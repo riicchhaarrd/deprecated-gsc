@@ -1,9 +1,9 @@
 #pragma once
-#include <vector>
-#include <string>
-#include <exception>
-#include "token.h"
 #include "source.h"
+#include "token.h"
+#include <exception>
+#include <string>
+#include <vector>
 
 namespace parse
 {
@@ -29,9 +29,15 @@ namespace parse
 	{
 		int start, end;
 		int line1, line2;
+		const char* message_;
 		lexer_error(const char* message, int s, int e, int x, int y)
-			: std::exception(message), start(s), end(e), line1(x), line2(y)
+			: start(s), end(e), line1(x), line2(y), message_(message)
 		{
+		}
+
+		const char* what() const noexcept override
+		{
+			return message_;
 		}
 	};
 
@@ -109,8 +115,8 @@ namespace parse
 			{
 				ch = read_character();
 				if (ch == -1)
-					throw lexer_error("unexpected eof, this shouldn't happen halfway through a string.", start, m_cursor,
-									  m_source->line_number(start), m_source->line_number(m_cursor));
+					throw lexer_error("unexpected eof, this shouldn't happen halfway through a string.", start,
+									  m_cursor, m_source->line_number(start), m_source->line_number(m_cursor));
 				if (ch == quote)
 					break;
 				++m_cursor;
@@ -214,4 +220,4 @@ namespace parse
 			return tokens;
 		}
 	};
-};
+}; // namespace parse

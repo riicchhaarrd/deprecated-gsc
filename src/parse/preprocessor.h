@@ -16,10 +16,16 @@ namespace parse
 	struct preprocessor_error : std::exception
 	{
 		std::string file;
+		const char *msg;
 		int linenumber;
 		preprocessor_error(const char* message, const std::string& _file, int _linenumber)
-			: file(_file), linenumber(_linenumber), exception(message)
+			: file(_file), linenumber(_linenumber), msg(message)
 		{
+		}
+
+		const char* what() const noexcept override
+		{
+			return msg;
 		}
 	};
 	class preprocessor
