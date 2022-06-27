@@ -39,7 +39,9 @@ namespace parse
 
 		std::string extract_string(int start, int n) const
 		{
-			return m_buffer.substr(start, n);
+			if (start >= 0 && n > 0)
+				return m_buffer.substr(start, n);
+			return "";
 		}
 	};
 };
