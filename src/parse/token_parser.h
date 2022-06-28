@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include "token.h"
+#include <format>
 
 namespace parse
 {
@@ -14,10 +15,13 @@ namespace parse
 
 	struct parse_error : std::exception
 	{
-		int line;
 		std::string message_;
-		explicit parse_error(const std::string& message, int lineno = -1) : message_(message), line(lineno)
+		explicit parse_error(const std::string& message, token* t = nullptr)
 		{
+			if (t)
+				message_ = std::format("[{}:{}] {}", t->source_file(), t->line_number(), message);
+			else
+				message_ = message;
 		}
 		const char* what() const noexcept override
 		{
@@ -90,7 +94,7 @@ namespace parse
 			if (!accept_token(t, tt))
 			{
 				std::string error_message = "expected token type" + t.type_as_string();
-				throw parse_error(error_message, t.line_number());
+				throw parse_error(error_message, &t);
 			}
 		}
 
@@ -99,7 +103,7 @@ namespace parse
 			if (!accept_token(t, tt))
 			{
 				std::string error_message = "expected token type" + t.type_as_string();
-				throw parse_error(error_message, t.line_number());
+				throw parse_error(error_message, &t);
 			}
 		}
 
@@ -122,7 +126,7 @@ namespace parse
 				t = read_token();
 			}
 			if (t.type != parse::token_type::integer)
-				throw parse_error("expected integer", t.line_number());
+				throw parse_error("expected integer", &t);
 			return neg ? -std::stoi(t.to_string()) : std::stoi(t.to_string());
 		}
 
@@ -136,7 +140,7 @@ namespace parse
 				t = read_token();
 			}
 			if (t.type != parse::token_type::number && t.type != parse::token_type::integer)
-				throw parse_error("expected number", t.line_number());
+				throw parse_error("expected number", &t);
 			return neg ? -std::stof(t.to_string()) : std::stof(t.to_string());
 		}
 
@@ -144,7 +148,7 @@ namespace parse
 		{
 			auto t = read_token();
 			if (t.type != parse::token_type::string)
-				throw parse_error("expected string", t.line_number());
+				throw parse_error("expected string", &t);
 			return t.to_string();
 		}
 
@@ -152,7 +156,7 @@ namespace parse
 		{
 			auto t = read_token();
 			if (t.type != parse::token_type::identifier)
-				throw parse_error("expected identifier got " + t.type_as_string() + ", " + t.to_string(), t.line_number());
+				throw parse_error("expected identifier got " + t.type_as_string() + ", " + t.to_string(), &t);
 			return t.to_string();
 		}
 	};

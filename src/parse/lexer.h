@@ -45,6 +45,7 @@ namespace parse
 	{
 		const source* m_source;
 		size_t m_cursor, m_bufsz;
+		int m_lineno;
 
 		lexer_opts m_opts;
 
@@ -59,10 +60,11 @@ namespace parse
 		}
 
 	  public:
-		lexer(const source* src) : m_cursor(0), m_source(src), m_bufsz(src->length())
+		lexer(const source* src) : m_cursor(0), m_source(src), m_bufsz(src->length()), m_lineno(-1)
 		{
 		}
-		lexer(const source* src, lexer_opts opts) : m_opts(opts), m_cursor(0), m_source(src), m_bufsz(src->length())
+		lexer(const source* src, lexer_opts opts)
+			: m_opts(opts), m_cursor(0), m_source(src), m_bufsz(src->length()), m_lineno(-1)
 		{
 		}
 
@@ -90,7 +92,8 @@ namespace parse
 				++m_cursor;
 				ch = read_character();
 			}
-			return token(m_source, is_integer ? token_type::integer : token_type::number, start, m_cursor - start);
+			return token(m_source, is_integer ? token_type::integer : token_type::number, start, m_cursor - start,
+						 m_lineno);
 		}
 
 		bool is_identifier_character(int ch)
@@ -103,7 +106,7 @@ namespace parse
 			int start = m_cursor;
 			while (is_identifier_character(read_character()) || is_digit(read_character()))
 				++m_cursor;
-			return token(m_source, token_type::identifier, start, m_cursor - start);
+			return token(m_source, token_type::identifier, start, m_cursor - start, m_lineno);
 		}
 
 		token string(int quote, token_type tt)
@@ -121,7 +124,7 @@ namespace parse
 					break;
 				++m_cursor;
 			}
-			auto t = token(m_source, tt, start, m_cursor - start);
+			auto t = token(m_source, tt, start, m_cursor - start, m_lineno);
 			++m_cursor;
 			return t;
 		}
@@ -129,8 +132,18 @@ namespace parse
 		token read_token()
 		{
 		repeat:
-			while (is_space(read_character()))
+			int c;
+			do
+			{
+				c = read_character();
+				if (c == '\n')
+					++m_lineno;
+				if (!is_space(c))
+					break;
 				++m_cursor;
+			} while (is_space(c));
+			//while (is_space(read_character()))
+				//++m_cursor;
 			int ch = read_character();
 			if (ch == -1)
 				return token(m_source, token_type::eof);
@@ -158,14 +171,14 @@ namespace parse
 						{
 							if (!m_opts.tokenize_comments)
 								goto repeat;
-							return token(m_source, token_type::comment, start, m_cursor - start);
+							return token(m_source, token_type::comment, start, m_cursor - start, m_lineno);
 						}
 						++m_cursor;
 					}
 					m_cursor += 2;
 					if (!m_opts.tokenize_comments)
 						goto repeat;
-					return token(m_source, token_type::comment, start, m_cursor - start);
+					return token(m_source, token_type::comment, start, m_cursor - start, m_lineno);
 				}
 				else if (peek_next_character() == '/')
 				{
@@ -179,14 +192,14 @@ namespace parse
 						{
 							if (!m_opts.tokenize_comments)
 								goto repeat;
-							return token(m_source, token_type::comment, start, m_cursor - start);
+							return token(m_source, token_type::comment, start, m_cursor - start, m_lineno);
 						}
 						++m_cursor;
 					} while (ch != '\n');
 					--m_cursor; // incase we read the \n as token
 					if (!m_opts.tokenize_comments)
 						goto repeat;
-					return token(m_source, token_type::comment, start, m_cursor - start);
+					return token(m_source, token_type::comment, start, m_cursor - start, m_lineno);
 				}
 			}
 			for (int i = 0; i < sizeof(sequence_map) / sizeof(sequence_map[0]); ++i)
@@ -202,9 +215,9 @@ namespace parse
 					continue;
 				}
 				++m_cursor;
-				return token(m_source, sequence_map[i].type, m_cursor - 2, 2);
+				return token(m_source, sequence_map[i].type, m_cursor - 2, 2, m_lineno);
 			}
-			return token(m_source, ch, m_cursor++, 1);
+			return token(m_source, ch, m_cursor++, 1, m_lineno);
 		}
 
 		std::vector<token> tokenize()

@@ -16,6 +16,11 @@ namespace parse
 		{
 		}
 
+		const std::string& path() const
+		{
+			return m_path;
+		}
+
 		const int length() const
 		{
 			return m_buffer.size();

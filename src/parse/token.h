@@ -32,26 +32,38 @@ namespace parse
 		const source* m_source;
 		token_type type;
 		int pos, sz;
+		int real_line_number;
 
-		token() : pos(-1), sz(0), type(token_type::invalid), m_source(NULL)
+		token() : pos(-1), sz(0), type(token_type::invalid), m_source(NULL), real_line_number(-1)
 		{
 		}
-		token(token_type t) : type(t), m_source(NULL), pos(-1), sz(0)
+		token(token_type t) : type(t), m_source(NULL), pos(-1), sz(0), real_line_number(-1)
 		{
 		}
-		token(const source* src, token_type t) : m_source(src), type(t), pos(-1), sz(0)
+		token(const source* src, token_type t) : m_source(src), type(t), pos(-1), sz(0), real_line_number(-1)
 		{
 		}
 		template <typename T>
-		token(const source* src, T t, int _pos, int _sz) : m_source(src), type((token_type)t), pos(_pos), sz(_sz)
+		token(const source* src, T t, int _pos, int _sz, int ln)
+			: m_source(src), type((token_type)t), pos(_pos), sz(_sz), real_line_number(ln)
 		{
+		}
+
+		std::string source_file() const
+		{
+			if (!m_source)
+				return "memory buffer";
+			return m_source->path();
 		}
 
 		const int line_number() const
 		{
+			return real_line_number;
+			#if 0
 			if (!m_source)
 				return -1;
 			return m_source->line_number(pos);
+			#endif
 		}
 
 		std::string type_as_string() const
