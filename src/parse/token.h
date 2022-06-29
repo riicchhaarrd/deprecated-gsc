@@ -11,6 +11,7 @@ namespace parse
 		identifier,
 		literal,
 		integer,
+		hexadecimal,
 		number,
 		comment,
 		eq,
@@ -23,7 +24,7 @@ namespace parse
 		invalid
 	};
 
-	static const char* token_type_strings[] = {"string",  "identifier", "literal", "integer", "number",
+	static const char* token_type_strings[] = {"string",  "identifier", "literal", "integer", "hexadecimal", "number",
 											   "comment", "==",			"!=",	   "<=",	  ">=",
 											   "<<",	  ">>",			"eof",	   "invalid", NULL};
 

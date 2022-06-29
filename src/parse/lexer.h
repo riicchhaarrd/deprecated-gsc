@@ -81,6 +81,20 @@ namespace parse
 			return ch >= '0' && ch <= '9';
 		}
 
+		token hex()
+		{
+			m_cursor += 2; // read "0x"
+			int start = m_cursor;
+			int ch = read_character();
+
+			while (is_digit(ch) || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F'))
+			{
+				++m_cursor;
+				ch = read_character();
+			}
+			return token(m_source, token_type::hexadecimal, start, m_cursor - start, m_lineno);
+		}
+
 		token number()
 		{
 			int start = m_cursor;
@@ -150,6 +164,8 @@ namespace parse
 				return token(m_source, token_type::eof);
 			if (is_identifier_character(ch))
 				return identifier();
+			if (ch == '0' && peek_next_character() == 'x')
+				return hex();
 			if (is_digit(ch) || (ch == '.' && is_digit(peek_next_character())))
 				return number();
 			if (ch == '"')

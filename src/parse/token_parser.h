@@ -125,9 +125,19 @@ namespace parse
 				neg = true;
 				t = read_token();
 			}
-			if (t.type != parse::token_type::integer)
-				throw parse_error("expected integer", &t);
-			return neg ? -std::stoi(t.to_string()) : std::stoi(t.to_string());
+			if (t.type == parse::token_type::hexadecimal)
+			{
+				int i;
+				std::stringstream ss;
+				ss << std::hex << t.to_string();
+				ss >> i;
+				return neg ? -i : i;
+			}
+			else if (t.type == parse::token_type::integer)
+			{
+				return neg ? -std::stoi(t.to_string()) : std::stoi(t.to_string());
+			}
+			throw parse_error("expected integer", &t);
 		}
 
 		float read_number()
