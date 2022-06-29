@@ -54,7 +54,7 @@ namespace parse
 			std::ifstream in(path);
 			if (!in.is_open())
 			{
-				printf("failed to preprocess file '%s'\n", path.c_str());
+				printf("failed to open file '%s'\n", path.c_str());
 				return false;
 			}
 			std::stringstream ss;
