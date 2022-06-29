@@ -49,7 +49,7 @@ namespace parse
 		}
 
 		bool preprocess(const std::string& path_base, const std::string& path, token_list& preprocessed_tokens,
-						source_map& sources, definition_map& definitions, int depth = 0)
+						source_map& sources, definition_map& definitions, parse::lexer_opts opts, int depth = 0)
 		{
 			std::ifstream in(path);
 			if (!in.is_open())
@@ -61,9 +61,8 @@ namespace parse
 			ss << in.rdbuf();
 
 			sources.insert(std::make_pair(path, parse::source(path, ss.str())));
-			parse::lexer_opts opts;
 			opts.tokenize_newlines = true;
-			parse::lexer lexer(&sources[path]);
+			parse::lexer lexer(&sources[path], opts);
 
 			token_list tokens;
 
@@ -103,7 +102,7 @@ namespace parse
 							// putchar('\t');
 							// printf("including %s\n", t.to_string().c_str());
 							token_list tmp;
-							if (!preprocess(path_base, path_base + t.to_string(), tmp, sources, definitions, depth + 1))
+							if (!preprocess(path_base, path_base + t.to_string(), tmp, sources, definitions, opts, depth + 1))
 								throw preprocessor_error("failed to preprocess file", t.to_string(), t.line_number());
 							preprocessed_tokens.insert(preprocessed_tokens.end(), tmp.begin(), tmp.end());
 						}

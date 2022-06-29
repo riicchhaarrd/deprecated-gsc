@@ -12,6 +12,7 @@ namespace parse
 		bool tokenize_comments = false;
 		bool tokenize_whitespace = false;
 		bool tokenize_newlines = false;
+		bool backslash_comments = false;
 	};
 
 	typedef struct
@@ -155,6 +156,30 @@ namespace parse
 				return string(ch, token_type::string);
 			if (ch == '\'')
 				return string(ch, token_type::literal);
+			if (m_opts.backslash_comments && ch == '\\')
+			{
+				if (peek_next_character() == '\\')
+				{
+					m_cursor += 2;
+					// read till next line
+					int start = m_cursor;
+					do
+					{
+						ch = read_character();
+						if (ch == -1)
+						{
+							if (!m_opts.tokenize_comments)
+								goto repeat;
+							return token(m_source, token_type::comment, start, m_cursor - start, m_lineno);
+						}
+						++m_cursor;
+					} while (ch != '\n');
+					--m_cursor; // incase we read the \n as token
+					if (!m_opts.tokenize_comments)
+						goto repeat;
+					return token(m_source, token_type::comment, start, m_cursor - start, m_lineno);
+				}
+			}
 			if (ch == '/')
 			{
 				if (peek_next_character() == '*')
