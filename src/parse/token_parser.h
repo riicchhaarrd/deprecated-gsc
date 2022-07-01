@@ -3,6 +3,7 @@
 #include <string>
 #include "token.h"
 #include <format>
+#include <sstream>
 
 namespace parse
 {
@@ -43,6 +44,12 @@ namespace parse
 		{
 		}
 
+		void unread_token()
+		{
+			if (m_tokenindex > 0)
+				--m_tokenindex;
+		}
+
 		parse::token read_token()
 		{
 			if (m_tokenindex + 1 > m_tokens.size())
@@ -51,6 +58,11 @@ namespace parse
 			if (!m_opts.newlines && t.type_as_int() == '\n')
 				return read_token();
 			return t;
+		}
+
+		bool eof() const
+		{
+			return m_tokenindex + 1 > m_tokens.size();
 		}
 
 		void read_tokens_till(std::vector<parse::token>& tokens, const char* tt)
@@ -167,6 +179,14 @@ namespace parse
 			auto t = read_token();
 			if (t.type != parse::token_type::identifier)
 				throw parse_error("expected identifier got " + t.type_as_string() + ", " + t.to_string(), &t);
+			return t.to_string();
+		}
+
+		std::string read_identifier_or_string()
+		{
+			auto t = read_token();
+			if (t.type != parse::token_type::identifier && t.type != parse::token_type::string)
+				throw parse_error("expected identifier or string got " + t.type_as_string() + ", " + t.to_string(), &t);
 			return t.to_string();
 		}
 	};
