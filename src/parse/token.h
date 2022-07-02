@@ -41,6 +41,9 @@ namespace parse
 		token(token_type t) : type(t), m_source(NULL), pos(-1), sz(0), real_line_number(-1)
 		{
 		}
+		token(int t) : type((token_type)t), m_source(NULL), pos(-1), sz(0), real_line_number(-1)
+		{
+		}
 		token(const source* src, token_type t) : m_source(src), type(t), pos(-1), sz(0), real_line_number(-1)
 		{
 		}

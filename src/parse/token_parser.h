@@ -100,22 +100,26 @@ namespace parse
 			}
 		}
 
-		template <typename T> void expect_token(T tt)
+		template <typename T> void expect_token(T token_type)
 		{
 			parse::token t;
-			if (!accept_token(t, tt))
+			if (!accept_token(t, token_type))
 			{
-				std::string error_message = "expected token type " + t.type_as_string();
-				throw parse_error(error_message, &t);
+				token tok(token_type);
+				throw parse_error(
+					std::format("expected token type {}, got {} instead", tok.type_as_string(), t.type_as_string()),
+					&t);
 			}
 		}
 
-		template <typename T> void expect_token(parse::token& t, T tt)
+		template <typename T> void expect_token(parse::token& t, T token_type)
 		{
-			if (!accept_token(t, tt))
+			if (!accept_token(t, token_type))
 			{
-				std::string error_message = "expected token type " + t.type_as_string();
-				throw parse_error(error_message, &t);
+				token tok(token_type);
+				throw parse_error(
+					std::format("expected token type {}, got {} instead", tok.type_as_string(), t.type_as_string()),
+					&t);
 			}
 		}
 
