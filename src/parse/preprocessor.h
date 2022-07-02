@@ -8,6 +8,8 @@
 #include "token_parser.h"
 #include "lexer.h"
 
+#include <core/filesystem/api.h>
+
 namespace parse
 {
 	using source_map = std::unordered_map<std::string, parse::source>;
@@ -48,19 +50,17 @@ namespace parse
 				preprocessed_tokens.push_back(t);
 		}
 
-		bool preprocess(const std::string& path_base, const std::string& path, token_list& preprocessed_tokens,
+		bool preprocess(filesystem_api& fs, const std::string& path_base, const std::string& path,
+						token_list& preprocessed_tokens,
 						source_map& sources, definition_map& definitions, parse::lexer_opts opts, int depth = 0)
 		{
-			std::ifstream in(path);
-			if (!in.is_open())
-			{
-				//printf("failed to open file '%s'\n", path.c_str());
+			auto entry = fs.read_entry(path);
+			if (!entry)
 				return false;
-			}
-			std::stringstream ss;
-			ss << in.rdbuf();
+			const char* data = (const char*)entry->data();
+			std::string tmp(data, entry->size());
 
-			sources.insert(std::make_pair(path, parse::source(path, ss.str())));
+			sources.insert(std::make_pair(path, parse::source(path, tmp)));
 			opts.tokenize_newlines = true;
 			parse::lexer lexer(&sources[path], opts);
 
@@ -102,7 +102,7 @@ namespace parse
 							// putchar('\t');
 							// printf("including %s\n", t.to_string().c_str());
 							token_list tmp;
-							if (!preprocess(path_base, path_base + t.to_string(), tmp, sources, definitions, opts, depth + 1))
+							if (!preprocess(fs, path_base, path_base + t.to_string(), tmp, sources, definitions, opts, depth + 1))
 								throw preprocessor_error("failed to preprocess file", t.to_string(), t.line_number());
 							preprocessed_tokens.insert(preprocessed_tokens.end(), tmp.begin(), tmp.end());
 						}
