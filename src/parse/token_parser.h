@@ -105,7 +105,7 @@ namespace parse
 			parse::token t;
 			if (!accept_token(t, tt))
 			{
-				std::string error_message = "expected token type" + t.type_as_string();
+				std::string error_message = "expected token type " + t.type_as_string();
 				throw parse_error(error_message, &t);
 			}
 		}
@@ -114,7 +114,7 @@ namespace parse
 		{
 			if (!accept_token(t, tt))
 			{
-				std::string error_message = "expected token type" + t.type_as_string();
+				std::string error_message = "expected token type " + t.type_as_string();
 				throw parse_error(error_message, &t);
 			}
 		}
