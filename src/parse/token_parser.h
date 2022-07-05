@@ -4,6 +4,7 @@
 #include "token.h"
 #include <format>
 #include <sstream>
+#include <common/logger.h>
 
 namespace parse
 {
@@ -36,12 +37,27 @@ namespace parse
 		int m_tokenindex = 0;
 		parse_opts m_opts;
 
+		int m_tokenindex_saved = -1;
+
 	  public:
 		token_parser(const token_list& t) : m_tokens(t), m_tokenindex(0)
 		{
 		}
 		token_parser(const token_list& t, parse_opts opts) : m_tokens(t), m_tokenindex(0), m_opts(opts)
 		{
+		}
+
+		void save()
+		{
+			if (m_tokenindex_saved != -1)
+				LOG_ERROR("can't save parser");
+			m_tokenindex_saved = m_tokenindex;
+		}
+
+		void restore()
+		{
+			m_tokenindex = m_tokenindex_saved;
+			m_tokenindex_saved = -1;
 		}
 
 		void unread_token()
