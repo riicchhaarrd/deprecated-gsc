@@ -169,7 +169,7 @@ namespace parse
 			{
 				return neg ? -std::stoi(t.to_string()) : std::stoi(t.to_string());
 			}
-			throw parse_error("expected integer", &t);
+			throw parse_error("expected integer got " + t.type_as_string() + ", " + t.to_string(), &t);
 		}
 
 		float read_number()
@@ -182,7 +182,7 @@ namespace parse
 				t = read_token();
 			}
 			if (t.type != parse::token_type::number && t.type != parse::token_type::integer)
-				throw parse_error("expected number", &t);
+				throw parse_error("expected number got " + t.type_as_string() + ", " + t.to_string(), &t);
 			return neg ? -std::stof(t.to_string()) : std::stof(t.to_string());
 		}
 
@@ -190,7 +190,7 @@ namespace parse
 		{
 			auto t = read_token();
 			if (t.type != parse::token_type::string)
-				throw parse_error("expected string", &t);
+				throw parse_error("expected string got " + t.type_as_string() + ", " + t.to_string(), &t);
 			return t.to_string();
 		}
 
