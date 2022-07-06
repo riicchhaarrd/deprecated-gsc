@@ -30,6 +30,8 @@ namespace parse
 
 	struct token
 	{
+		//either stringvalue is set and it has no reference to any source anymore or the source is set and the string can be extracted from there
+		std::string m_stringvalue;
 		const source* m_source;
 		token_type type;
 		int pos, sz;
@@ -51,6 +53,18 @@ namespace parse
 		token(const source* src, T t, int _pos, int _sz, int ln)
 			: m_source(src), type((token_type)t), pos(_pos), sz(_sz), real_line_number(ln)
 		{
+		}
+
+		token copy() const
+		{
+			token t;
+			t.m_stringvalue = m_source ? to_string() : m_stringvalue;
+			t.pos = -1;
+			t.sz = -1;
+			t.type = type;
+			t.real_line_number = -1;
+			t.m_source = nullptr;
+			return t;
 		}
 
 		std::string source_file() const
@@ -83,7 +97,9 @@ namespace parse
 
 		std::string to_string() const
 		{
-			return m_source->extract_string(pos, sz);
+			if(m_stringvalue.empty())
+				return m_source->extract_string(pos, sz);
+			return m_stringvalue;
 		}
 
 		int to_int() const
