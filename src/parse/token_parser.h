@@ -47,6 +47,16 @@ namespace parse
 		{
 		}
 
+		const int size() const
+		{
+			return m_tokenindex;
+		}
+
+		const int capacity() const
+		{
+			return m_tokens.size();
+		}
+
 		void save()
 		{
 			if (m_tokenindex_saved != -1)
@@ -60,6 +70,13 @@ namespace parse
 			m_tokenindex_saved = -1;
 		}
 
+		std::string current_token_string() const
+		{
+			if (m_tokenindex - 1 < 0 || m_tokenindex - 1 >= m_tokens.size())
+				return "eof";
+			return m_tokens[m_tokenindex - 1].to_string();
+		}
+
 		void unread_token()
 		{
 			if (m_tokenindex > 0)
@@ -68,7 +85,7 @@ namespace parse
 
 		parse::token read_token()
 		{
-			if (m_tokenindex + 1 > m_tokens.size())
+			if (eof())
 				return parse::token(parse::token_type::eof);
 			auto t = m_tokens[m_tokenindex++];
 			if (!m_opts.newlines && t.type_as_int() == '\n')
@@ -78,7 +95,7 @@ namespace parse
 
 		bool eof() const
 		{
-			return m_tokenindex + 1 > m_tokens.size();
+			return m_tokenindex >= m_tokens.size();
 		}
 
 		void read_tokens_till(std::vector<parse::token>& tokens, const char* tt)
