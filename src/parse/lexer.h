@@ -50,17 +50,37 @@ namespace parse
 
 		lexer_opts m_opts;
 
-		int read_character()
+	  public:
+
+		void seek(size_t pos)
 		{
+			m_cursor = pos;
+		}
+
+		void skip(size_t n)
+		{
+			m_cursor += n;
+		}
+
+		void advance()
+		{
+			++m_cursor;
+		}
+		
+		int read_character(size_t *wb = nullptr)
+		{
+			if (wb)
+				*wb = m_cursor;
 			return (*m_source)[m_cursor];
 		}
 
-		int peek_next_character()
+		int peek_next_character(int distance = 0, size_t *would_be_position = nullptr)
 		{
-			return (*m_source)[m_cursor + 1];
+			if (would_be_position)
+				*would_be_position = m_cursor + (distance + 1);
+			return (*m_source)[m_cursor + (distance + 1)];
 		}
 
-	  public:
 		lexer(const source* src) : m_cursor(0), m_source(src), m_bufsz(src->length()), m_lineno(-1)
 		{
 		}

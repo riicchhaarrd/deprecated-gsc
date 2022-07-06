@@ -18,16 +18,16 @@ namespace parse
 	struct preprocessor_error : std::exception
 	{
 		std::string file;
-		const char *msg;
+		std::string msg;
 		int linenumber;
-		preprocessor_error(const char* message, const std::string& _file, int _linenumber)
+		preprocessor_error(const std::string &message, const std::string& _file, int _linenumber)
 			: file(_file), linenumber(_linenumber), msg(message)
 		{
 		}
 
 		const char* what() const noexcept override
 		{
-			return msg;
+			return msg.c_str();
 		}
 	};
 	class preprocessor
@@ -72,7 +72,7 @@ namespace parse
 			}
 			catch (parse::lexer_error& err)
 			{
-				throw preprocessor_error("failed to tokenize file", path, err.line1);
+				throw preprocessor_error(std::format("failed to tokenize file {}", err.what()), path, err.line1);
 			}
 			parse_opts popts;
 			popts.newlines = true;
