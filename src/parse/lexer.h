@@ -57,7 +57,7 @@ namespace parse
 			m_cursor = pos;
 		}
 
-		void skip(size_t n)
+		void skip(int n)
 		{
 			m_cursor += n;
 		}
