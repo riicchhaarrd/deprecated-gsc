@@ -89,6 +89,10 @@ namespace parse
 		{
 		}
 
+		virtual ~lexer()
+		{
+		}
+
 		bool is_space(int ch) const
 		{
 			if (m_opts.tokenize_newlines && ch == '\n')
@@ -131,9 +135,14 @@ namespace parse
 						 m_lineno);
 		}
 
-		bool is_identifier_character(int ch)
+		virtual bool is_identifier_preamble_character(int ch)
 		{
 			return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_';
+		}
+
+		virtual bool is_identifier_character(int ch)
+		{
+			return is_identifier_preamble_character(ch) || isdigit(ch); //allow digits after the first character
 		}
 
 		token identifier()
@@ -182,7 +191,7 @@ namespace parse
 			int ch = read_character();
 			if (ch == -1)
 				return token(m_source, token_type::eof);
-			if (is_identifier_character(ch))
+			if (is_identifier_preamble_character(ch))
 				return identifier();
 			if (ch == '0' && peek_next_character() == 'x')
 				return hex();

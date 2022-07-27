@@ -25,6 +25,8 @@
 #include <script/ast/node/statement/return_statement.h>
 #include <script/ast/node/expression/unary_expression.h>
 #include <script/ast/node/statement/while_statement.h>
+#include <script/ast/node/expression/call_external_expression.h>
+#include <script/ast/node/expression.h>
 
 namespace compiler
 {
@@ -61,6 +63,14 @@ namespace compiler
 		void expect(int token_type);
 		std::unique_ptr<ast::Statement> statement();
 		std::unique_ptr<ast::CallExpression> call_expression();
+		std::unique_ptr<ast::Expression> expression();
+		std::unique_ptr<ast::Expression> factor_integer();
+		std::unique_ptr<ast::Expression> factor_number();
+		std::unique_ptr<ast::Expression> factor_string();
+		std::unique_ptr<ast::Expression> factor_unary_expression();
+		std::unique_ptr<ast::Expression> factor_identifier();
+		std::unique_ptr<ast::Expression> factor_parentheses();
+		std::unique_ptr<ast::Expression> factor();
 	  public:
 		ASTGenerator();
 		~ASTGenerator();

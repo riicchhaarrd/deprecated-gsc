@@ -49,8 +49,16 @@ namespace parse
 			else
 				preprocessed_tokens.push_back(t);
 		}
-
 		bool preprocess(filesystem_api& fs, const std::string& path_base, const std::string& path,
+						token_list& preprocessed_tokens, source_map& sources, definition_map& definitions,
+						parse::lexer_opts opts, int depth = 0)
+		{
+			return preprocess_with_typed_lexer<parse::lexer>(fs, path_base, path, preprocessed_tokens, sources,
+															 definitions, opts, depth);
+		}
+
+		template <typename T>
+		bool preprocess_with_typed_lexer(filesystem_api& fs, const std::string& path_base, const std::string& path,
 						token_list& preprocessed_tokens,
 						source_map& sources, definition_map& definitions, parse::lexer_opts opts, int depth = 0)
 		{
@@ -62,7 +70,7 @@ namespace parse
 
 			sources.insert(std::make_pair(path, parse::source(path, tmp)));
 			opts.tokenize_newlines = true;
-			parse::lexer lexer(&sources[path], opts);
+			T lexer(&sources[path], opts);
 
 			token_list tokens;
 
