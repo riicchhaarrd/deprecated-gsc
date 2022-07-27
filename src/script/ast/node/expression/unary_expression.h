@@ -11,7 +11,7 @@ namespace compiler
 		{
 			std::unique_ptr<Expression> argument;
 			int op;
-			int prefix;
+			bool prefix;
 		};
 	}; // namespace ast
 };	   // namespace compiler

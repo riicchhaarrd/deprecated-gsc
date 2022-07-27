@@ -36,36 +36,42 @@ namespace compiler
 		return std::move(node<ast::Identifier>(token.to_string()));
 	}
 
-	std::unique_ptr<ast::Expression> ASTGenerator::factor_unary_expression()
+	ExpressionPtr ASTGenerator::factor_unary_expression()
 	{
 		throw ASTException("factor unary expression unhandled");
 		return nullptr;
 	}
-	std::unique_ptr<ast::Expression> ASTGenerator::factor_identifier()
+	ExpressionPtr ASTGenerator::factor_identifier()
 	{
+		std::string ident_string = token.to_string();
+		auto ident = node<ast::Identifier>(ident_string);
+		if (accept('('))
+		{
+			//function call
+		}
 		throw ASTException("factor identifier unhandled");
 		return nullptr;
 	}
-	std::unique_ptr<ast::Expression> ASTGenerator::factor_parentheses()
+	ExpressionPtr ASTGenerator::factor_parentheses()
 	{
 		throw ASTException("factor parentheses unhandled");
 		return nullptr;
 	}
-	std::unique_ptr<ast::Expression> ASTGenerator::factor_integer()
+	ExpressionPtr ASTGenerator::factor_integer()
 	{
 		auto n = node<ast::Literal>();
 		n->type = ast::Literal::Type::kInteger;
 		n->value = token.to_string();
 		return n;
 	}
-	std::unique_ptr<ast::Expression> ASTGenerator::factor_number()
+	ExpressionPtr ASTGenerator::factor_number()
 	{
 		auto n = node<ast::Literal>();
 		n->type = ast::Literal::Type::kNumber;
 		n->value = token.to_string();
 		return n;
 	}
-	std::unique_ptr<ast::Expression> ASTGenerator::factor_string()
+	ExpressionPtr ASTGenerator::factor_string()
 	{
 		auto n = node<ast::Literal>();
 		n->type = ast::Literal::Type::kString;
@@ -73,10 +79,10 @@ namespace compiler
 		return n;
 	}
 
-	std::unique_ptr<ast::Expression> ASTGenerator::factor()
+	void ASTGenerator::factor(ExpressionPtr& expr)
 	{
 		token = m_token_parser->read_token();
-		using FactorFunction = std::function<std::unique_ptr<ast::Expression>(ASTGenerator&)>;
+		using FactorFunction = std::function<ExpressionPtr(ASTGenerator&)>;
 		std::unordered_map<int, FactorFunction> factors = {
 			{parse::TokenType_kIdentifier, &ASTGenerator::factor_identifier},
 			{'(', &ASTGenerator::factor_parentheses},
@@ -91,12 +97,210 @@ namespace compiler
 		auto fnd = factors.find(token.type_as_int());
 		if (fnd == factors.end())
 			throw ASTException("Invalid factor '{}'", token.type_as_string());
-		return fnd->second(*this);
+		expr = std::move(fnd->second(*this));
 	}
 
-	std::unique_ptr<ast::Expression> ASTGenerator::expression()
+	bool ASTGenerator::accept_assignment_operator()
 	{
-		return factor();
+		static int operators[] = {'=',
+								  parse::TokenType_kPlusAssign,
+								  parse::TokenType_kMinusAssign,
+								  parse::TokenType_kDivideAssign,
+								  parse::TokenType_kMultiplyAssign,
+								  parse::TokenType_kAndAssign,
+								  parse::TokenType_kOrAssign,
+								  parse::TokenType_kXorAssign,
+								  parse::TokenType_kModAssign};
+		for (size_t i = 0; i < COUNT_OF(operators); ++i)
+		{
+			if (accept(operators[i]))
+				return true;
+		}
+		return false;
+	}
+	ExpressionPtr ASTGenerator::binary_expression(int op, ExpressionPtr& lhs, ExpressionPtr& rhs)
+	{
+		auto n = node<ast::BinaryExpression>();
+		n->left = std::move(lhs);
+		n->right = std::move(rhs);
+		n->op = op;
+		return n;
+	}
+
+	void ASTGenerator::postfix(ExpressionPtr& expr)
+	{
+		factor(expr);
+		while (accept(parse::TokenType_kPlusPlus) || accept(parse::TokenType_kMinusMinus))
+		{
+			int op = token.type_as_int();
+			auto n = node<ast::UnaryExpression>();
+			n->op = op;
+			n->prefix = false;
+			n->argument = std::move(expr);
+			expr = std::move(n);
+		}
+	}
+
+	void ASTGenerator::array_subscripting(ExpressionPtr& expr)
+	{
+		postfix(expr);
+		while (accept('['))
+		{
+			ExpressionPtr rhs = expression();
+			expect(']');
+			auto n = node<ast::MemberExpression>();
+			n->object = std::move(expr);
+			n->prop = std::move(rhs);
+			expr = std::move(n);
+		}
+	}
+	
+	void ASTGenerator::term(ExpressionPtr& expr)
+	{
+		array_subscripting(expr);
+		while (accept('/') || accept('*') || accept('%'))
+		{
+			int op = token.type_as_int();
+			ExpressionPtr rhs;
+			array_subscripting(rhs);
+			expr = binary_expression(op, expr, rhs);
+		}
+	}
+
+	void ASTGenerator::add_and_subtract(ExpressionPtr& expr)
+	{
+		term(expr);
+		while (accept('+') || accept('-'))
+		{
+			int op = token.type_as_int();
+			ExpressionPtr rhs;
+			term(rhs);
+			expr = binary_expression(op, expr, rhs);
+		}
+	}
+
+	void ASTGenerator::bitwise_shift(ExpressionPtr& expr)
+	{
+		add_and_subtract(expr);
+		while (accept(parse::TokenType_kLsht) || accept(parse::TokenType_kRsht))
+		{
+			int op = token.type_as_int();
+			ExpressionPtr rhs;
+			add_and_subtract(rhs);
+			expr = binary_expression(op, expr, rhs);
+		}
+	}
+
+	void ASTGenerator::relational(ExpressionPtr& expr)
+	{
+		bitwise_shift(expr);
+		while (accept('>') || accept('<') || accept(parse::TokenType_kEq) || accept(parse::TokenType_kLeq) ||
+			   accept(parse::TokenType_kNeq) || accept(parse::TokenType_kGeq))
+		{
+			int op = token.type_as_int();
+			ExpressionPtr rhs;
+			bitwise_shift(rhs);
+			expr = binary_expression(op, expr, rhs);
+		}
+	}
+
+	void ASTGenerator::bitwise_and(ExpressionPtr& expr)
+	{
+		relational(expr);
+		while (accept('&'))
+		{
+			ExpressionPtr rhs;
+			relational(rhs);
+			expr = binary_expression('&', expr, rhs);
+		}
+	}
+
+	void ASTGenerator::bitwise_xor(ExpressionPtr& expr)
+	{
+		bitwise_and(expr);
+		while (accept('^'))
+		{
+			ExpressionPtr rhs;
+			bitwise_and(rhs);
+			expr = binary_expression('^', expr, rhs);
+		}
+	}
+
+	void ASTGenerator::bitwise_or(ExpressionPtr& expr)
+	{
+		bitwise_xor(expr);
+		while (accept('|'))
+		{
+			ExpressionPtr rhs;
+			bitwise_xor(rhs);
+			expr = binary_expression('|', expr, rhs);
+		}
+	}
+	void ASTGenerator::ternary_expression(ExpressionPtr& expr)
+	{
+		bitwise_or(expr);
+
+		while (accept('?'))
+		{
+			ExpressionPtr consequent, alternative;
+			bitwise_or(consequent);
+			expect(':');
+			bitwise_or(alternative);
+
+			auto ternary = node<ast::ConditionalExpression>();
+			ternary->condition = std::move(expr);
+			ternary->consequent = std::move(consequent);
+			ternary->alternative = std::move(alternative);
+			expr = std::move(ternary);
+		}
+	}
+
+	std::unique_ptr<ast::AssignmentExpression> ASTGenerator::assignment_node(int op, ExpressionPtr &lhs)
+	{
+		auto n = node<ast::AssignmentExpression>();
+		n->op = op;
+		n->lhs = std::move(lhs);
+		n->rhs = nullptr;
+		return n;
+	}
+
+	void ASTGenerator::assignment_expression(ExpressionPtr& expr)
+	{
+		ExpressionPtr lhs;
+		
+		ternary_expression(lhs);
+
+		if (!accept_assignment_operator())
+		{
+			expr = std::move(lhs);
+			return;
+		}
+		int op = token.type_as_int();
+		expr = assignment_node(op, lhs);
+		ExpressionPtr* n = &expr;
+		while (1)
+		{
+			ExpressionPtr rhs;
+			ternary_expression(rhs);
+			if (!accept_assignment_operator())
+			{
+				dynamic_cast<ast::AssignmentExpression*>(n->get())->rhs = std::move(rhs);
+				break;
+			}
+			op = token.type_as_int();
+			auto* ptr = dynamic_cast<ast::AssignmentExpression*>(n->get());
+			ptr->rhs = assignment_node(op, rhs);
+			n = &ptr->rhs;
+		}
+	}
+
+	ExpressionPtr ASTGenerator::expression()
+	{
+		ExpressionPtr expr;
+		assignment_expression(expr);
+		if (!expr)
+			throw ASTException("should not happen");
+		return expr;
 	}
 
 	std::unique_ptr<ast::CallExpression> ASTGenerator::call_expression()
@@ -128,7 +332,7 @@ namespace compiler
 	{
 		//read the token type, then based off of that choose which statement is being processed
 		auto expr_stmt = node<ast::ExpressionStatement>();
-		expr_stmt->expression = call_expression();
+		expr_stmt->expression = expression();
 		expect(';');
 		//std::move implicitly applied to local return values i guess
 		return expr_stmt;

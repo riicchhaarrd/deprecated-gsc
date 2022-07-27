@@ -21,9 +21,22 @@ namespace parse
 		token_type type;
 	} seqmap_t;
 
-	static const seqmap_t sequence_map[] = {
-		{"==", token_type::eq},	 {"!=", token_type::neq},  {">=", token_type::geq},
-		{"<=", token_type::leq}, {"<<", token_type::lsht}, {">>", token_type::rsht},
+	static const seqmap_t sequence_map[] = {{"==", token_type::eq},
+											{"!=", token_type::neq},
+											{">=", token_type::geq},
+											{"<=", token_type::leq},
+											{"<<", token_type::lsht},
+											{">>", token_type::rsht},
+											{"+=", token_type::plus_assign},
+											{"-=", token_type::minus_assign},
+											{"*=", token_type::multiply_assign},
+											{"/=", token_type::divide_assign},
+											{"%=", token_type::mod_assign},
+											{"^=", token_type::xor_assign},
+											{"|=", token_type::or_assign},
+											{"&=", token_type::and_assign},
+											{"++", token_type::plus_plus},
+											{"--", token_type::minus_minus}
 	};
 
 	struct lexer_error : std::exception

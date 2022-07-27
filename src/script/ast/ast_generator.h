@@ -43,6 +43,7 @@ namespace compiler
 		}
 	};
 
+	using ExpressionPtr = std::unique_ptr<ast::Expression>;
 	class ASTGenerator
 	{
 		parse::token_list tokens;
@@ -62,15 +63,29 @@ namespace compiler
 		bool accept(int token_type);
 		void expect(int token_type);
 		std::unique_ptr<ast::Statement> statement();
-		std::unique_ptr<ast::CallExpression> call_expression();
-		std::unique_ptr<ast::Expression> expression();
-		std::unique_ptr<ast::Expression> factor_integer();
-		std::unique_ptr<ast::Expression> factor_number();
-		std::unique_ptr<ast::Expression> factor_string();
-		std::unique_ptr<ast::Expression> factor_unary_expression();
-		std::unique_ptr<ast::Expression> factor_identifier();
-		std::unique_ptr<ast::Expression> factor_parentheses();
-		std::unique_ptr<ast::Expression> factor();
+		std::unique_ptr<ast::CallExpression> call_expression(const std::string);
+		ExpressionPtr expression();
+		ExpressionPtr factor_integer();
+		ExpressionPtr factor_number();
+		ExpressionPtr factor_string();
+		ExpressionPtr factor_unary_expression();
+		ExpressionPtr factor_identifier();
+		ExpressionPtr factor_parentheses();
+		void factor(ExpressionPtr&);
+		void assignment_expression(ExpressionPtr& expr);
+		bool accept_assignment_operator();
+		void ternary_expression(ExpressionPtr& expr);
+		void bitwise_or(ExpressionPtr& expr);
+		void bitwise_xor(ExpressionPtr& expr);
+		void bitwise_and(ExpressionPtr& expr);
+		void relational(ExpressionPtr& expr);
+		void bitwise_shift(ExpressionPtr& expr);
+		void add_and_subtract(ExpressionPtr& expr);
+		void term(ExpressionPtr& expr);
+		void array_subscripting(ExpressionPtr& expr);
+		void postfix(ExpressionPtr& expr);
+		ExpressionPtr binary_expression(int, ExpressionPtr&, ExpressionPtr&);
+		std::unique_ptr<ast::AssignmentExpression> assignment_node(int op, ExpressionPtr& lhs);
 	  public:
 		ASTGenerator();
 		~ASTGenerator();
