@@ -1,5 +1,6 @@
 #pragma once
-#include "node.h"
+#include "../statement.h"
+#include "../expression.h"
 #include <string>
 #include <memory>
 
@@ -7,10 +8,9 @@ namespace compiler
 {
 	namespace ast
 	{
-		struct WhileStatement : Node
+		struct ExpressionStatement : Statement
 		{
-			std::unique_ptr<Node> test;
-			std::unique_ptr<Node> body;
+			std::unique_ptr<Expression> expression;
 		};
 	}; // namespace ast
 };	   // namespace compiler

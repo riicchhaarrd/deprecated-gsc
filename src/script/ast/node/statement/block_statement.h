@@ -1,15 +1,16 @@
 #pragma once
-#include "node.h"
+#include "../statement.h"
 #include <string>
+#include <vector>
 #include <memory>
 
 namespace compiler
 {
 	namespace ast
 	{
-		struct ExpressionStatement : Node
+		struct BlockStatement : Statement
 		{
-			std::unique_ptr<Node> expression;
+			std::vector<std::unique_ptr<Statement>> body;
 		};
 	}; // namespace ast
 };	   // namespace compiler

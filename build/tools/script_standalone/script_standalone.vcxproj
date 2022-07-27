@@ -19,7 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\tools\materialinfo\materialinfo.cpp" />
+    <ClCompile Include="..\..\..\src\script\ast\ast_generator.cpp" />
+    <ClCompile Include="..\..\..\src\tools\script_standalone\script_standalone.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

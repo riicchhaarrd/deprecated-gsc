@@ -1,15 +1,13 @@
 #pragma once
-#include "node.h"
+#include "../statement.h"
 #include <string>
-#include <memory>
 
 namespace compiler
 {
 	namespace ast
 	{
-		struct BreakStatement : Node
+		struct EmptyStatement : Statement
 		{
-			//std::unique_ptr<Node> label;
 		};
 	}; // namespace ast
 };	   // namespace compiler

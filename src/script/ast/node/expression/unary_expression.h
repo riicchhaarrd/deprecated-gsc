@@ -1,5 +1,5 @@
 #pragma once
-#include "node.h"
+#include "../expression.h"
 #include <string>
 #include <memory>
 
@@ -7,10 +7,11 @@ namespace compiler
 {
 	namespace ast
 	{
-		struct DoWhileStatement : Node
+		struct UnaryExpression : Expression
 		{
-			std::unique_ptr<Node> test;
-			std::unique_ptr<Node> body;
+			std::unique_ptr<Expression> argument;
+			int op;
+			int prefix;
 		};
 	}; // namespace ast
 };	   // namespace compiler

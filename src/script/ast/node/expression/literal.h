@@ -1,12 +1,12 @@
 #pragma once
-#include "node.h"
+#include "../expression.h"
 #include <string>
 
 namespace compiler
 {
 	namespace ast
 	{
-		struct Literal : Node
+		struct Literal : Expression
 		{
 			enum class Type
 			{

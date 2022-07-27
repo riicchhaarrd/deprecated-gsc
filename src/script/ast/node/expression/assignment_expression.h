@@ -1,5 +1,5 @@
 #pragma once
-#include "node.h"
+#include "../expression.h"
 #include <string>
 #include <memory>
 
@@ -7,10 +7,10 @@ namespace compiler
 {
 	namespace ast
 	{
-		struct AssignmentExpression : Node
+		struct AssignmentExpression : Expression
 		{
-			std::unique_ptr<Node> lhs;
-			std::unique_ptr<Node> rhs;
+			std::unique_ptr<Expression> lhs;
+			std::unique_ptr<Expression> rhs;
 			int op;
 		};
 	}; // namespace ast

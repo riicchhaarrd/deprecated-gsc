@@ -6,9 +6,8 @@ namespace compiler
 {
 	namespace ast
 	{
-		struct Identifier : Node
+		struct Statement : Node
 		{
-			std::string name;
 		};
 	}; // namespace ast
 };	   // namespace compiler
