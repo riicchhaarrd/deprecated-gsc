@@ -5,7 +5,24 @@
 #include <parse/preprocessor.h>
 #include <core/filesystem/api.h>
 
+#include <script/ast/node/assignment_expression.h>
+#include <script/ast/node/binary_expression.h>
+#include <script/ast/node/block_statement.h>
+#include <script/ast/node/break_statement.h>
+#include <script/ast/node/call_expression.h>
+#include <script/ast/node/conditional_expression.h>
+#include <script/ast/node/do_while_statement.h>
+#include <script/ast/node/expression_statement.h>
+#include <script/ast/node/for_statement.h>
+#include <script/ast/node/function_declaration.h>
+#include <script/ast/node/identifier.h>
+#include <script/ast/node/if_statement.h>
 #include <script/ast/node/literal.h>
+#include <script/ast/node/member_expression.h>
+#include <script/ast/node/program.h>
+#include <script/ast/node/return_statement.h>
+#include <script/ast/node/unary_expression.h>
+#include <script/ast/node/while_statement.h>
 
 namespace script
 {
