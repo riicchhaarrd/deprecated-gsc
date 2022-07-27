@@ -24,6 +24,26 @@ namespace parse
 		invalid
 	};
 
+	enum
+	{
+		// 0 through 255 reserved for ascii
+		TokenType_kString = 256,
+		TokenType_kIdentifier,
+		TokenType_kLiteral,
+		TokenType_kInteger,
+		TokenType_kHexadecimal,
+		TokenType_kNumber,
+		TokenType_kComment,
+		TokenType_kEq,
+		TokenType_kNeq,
+		TokenType_kLeq,
+		TokenType_kGeq,
+		TokenType_kLsht,
+		TokenType_kRsht,
+		TokenType_kEof,
+		TokenType_kInvalid
+	};
+
 	static const char* token_type_strings[] = {"string",  "identifier", "literal", "integer", "hexadecimal", "number",
 											   "comment", "==",			"!=",	   "<=",	  ">=",
 											   "<<",	  ">>",			"eof",	   "invalid", NULL};
