@@ -33,32 +33,65 @@ namespace compiler
 	std::unique_ptr<ast::Identifier> ASTGenerator::identifier()
 	{
 		expect(parse::TokenType_kIdentifier);
-		return std::move(node<ast::Identifier>(token.to_string()));
+		std::string ident = token.to_string();
+		if (accept(':') && accept(':'))
+		{
+			expect(parse::TokenType_kIdentifier);
+			std::string file_reference = ident;
+			ident = token.to_string();
+			return node<ast::Identifier>(ident, file_reference);
+		}
+		return node<ast::Identifier>(ident);
 	}
 
 	ExpressionPtr ASTGenerator::factor_unary_expression()
 	{
-		throw ASTException("factor unary expression unhandled");
+		token = m_token_parser->read_token();
+		int op = token.type_as_int();
+		throw ASTException("factor unary expression {} unhandled", op);
 		return nullptr;
 	}
 	ExpressionPtr ASTGenerator::factor_identifier()
 	{
-		std::string ident_string = token.to_string();
-		auto ident = node<ast::Identifier>(ident_string);
+		auto ident = identifier();
 		if (accept('('))
 		{
 			//function call
+			return call_expression(ident);
 		}
-		throw ASTException("factor identifier unhandled");
-		return nullptr;
+		else if (accept('.'))
+		{
+			auto n = node<ast::MemberExpression>();
+			n->object = std::move(ident);
+			n->prop = identifier();
+			return n;
+		}
+		return ident;
 	}
 	ExpressionPtr ASTGenerator::factor_parentheses()
 	{
+		expect('(');
 		throw ASTException("factor parentheses unhandled");
 		return nullptr;
 	}
+	ExpressionPtr ASTGenerator::factor_array_expression()
+	{
+		expect('[');
+		auto n = node<ast::ArrayExpression>();
+		while (1)
+		{
+			if (accept(']'))
+				return n;
+			n->elements.push_back(expression());
+			if (!accept(','))
+				break;
+		}
+		expect(']');
+		return n;
+	}
 	ExpressionPtr ASTGenerator::factor_integer()
 	{
+		expect(parse::TokenType_kInteger);
 		auto n = node<ast::Literal>();
 		n->type = ast::Literal::Type::kInteger;
 		n->value = token.to_string();
@@ -66,6 +99,7 @@ namespace compiler
 	}
 	ExpressionPtr ASTGenerator::factor_number()
 	{
+		expect(parse::TokenType_kNumber);
 		auto n = node<ast::Literal>();
 		n->type = ast::Literal::Type::kNumber;
 		n->value = token.to_string();
@@ -73,6 +107,7 @@ namespace compiler
 	}
 	ExpressionPtr ASTGenerator::factor_string()
 	{
+		expect(parse::TokenType_kString);
 		auto n = node<ast::Literal>();
 		n->type = ast::Literal::Type::kString;
 		n->value = token.to_string();
@@ -81,7 +116,9 @@ namespace compiler
 
 	void ASTGenerator::factor(ExpressionPtr& expr)
 	{
+		m_token_parser->save();
 		token = m_token_parser->read_token();
+		m_token_parser->restore();
 		using FactorFunction = std::function<ExpressionPtr(ASTGenerator&)>;
 		std::unordered_map<int, FactorFunction> factors = {
 			{parse::TokenType_kIdentifier, &ASTGenerator::factor_identifier},
@@ -92,7 +129,7 @@ namespace compiler
 			{'-', &ASTGenerator::factor_unary_expression},
 			{'!', &ASTGenerator::factor_unary_expression},
 			{'~', &ASTGenerator::factor_unary_expression},
-			{'&', &ASTGenerator::factor_unary_expression}
+			{'[', &ASTGenerator::factor_array_expression}
 		};
 		auto fnd = factors.find(token.type_as_int());
 		if (fnd == factors.end())
