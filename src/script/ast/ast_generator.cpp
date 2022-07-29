@@ -409,6 +409,9 @@ namespace compiler
 			opts.backslash_comments = true;
 			if (proc.preprocess_with_typed_lexer<custom_lexer>(fs, base_path, path, tokens, sources, definitions, opts))
 			{
+				auto it = std::remove_if(tokens.begin(), tokens.end(),
+							   [](const parse::token& t) { return t.type_as_int() == '\n'; });
+				tokens.erase(it, tokens.end());
 				m_token_parser = std::make_unique<parse::token_parser>(tokens);
 				program();
 			}
