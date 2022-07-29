@@ -12,6 +12,20 @@ namespace compiler
 			std::unique_ptr<Expression> left;
 			std::unique_ptr<Expression> right;
 			int op;
+			virtual void print(Printer& out) override
+			{
+				out.print("binary expression: %d", op);
+				out.indent();
+				out.print("left:");
+				out.indent();
+				left->print(out);
+				out.unindent();
+				out.print("right:");
+				out.indent();
+				right->print(out);
+				out.unindent();
+				out.unindent();
+			}
 		};
 	}; // namespace ast
 };	   // namespace compiler

@@ -18,6 +18,23 @@ namespace compiler
 				for (auto& arg : arguments)
 					fn(arg.get());
 			}
+			virtual void print(Printer& out) override
+			{
+				out.print("call expression:");
+				out.indent();
+				out.print("callee:");
+				out.indent();
+				callee->print(out);
+
+				out.unindent();
+
+				out.print("arguments:");
+				out.indent();
+				for (auto& arg : arguments)
+					arg->print(out);
+				out.unindent();
+				out.unindent();
+			}
 		};
 	}; // namespace ast
 };	   // namespace compiler

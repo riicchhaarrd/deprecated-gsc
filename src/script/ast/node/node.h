@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <functional>
+#include "../printer.h"
 
 namespace compiler
 {
@@ -14,6 +15,8 @@ namespace compiler
 			virtual void visit(VisitorFunction)
 			{
 			}
+
+			virtual void print(Printer&) = 0;
 
 			virtual ~Node()
 			{

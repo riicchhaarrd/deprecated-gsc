@@ -8,6 +8,10 @@ namespace compiler
 	{
 		struct EmptyStatement : Statement
 		{
+			virtual void print(Printer& out) override
+			{
+				out.print("empty statement");
+			}
 		};
 	}; // namespace ast
 };	   // namespace compiler

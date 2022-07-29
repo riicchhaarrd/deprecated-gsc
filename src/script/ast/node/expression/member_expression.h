@@ -11,6 +11,24 @@ namespace compiler
 		{
 			std::unique_ptr<Expression> object;
 			std::unique_ptr<Expression> prop;
+
+			virtual void print(Printer& out) override
+			{
+				out.print("member expression:");
+				out.indent();
+
+				out.print("object:");
+				out.indent();
+				object->print(out);
+				out.unindent();
+
+				out.print("property:");
+				out.indent();
+				prop->print(out);
+				out.unindent();
+
+				out.unindent();
+			}
 		};
 	}; // namespace ast
 };	   // namespace compiler

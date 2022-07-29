@@ -17,6 +17,13 @@ namespace compiler
 			//std::unique_ptr<Node> return_data_type;
 			bool variadic = false;
 			std::vector<std::unique_ptr<Identifier>> declarations;
+			virtual void print(Printer& out) override
+			{
+				out.print("function declaration:");
+				out.indent();
+				id->print(out);
+				out.unindent();
+			}
 		};
 	}; // namespace ast
 };	   // namespace compiler

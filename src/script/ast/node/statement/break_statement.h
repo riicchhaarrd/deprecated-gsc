@@ -10,6 +10,10 @@ namespace compiler
 		struct BreakStatement : Statement
 		{
 			//std::unique_ptr<Node> label;
+			virtual void print(Printer& out) override
+			{
+				out.print("break statement:");
+			}
 		};
 	}; // namespace ast
 };	   // namespace compiler
