@@ -303,19 +303,10 @@ namespace compiler
 		return expr;
 	}
 
-	std::unique_ptr<ast::CallExpression> ASTGenerator::call_expression()
+	std::unique_ptr<ast::CallExpression> ASTGenerator::call_expression(std::unique_ptr<ast::Identifier>& ident)
 	{
 		auto call = node<ast::CallExpression>();
-		call->callee = identifier();
-
-		if (accept(':') && accept(':'))
-		{
-			auto c = node<ast::CallExternalExpression>();
-			c->file_reference = std::move(call->callee);
-			c->callee = identifier();
-			call = std::move(c);
-		}
-		expect('(');
+		call->callee = std::move(ident);
 		while (1)
 		{
 			if (accept(')'))
@@ -328,13 +319,48 @@ namespace compiler
 		return call;
 	}
 
+	bool ASTGenerator::accept_identifier_string(const std::string string)
+	{
+		expect(parse::TokenType_kIdentifier);
+		return token.to_string() == string;
+	}
+
+	StatementPtr ASTGenerator::if_statement()
+	{
+		accept_identifier_string("if");
+		expect('(');
+		auto stmt = node<ast::IfStatement>();
+		stmt->test = expression();
+		expect(')');
+		stmt->consequent = statement();
+		if (accept_identifier_string("else"))
+			stmt->alternative = statement();
+		return stmt;
+	}
+
 	std::unique_ptr<ast::Statement> ASTGenerator::statement()
 	{
-		//read the token type, then based off of that choose which statement is being processed
+		if (accept('{'))
+			return block_statement();
+		m_token_parser->save();
+		token = m_token_parser->read_token();
+		m_token_parser->restore(); // restore now otherwise we may call statement in a recursive way later again and
+								   // bugs will happen.
+		if (token.type_as_int() != parse::TokenType_kIdentifier && token.type_as_int() != '{')
+			throw ASTException("expected identifier or block statement");
+		using StatementFunction = std::function<StatementPtr(ASTGenerator&)>;
+		std::unordered_map<std::string, StatementFunction> statements = {
+			{"if", &ASTGenerator::if_statement}
+		};
+
+		// read the token, then based off of that choose which statement is being processed
+		auto fnd = statements.find(token.to_string());
+		if (fnd != statements.end())
+			return fnd->second(*this);
+
 		auto expr_stmt = node<ast::ExpressionStatement>();
 		expr_stmt->expression = expression();
 		expect(';');
-		//std::move implicitly applied to local return values i guess
 		return expr_stmt;
 	}
 
@@ -347,6 +373,7 @@ namespace compiler
 				break;
 			block->body.push_back(statement());
 		}
+		return block;
 	}
 
 	void ASTGenerator::function_declaration(ast::Program &program)
