@@ -25,8 +25,8 @@
 #include <script/ast/node/statement/return_statement.h>
 #include <script/ast/node/expression/unary_expression.h>
 #include <script/ast/node/statement/while_statement.h>
-#include <script/ast/node/expression/call_external_expression.h>
 #include <script/ast/node/expression.h>
+#include <script/ast/node/expression/array_expression.h>
 
 namespace compiler
 {
@@ -44,6 +44,7 @@ namespace compiler
 	};
 
 	using ExpressionPtr = std::unique_ptr<ast::Expression>;
+	using StatementPtr = std::unique_ptr<ast::Statement>;
 	class ASTGenerator
 	{
 		parse::token_list tokens;
@@ -55,6 +56,7 @@ namespace compiler
 		template<typename T, typename... Ts>
 		std::unique_ptr<T> node(Ts... ts)
 		{
+			//printf("node(%s)\n", typeid(T).name());
 			return std::move(std::make_unique<T>(ts...));
 		}
 		std::unique_ptr<ast::Identifier> identifier();
@@ -63,7 +65,7 @@ namespace compiler
 		bool accept(int token_type);
 		void expect(int token_type);
 		std::unique_ptr<ast::Statement> statement();
-		std::unique_ptr<ast::CallExpression> call_expression(const std::string);
+		std::unique_ptr<ast::CallExpression> call_expression(std::unique_ptr<ast::Identifier>&);
 		ExpressionPtr expression();
 		ExpressionPtr factor_integer();
 		ExpressionPtr factor_number();
@@ -86,6 +88,9 @@ namespace compiler
 		void postfix(ExpressionPtr& expr);
 		ExpressionPtr binary_expression(int, ExpressionPtr&, ExpressionPtr&);
 		std::unique_ptr<ast::AssignmentExpression> assignment_node(int op, ExpressionPtr& lhs);
+		StatementPtr if_statement();
+		bool accept_identifier_string(const std::string string);
+		ExpressionPtr factor_array_expression();
 	  public:
 		ASTGenerator();
 		~ASTGenerator();
