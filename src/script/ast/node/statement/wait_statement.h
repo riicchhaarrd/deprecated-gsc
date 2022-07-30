@@ -2,25 +2,18 @@
 #include "../statement.h"
 #include "../expression.h"
 #include <string>
-#include <vector>
 #include <memory>
 
 namespace compiler
 {
 	namespace ast
 	{
-		struct ReturnStatement : Statement
+		struct WaitStatement : Statement
 		{
-			std::unique_ptr<Expression> argument;
+			std::unique_ptr<Expression> duration;
 			virtual void print(Printer& out) override
 			{
-				out.print("return:");
-				if (argument)
-				{
-					out.indent();
-					argument->print(out);
-					out.unindent();
-				}
+				out.print("wait statement:");
 			}
 		};
 	}; // namespace ast

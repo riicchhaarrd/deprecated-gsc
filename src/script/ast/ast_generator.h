@@ -28,9 +28,10 @@
 #include <script/ast/node/expression.h>
 #include <script/ast/node/expression/array_expression.h>
 #include <script/ast/node/expression/vector_expression.h>
-#include <script/ast/node/statement/thread_statement.h>
 #include <script/ast/node/expression/function_pointer.h>
 #include <script/ast/node/expression/localized_string.h>
+#include <script/ast/node/statement/wait_statement.h>
+#include <script/ast/node/statement/wait_till_frame_end_statement.h>
 
 namespace compiler
 {
@@ -69,7 +70,7 @@ namespace compiler
 		bool accept(int token_type);
 		void expect(int token_type);
 		std::unique_ptr<ast::Statement> statement();
-		std::unique_ptr<ast::CallExpression> call_expression(std::unique_ptr<ast::Identifier>&);
+		std::unique_ptr<ast::CallExpression> call_expression(std::unique_ptr<ast::Expression>);
 		ExpressionPtr expression();
 		ExpressionPtr factor_integer();
 		ExpressionPtr factor_number();
@@ -78,6 +79,7 @@ namespace compiler
 		ExpressionPtr factor_identifier();
 		ExpressionPtr factor_parentheses();
 		void factor(ExpressionPtr&);
+		std::unique_ptr<ast::CallExpression> function_pointer_call();
 		void assignment_expression(ExpressionPtr& expr);
 		bool accept_assignment_operator();
 		void ternary_expression(ExpressionPtr& expr);
@@ -93,10 +95,21 @@ namespace compiler
 		ExpressionPtr binary_expression(int, ExpressionPtr&, ExpressionPtr&);
 		std::unique_ptr<ast::AssignmentExpression> assignment_node(int op, ExpressionPtr& lhs);
 		StatementPtr if_statement();
-		StatementPtr thread_statement();
+		StatementPtr return_statement();
+		StatementPtr for_statement();
+		StatementPtr while_statement();
+		StatementPtr do_while_statement();
+		StatementPtr wait_statement();
+		StatementPtr waittillframeend_statement();
 		bool accept_identifier_string(const std::string string);
 		ExpressionPtr factor_array_expression();
+		ExpressionPtr factor_function_pointer();
+		ExpressionPtr factor_localized_string();
 		void expect_identifier_string(const std::string string);
+		parse::token peek();
+		void method_call_expression(ExpressionPtr& expr);
+		void logical_and(ExpressionPtr& expr);
+		void logical_or(ExpressionPtr& expr);
 	  public:
 		ASTGenerator();
 		~ASTGenerator();

@@ -30,6 +30,11 @@ namespace parse
 		mod_assign,
 		plus_plus,
 		minus_minus,
+		double_bracket_left,
+		double_bracket_right,
+		double_colon,
+		and_and,
+		or_or,
 		eof,
 		invalid
 	};
@@ -60,15 +65,19 @@ namespace parse
 		TokenType_kModAssign,
 		TokenType_kPlusPlus,
 		TokenType_kMinusMinus,
+		TokenType_kDoubleBracketLeft,
+		TokenType_kDoubleBracketRight,
+		TokenType_kDoubleColon,
+		TokenType_kAndAnd,
+		TokenType_kOrOr,
 		TokenType_kEof,
 		TokenType_kInvalid
 	};
 
-	static const char* token_type_strings[] = {"string",  "identifier", "literal", "integer", "hexadecimal", "number",
-											   "comment", "==",			"!=",	   "<=",	  ">=",			 "<<",
-											   ">>",	  "+=",			"-=",	   "/=",	  "*=",			 "&=",
-											   "|=",	  "^=",			"%=",	   "++",	  "--",			 "eof",
-											   "invalid", NULL};
+	static const char* token_type_strings[] = {
+		"string", "identifier", "literal", "integer", "hexadecimal", "number", "comment", "==",		 "!=", "<=", ">=",
+		"<<",	  ">>",			"+=",	   "-=",	  "/=",			 "*=",	   "&=",	  "|=",		 "^=", "%=", "++",
+		"--",	  "[[",			"]]",	   "::",	  "&&",			 "||",	   "eof",	  "invalid", NULL};
 
 	struct token
 	{

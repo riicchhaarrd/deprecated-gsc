@@ -2,6 +2,7 @@
 #include "../expression.h"
 #include "identifier.h"
 #include <string>
+#include <vector>
 #include <memory>
 
 namespace compiler
@@ -10,7 +11,9 @@ namespace compiler
 	{
 		struct CallExpression : Expression
 		{
-			std::unique_ptr<Identifier> callee;
+			bool threaded = false;
+			std::unique_ptr<Expression> object;
+			std::unique_ptr<Expression> callee;
 			std::vector<std::unique_ptr<Expression>> arguments;
 			virtual void visit(VisitorFunction fn) override
 			{
@@ -20,7 +23,16 @@ namespace compiler
 			}
 			virtual void print(Printer& out) override
 			{
-				out.print("call expression:");
+				out.print("%scall expression:", threaded ? "threaded " : "");
+				if (object)
+				{
+					out.indent();
+					out.print("object:");
+					out.indent();
+					object->print(out);
+					out.unindent();
+				}
+
 				out.indent();
 				out.print("callee:");
 				out.indent();

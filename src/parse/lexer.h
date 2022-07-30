@@ -36,7 +36,12 @@ namespace parse
 											{"|=", token_type::or_assign},
 											{"&=", token_type::and_assign},
 											{"++", token_type::plus_plus},
-											{"--", token_type::minus_minus}
+											{"--", token_type::minus_minus},
+											{"[[", token_type::double_bracket_left},
+											{"]]", token_type::double_bracket_right},
+											{"::", token_type::double_colon},
+											{"&&", token_type::and_and},
+											{"||", token_type::or_or}
 	};
 
 	struct lexer_error : std::exception

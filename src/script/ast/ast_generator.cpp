@@ -39,7 +39,7 @@ namespace compiler
 	{
 		expect(parse::TokenType_kIdentifier);
 		std::string ident = token.to_string();
-		if (accept(':') && accept(':'))
+		if (accept(parse::TokenType_kDoubleColon))
 		{
 			expect(parse::TokenType_kIdentifier);
 			std::string file_reference = ident;
@@ -59,22 +59,22 @@ namespace compiler
 		n->prefix = true;
 		return n;
 	}
+
+	parse::token ASTGenerator::peek()
+	{
+		m_token_parser->save();
+		parse::token t = m_token_parser->read_token();
+		m_token_parser->restore();
+		return t;
+	}
+
 	ExpressionPtr ASTGenerator::factor_identifier()
 	{
 		auto ident = identifier();
 		if (accept('('))
 		{
-			return call_expression(ident);
+			return call_expression(std::move(ident));
 		}
-		/*
-		else if (accept('.'))
-		{
-			auto n = node<ast::MemberExpression>();
-			n->object = std::move(ident);
-			n->prop = identifier();
-			return n;
-		}
-		*/
 		return ident;
 	}
 	ExpressionPtr ASTGenerator::factor_parentheses()
@@ -97,9 +97,33 @@ namespace compiler
 		expect(')');
 		return a;
 	}
+	ExpressionPtr ASTGenerator::factor_localized_string()
+	{
+		expect('&');
+		auto n = node<ast::LocalizedString>();
+		expect(parse::TokenType_kString);
+		n->reference = token.to_string();
+		return n;
+	}
+	ExpressionPtr ASTGenerator::factor_function_pointer()
+	{
+		expect(parse::TokenType_kDoubleColon);
+		auto n = node<ast::FunctionPointer>();
+		n->identifier = identifier();
+		return n;
+	}
+	std::unique_ptr<ast::CallExpression> ASTGenerator::function_pointer_call()
+	{
+		expect(parse::TokenType_kDoubleBracketLeft);
+		// function pointer call
+		auto ident = expression();
+		expect(parse::TokenType_kDoubleBracketRight);
+		return call_expression(std::move(ident));
+	}
 	ExpressionPtr ASTGenerator::factor_array_expression()
 	{
 		expect('[');
+
 		auto n = node<ast::ArrayExpression>();
 		while (1)
 		{
@@ -139,22 +163,6 @@ namespace compiler
 
 	void ASTGenerator::factor(ExpressionPtr& expr)
 	{
-		//function pointer
-		if (accept(':') && accept(':'))
-		{
-			auto n = node<ast::FunctionPointer>();
-			n->identifier = identifier();
-			expr = std::move(n);
-			return;
-		}
-		else if (accept('&'))
-		{
-			auto n = node<ast::LocalizedString>();
-			expect(parse::TokenType_kString);
-			n->reference = token.to_string();
-			expr = std::move(n);
-			return;
-		}
 		m_token_parser->save();
 		token = m_token_parser->read_token();
 		m_token_parser->restore();
@@ -169,7 +177,10 @@ namespace compiler
 			{'-', &ASTGenerator::factor_unary_expression},
 			{'!', &ASTGenerator::factor_unary_expression},
 			{'~', &ASTGenerator::factor_unary_expression},
-			{'[', &ASTGenerator::factor_array_expression}
+			{'&', &ASTGenerator::factor_localized_string},
+			{'[', &ASTGenerator::factor_array_expression},
+			{parse::TokenType_kDoubleBracketLeft, &ASTGenerator::function_pointer_call},
+			{parse::TokenType_kDoubleColon, &ASTGenerator::factor_function_pointer}
 		};
 		auto fnd = factors.find(token.type_as_int());
 		if (fnd == factors.end())
@@ -224,7 +235,8 @@ namespace compiler
 		while (accept('[') || accept('.'))
 		{
 			int op = token.type_as_int();
-			ExpressionPtr rhs = expression();
+			ExpressionPtr rhs;
+			postfix(rhs);
 			if (op == '[')
 				expect(']');
 			auto n = node<ast::MemberExpression>();
@@ -233,15 +245,38 @@ namespace compiler
 			expr = std::move(n);
 		}
 	}
+
+	void ASTGenerator::method_call_expression(ExpressionPtr& expr)
+	{
+		member_expression(expr);
+		bool threaded = accept_identifier_string("thread");
+		auto t = peek();
+		if (t.type_as_int() == parse::TokenType_kDoubleBracketLeft)
+		{
+			auto n = function_pointer_call();
+			n->threaded = threaded;
+			n->object = std::move(expr);
+			expr = std::move(n);
+		}
+		else if (t.type_as_int() == parse::TokenType_kIdentifier)
+		{
+			auto ident = identifier();
+			expect('(');
+			auto n = call_expression(std::move(ident));
+			n->threaded = threaded;
+			n->object = std::move(expr);
+			expr = std::move(n);
+		}
+	}
 	
 	void ASTGenerator::term(ExpressionPtr& expr)
 	{
-		member_expression(expr);
+		method_call_expression(expr);
 		while (accept('/') || accept('*') || accept('%'))
 		{
 			int op = token.type_as_int();
 			ExpressionPtr rhs;
-			member_expression(rhs);
+			method_call_expression(rhs);
 			expr = binary_expression(op, expr, rhs);
 		}
 	}
@@ -315,16 +350,39 @@ namespace compiler
 			expr = binary_expression('|', expr, rhs);
 		}
 	}
-	void ASTGenerator::ternary_expression(ExpressionPtr& expr)
+
+	void ASTGenerator::logical_and(ExpressionPtr& expr)
 	{
 		bitwise_or(expr);
+		while (accept(parse::TokenType_kAndAnd))
+		{
+			ExpressionPtr rhs;
+			bitwise_or(rhs);
+			expr = binary_expression(parse::TokenType_kAndAnd, expr, rhs);
+		}
+	}
+
+	void ASTGenerator::logical_or(ExpressionPtr& expr)
+	{
+		logical_and(expr);
+		while (accept(parse::TokenType_kOrOr))
+		{
+			ExpressionPtr rhs;
+			logical_and(rhs);
+			expr = binary_expression(parse::TokenType_kOrOr, expr, rhs);
+		}
+	}
+
+	void ASTGenerator::ternary_expression(ExpressionPtr& expr)
+	{
+		logical_or(expr);
 
 		while (accept('?'))
 		{
 			ExpressionPtr consequent, alternative;
-			bitwise_or(consequent);
+			logical_or(consequent);
 			expect(':');
-			bitwise_or(alternative);
+			logical_or(alternative);
 
 			auto ternary = node<ast::ConditionalExpression>();
 			ternary->condition = std::move(expr);
@@ -382,7 +440,7 @@ namespace compiler
 		return expr;
 	}
 
-	std::unique_ptr<ast::CallExpression> ASTGenerator::call_expression(std::unique_ptr<ast::Identifier>& ident)
+	std::unique_ptr<ast::CallExpression> ASTGenerator::call_expression(std::unique_ptr<ast::Expression> ident)
 	{
 		auto call = node<ast::CallExpression>();
 		call->callee = std::move(ident);
@@ -417,12 +475,68 @@ namespace compiler
 			throw ASTException("expected identifier '{}'", string);
 	}
 
-	StatementPtr ASTGenerator::thread_statement()
+	StatementPtr ASTGenerator::for_statement()
 	{
-		expect_identifier_string("thread");
-		//should only be a expression statement of function pointer call or function (identifier) call type
-		auto n = node<ast::ThreadStatement>();
-		n->expression = expression();
+		expect_identifier_string("for");
+		expect('(');
+		//init-statement, but we'll just use expression for now
+		auto n = node<ast::ForStatement>();
+		if (!accept(';'))
+		{
+			n->init = expression();
+			expect(';');
+		}
+		if (!accept(';'))
+		{
+			n->test = expression();
+			expect(';');
+		}
+		if (!accept(')'))
+		{
+			n->update = expression();
+			expect(')');
+		}
+		n->body = statement();
+		return n;
+	}
+	StatementPtr ASTGenerator::return_statement()
+	{
+		expect_identifier_string("return");
+		auto stmt = node<ast::ReturnStatement>();
+		if (!accept(';'))
+		{
+			stmt->argument = expression();
+			expect(';');
+		}
+		return stmt;
+	}
+	StatementPtr ASTGenerator::while_statement()
+	{
+		expect_identifier_string("while");
+		expect('(');
+		auto n = node<ast::WhileStatement>();
+		n->test = expression();
+		expect(')');
+		n->body = statement();
+		return n;
+	}
+	StatementPtr ASTGenerator::do_while_statement()
+	{
+		expect_identifier_string("do");
+		throw ASTException("unhandled statement do while");
+	}
+	StatementPtr ASTGenerator::waittillframeend_statement()
+	{
+		expect_identifier_string("waittillframeend");
+		auto n = node<ast::WaitTillFrameEndStatement>();
+		expect(';');
+		return n;
+	}
+	StatementPtr ASTGenerator::wait_statement()
+	{
+		expect_identifier_string("wait");
+		auto n = node<ast::WaitStatement>();
+		n->duration = expression();
 		expect(';');
 		return n;
 	}
@@ -453,8 +567,13 @@ namespace compiler
 		}
 		using StatementFunction = std::function<StatementPtr(ASTGenerator&)>;
 		std::unordered_map<std::string, StatementFunction> statements = {
+			{"for", &ASTGenerator::for_statement},
+			{"while", &ASTGenerator::while_statement},
+			{"wait", &ASTGenerator::wait_statement},
+			{"waittillframeend", &ASTGenerator::waittillframeend_statement},
+			{"do", &ASTGenerator::do_while_statement},
 			{"if", &ASTGenerator::if_statement},
-			{"thread", &ASTGenerator::thread_statement}
+			{"return", &ASTGenerator::return_statement}
 		};
 
 		// read the token, then based off of that choose which statement is being processed
@@ -545,9 +664,10 @@ namespace compiler
 				tokens.erase(it, tokens.end());
 				m_token_parser = std::make_unique<parse::token_parser>(tokens);
 				program();
-
-				BasicPrinter out;
+				FILE* fp = fopen("F:\\export\\dm.txt", "w");
+				BasicPrinter out(fp);
 				tree.print(out);
+				fclose(fp);
 			}
 		}
 		catch (std::exception& e)
