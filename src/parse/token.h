@@ -20,6 +20,16 @@ namespace parse
 		geq,
 		lsht,
 		rsht,
+		plus_assign,
+		minus_assign,
+		divide_assign,
+		multiply_assign,
+		and_assign,
+		or_assign,
+		xor_assign,
+		mod_assign,
+		plus_plus,
+		minus_minus,
 		eof,
 		invalid
 	};
@@ -40,13 +50,25 @@ namespace parse
 		TokenType_kGeq,
 		TokenType_kLsht,
 		TokenType_kRsht,
+		TokenType_kPlusAssign,
+		TokenType_kMinusAssign,
+		TokenType_kDivideAssign,
+		TokenType_kMultiplyAssign,
+		TokenType_kAndAssign,
+		TokenType_kOrAssign,
+		TokenType_kXorAssign,
+		TokenType_kModAssign,
+		TokenType_kPlusPlus,
+		TokenType_kMinusMinus,
 		TokenType_kEof,
 		TokenType_kInvalid
 	};
 
 	static const char* token_type_strings[] = {"string",  "identifier", "literal", "integer", "hexadecimal", "number",
-											   "comment", "==",			"!=",	   "<=",	  ">=",
-											   "<<",	  ">>",			"eof",	   "invalid", NULL};
+											   "comment", "==",			"!=",	   "<=",	  ">=",			 "<<",
+											   ">>",	  "+=",			"-=",	   "/=",	  "*=",			 "&=",
+											   "|=",	  "^=",			"%=",	   "++",	  "--",			 "eof",
+											   "invalid", NULL};
 
 	struct token
 	{
@@ -72,6 +94,10 @@ namespace parse
 		template <typename T>
 		token(const source* src, T t, int _pos, int _sz, int ln)
 			: m_source(src), type((token_type)t), pos(_pos), sz(_sz), real_line_number(ln)
+		{
+		}
+
+		token(const std::string& sv, parse::token_type t) : m_stringvalue(sv), pos(-1), sz(-1), type(t), real_line_number(-1), m_source(nullptr)
 		{
 		}
 

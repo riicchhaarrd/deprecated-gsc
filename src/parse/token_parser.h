@@ -47,6 +47,17 @@ namespace parse
 		{
 		}
 
+		void dump()
+		{
+			for (size_t i = 0; i < 15; ++i)
+			{
+				if (m_tokenindex - i < 0 || m_tokenindex - i >= m_tokens.size())
+					continue;
+				auto tk = m_tokens[m_tokenindex - i];
+				printf("token %d/%d: %s (type %d)\n", m_tokenindex - i, m_tokens.size(), tk.to_string().c_str(), tk.type_as_int());
+			}
+		}
+
 		const int size() const
 		{
 			return m_tokenindex;
@@ -60,7 +71,7 @@ namespace parse
 		void save()
 		{
 			if (m_tokenindex_saved != -1)
-				LOG_ERROR("can't save parser");
+				return; // LOG_ERROR("can't save parser");
 			m_tokenindex_saved = m_tokenindex;
 		}
 

@@ -62,12 +62,9 @@ namespace parse
 						token_list& preprocessed_tokens,
 						source_map& sources, definition_map& definitions, parse::lexer_opts opts, int depth = 0)
 		{
-			auto entry = fs.read_entry(path);
-			if (!entry)
+			std::string tmp;
+			if (!fs.read_text_entry(path, tmp))
 				return false;
-			const char* data = (const char*)entry->data();
-			std::string tmp(data, entry->size());
-
 			sources.insert(std::make_pair(path, parse::source(path, tmp)));
 			opts.tokenize_newlines = true;
 			T lexer(&sources[path], opts);

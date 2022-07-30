@@ -6,6 +6,7 @@
 #include <core/filesystem/api.h>
 
 #include "ast_generator.h"
+#include "printer.h"
 
 namespace compiler
 {
@@ -26,7 +27,9 @@ namespace compiler
 		if (!accept(token_type))
 		{
 			parse::token tok(token_type);
-			throw ASTException("Expected token type '{}', got '{}' instead.", tok.type_as_string(), token.type_as_string());
+			throw ASTException("Expected token type '{}' {}, got '{}' {} instead. {}:{}", tok.type_as_string(),
+							   tok.to_string(), token.type_as_string(), token.to_string(), token.source_file(),
+							   token.line_number());
 		}
 	}
 
@@ -48,17 +51,20 @@ namespace compiler
 	{
 		token = m_token_parser->read_token();
 		int op = token.type_as_int();
-		throw ASTException("factor unary expression {} unhandled", op);
-		return nullptr;
+		auto n = node<ast::UnaryExpression>();
+		n->op = op;
+		n->argument = expression();
+		n->prefix = true;
+		return n;
 	}
 	ExpressionPtr ASTGenerator::factor_identifier()
 	{
 		auto ident = identifier();
 		if (accept('('))
 		{
-			//function call
 			return call_expression(ident);
 		}
+		/*
 		else if (accept('.'))
 		{
 			auto n = node<ast::MemberExpression>();
@@ -66,13 +72,28 @@ namespace compiler
 			n->prop = identifier();
 			return n;
 		}
+		*/
 		return ident;
 	}
 	ExpressionPtr ASTGenerator::factor_parentheses()
 	{
 		expect('(');
-		throw ASTException("factor parentheses unhandled");
-		return nullptr;
+		ExpressionPtr a = expression();
+
+		//TODO: check whether it's only int/float and handle vector as a literal
+		if (accept(','))
+		{
+			auto n = node<ast::VectorExpression>();
+			n->elements.push_back(std::move(a));
+			n->elements.push_back(expression());
+			expect(',');
+			n->elements.push_back(expression());
+			expect(')');
+			return n;
+		}
+		//otherwise just a general expression captured within parentheses
+		expect(')');
+		return a;
 	}
 	ExpressionPtr ASTGenerator::factor_array_expression()
 	{
@@ -178,13 +199,15 @@ namespace compiler
 		}
 	}
 
-	void ASTGenerator::array_subscripting(ExpressionPtr& expr)
+	void ASTGenerator::member_expression(ExpressionPtr& expr)
 	{
 		postfix(expr);
-		while (accept('['))
+		while (accept('[') || accept('.'))
 		{
+			int op = token.type_as_int();
 			ExpressionPtr rhs = expression();
-			expect(']');
+			if (op == '[')
+				expect(']');
 			auto n = node<ast::MemberExpression>();
 			n->object = std::move(expr);
 			n->prop = std::move(rhs);
@@ -194,12 +217,12 @@ namespace compiler
 	
 	void ASTGenerator::term(ExpressionPtr& expr)
 	{
-		array_subscripting(expr);
+		member_expression(expr);
 		while (accept('/') || accept('*') || accept('%'))
 		{
 			int op = token.type_as_int();
 			ExpressionPtr rhs;
-			array_subscripting(rhs);
+			member_expression(rhs);
 			expr = binary_expression(op, expr, rhs);
 		}
 	}
@@ -358,13 +381,33 @@ namespace compiler
 
 	bool ASTGenerator::accept_identifier_string(const std::string string)
 	{
-		expect(parse::TokenType_kIdentifier);
+		m_token_parser->save();
+		auto t = m_token_parser->read_token();
+		m_token_parser->restore();
+		if (t.type_as_int() != parse::TokenType_kIdentifier)
+			return false;
 		return token.to_string() == string;
 	}
 
+	void ASTGenerator::expect_identifier_string(const std::string string)
+	{
+		expect(parse::TokenType_kIdentifier);
+		if (token.to_string() != string)
+			throw ASTException("expected identifier '{}'", string);
+	}
+
+	StatementPtr ASTGenerator::thread_statement()
+	{
+		expect_identifier_string("thread");
+		//should only be a expression statement of function pointer call or function (identifier) call type
+		auto n = node<ast::ThreadStatement>();
+		n->expression = expression();
+		expect(';');
+		return n;
+	}
 	StatementPtr ASTGenerator::if_statement()
 	{
-		accept_identifier_string("if");
+		expect_identifier_string("if");
 		expect('(');
 		auto stmt = node<ast::IfStatement>();
 		stmt->test = expression();
@@ -383,11 +426,14 @@ namespace compiler
 		token = m_token_parser->read_token();
 		m_token_parser->restore(); // restore now otherwise we may call statement in a recursive way later again and
 								   // bugs will happen.
-		if (token.type_as_int() != parse::TokenType_kIdentifier && token.type_as_int() != '{')
-			throw ASTException("expected identifier or block statement");
+		if (token.type_as_int() != parse::TokenType_kIdentifier)
+		{
+			throw ASTException("expected identifier or block statement got '{}' instead", token.type_as_string());
+		}
 		using StatementFunction = std::function<StatementPtr(ASTGenerator&)>;
 		std::unordered_map<std::string, StatementFunction> statements = {
-			{"if", &ASTGenerator::if_statement}
+			{"if", &ASTGenerator::if_statement},
+			{"thread", &ASTGenerator::thread_statement}
 		};
 
 		// read the token, then based off of that choose which statement is being processed
@@ -478,6 +524,9 @@ namespace compiler
 				tokens.erase(it, tokens.end());
 				m_token_parser = std::make_unique<parse::token_parser>(tokens);
 				program();
+
+				BasicPrinter out;
+				tree.print(out);
 			}
 		}
 		catch (std::exception& e)

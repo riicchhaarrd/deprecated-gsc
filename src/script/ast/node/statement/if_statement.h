@@ -26,11 +26,14 @@ namespace compiler
 				out.indent();
 				consequent->print(out);
 				out.unindent();
-				
-				out.print("alternative:");
-				out.indent();
-				alternative->print(out);
-				out.unindent();
+
+				if (alternative)
+				{
+					out.print("alternative:");
+					out.indent();
+					alternative->print(out);
+					out.unindent();
+				}
 
 				out.unindent();
 			}

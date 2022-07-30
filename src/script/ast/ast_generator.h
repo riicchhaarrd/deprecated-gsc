@@ -27,6 +27,8 @@
 #include <script/ast/node/statement/while_statement.h>
 #include <script/ast/node/expression.h>
 #include <script/ast/node/expression/array_expression.h>
+#include <script/ast/node/expression/vector_expression.h>
+#include <script/ast/node/statement/thread_statement.h>
 
 namespace compiler
 {
@@ -84,13 +86,15 @@ namespace compiler
 		void bitwise_shift(ExpressionPtr& expr);
 		void add_and_subtract(ExpressionPtr& expr);
 		void term(ExpressionPtr& expr);
-		void array_subscripting(ExpressionPtr& expr);
+		void member_expression(ExpressionPtr& expr);
 		void postfix(ExpressionPtr& expr);
 		ExpressionPtr binary_expression(int, ExpressionPtr&, ExpressionPtr&);
 		std::unique_ptr<ast::AssignmentExpression> assignment_node(int op, ExpressionPtr& lhs);
 		StatementPtr if_statement();
+		StatementPtr thread_statement();
 		bool accept_identifier_string(const std::string string);
 		ExpressionPtr factor_array_expression();
+		void expect_identifier_string(const std::string string);
 	  public:
 		ASTGenerator();
 		~ASTGenerator();

@@ -23,6 +23,10 @@ namespace compiler
 				out.indent();
 				id->print(out);
 				out.unindent();
+
+				out.indent();
+				body->print(out);
+				out.unindent();
 			}
 		};
 	}; // namespace ast
