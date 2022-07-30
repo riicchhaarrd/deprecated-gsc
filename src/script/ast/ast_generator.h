@@ -29,6 +29,8 @@
 #include <script/ast/node/expression/array_expression.h>
 #include <script/ast/node/expression/vector_expression.h>
 #include <script/ast/node/statement/thread_statement.h>
+#include <script/ast/node/expression/function_pointer.h>
+#include <script/ast/node/expression/localized_string.h>
 
 namespace compiler
 {

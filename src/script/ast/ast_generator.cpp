@@ -27,6 +27,8 @@ namespace compiler
 		if (!accept(token_type))
 		{
 			parse::token tok(token_type);
+			m_token_parser->dump();
+			//__debugbreak();
 			throw ASTException("Expected token type '{}' {}, got '{}' {} instead. {}:{}", tok.type_as_string(),
 							   tok.to_string(), token.type_as_string(), token.to_string(), token.source_file(),
 							   token.line_number());
@@ -137,9 +139,26 @@ namespace compiler
 
 	void ASTGenerator::factor(ExpressionPtr& expr)
 	{
+		//function pointer
+		if (accept(':') && accept(':'))
+		{
+			auto n = node<ast::FunctionPointer>();
+			n->identifier = identifier();
+			expr = std::move(n);
+			return;
+		}
+		else if (accept('&'))
+		{
+			auto n = node<ast::LocalizedString>();
+			expect(parse::TokenType_kString);
+			n->reference = token.to_string();
+			expr = std::move(n);
+			return;
+		}
 		m_token_parser->save();
 		token = m_token_parser->read_token();
 		m_token_parser->restore();
+
 		using FactorFunction = std::function<ExpressionPtr(ASTGenerator&)>;
 		std::unordered_map<int, FactorFunction> factors = {
 			{parse::TokenType_kIdentifier, &ASTGenerator::factor_identifier},
@@ -381,12 +400,14 @@ namespace compiler
 
 	bool ASTGenerator::accept_identifier_string(const std::string string)
 	{
-		m_token_parser->save();
-		auto t = m_token_parser->read_token();
-		m_token_parser->restore();
-		if (t.type_as_int() != parse::TokenType_kIdentifier)
+		if (!accept(parse::TokenType_kIdentifier))
 			return false;
-		return token.to_string() == string;
+		if (token.to_string() != string)
+		{
+			m_token_parser->unread_token();
+			return false;
+		}
+		return true;
 	}
 
 	void ASTGenerator::expect_identifier_string(const std::string string)
