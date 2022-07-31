@@ -4,6 +4,16 @@
 #include "../printer.h"
 #include <script/ast/visitor.h>
 
+#define AST_NODE(x) \
+virtual const char *to_string() override \
+{ \
+	return #x; \
+} \
+virtual void accept(ASTVisitor& visitor) override \
+{ \
+	visitor.visit(*this); \
+}
+
 namespace compiler
 {
 	namespace ast
@@ -13,6 +23,7 @@ namespace compiler
 			size_t start, end;
 			std::string raw;
 
+			virtual const char* to_string() = 0;
 			virtual void accept(ASTVisitor& visitor) = 0;
 			virtual void print(Printer&) = 0;
 

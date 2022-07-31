@@ -13,10 +13,7 @@ namespace compiler
 			std::unique_ptr<Expression> consequent;
 			std::unique_ptr<Expression> alternative;
 
-			virtual void accept(ASTVisitor& visitor) override
-			{
-				visitor.visit(*this);
-			}
+			AST_NODE(ConditionalExpression)
 
 			virtual void print(Printer& out) override
 			{

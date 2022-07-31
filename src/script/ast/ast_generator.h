@@ -5,7 +5,7 @@
 #include <format>
 #include <core/filesystem/api.h>
 #include <parse/token_parser.h>
-#include <script/ast/visitor.h>
+#include "nodes.h"
 
 namespace compiler
 {
@@ -30,7 +30,7 @@ namespace compiler
 		parse::token token;
 		std::unique_ptr<parse::token_parser> m_token_parser;
 		void program();
-		std::unique_ptr<ast::Program> tree;
+		ast::Program tree;
 
 		template<typename T, typename... Ts>
 		std::unique_ptr<T> node(Ts... ts)
@@ -85,6 +85,10 @@ namespace compiler
 		void logical_and(ExpressionPtr& expr);
 		void logical_or(ExpressionPtr& expr);
 	  public:
+		ast::Program& root()
+		{
+			return tree;
+		}
 		ASTGenerator();
 		~ASTGenerator();
 		bool generate(filesystem_api& fs, const std::string base_path, const std::string path);

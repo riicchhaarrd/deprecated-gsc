@@ -50,10 +50,7 @@ namespace compiler
 				out.unindent();
 			}
 
-			virtual void accept(ASTVisitor& visitor)
-			{
-				visitor.visit(*this);
-			}
+			AST_NODE(ForStatement)
 		};
 	}; // namespace ast
 };	   // namespace compiler

@@ -10,11 +10,8 @@ namespace compiler
 		struct BreakStatement : Statement
 		{
 			//std::unique_ptr<Node> label;
-			
-			virtual void accept(ASTVisitor& visitor)
-			{
-				visitor.visit(*this);
-			}
+
+			AST_NODE(BreakStatement)
 
 			virtual void print(Printer& out) override
 			{

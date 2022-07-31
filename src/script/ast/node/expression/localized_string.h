@@ -10,10 +10,7 @@ namespace compiler
 		{
 			std::string reference;
 
-			virtual void accept(ASTVisitor& visitor) override
-			{
-				visitor.visit(*this);
-			}
+			AST_NODE(LocalizedString)
 
 			virtual void print(Printer& out) override
 			{

@@ -16,10 +16,7 @@ namespace compiler
 				out.print("wait statement:");
 			}
 
-			virtual void accept(ASTVisitor& visitor)
-			{
-				visitor.visit(*this);
-			}
+			AST_NODE(WaitStatement)
 		};
 	}; // namespace ast
 };	   // namespace compiler

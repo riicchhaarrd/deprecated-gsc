@@ -20,10 +20,7 @@ namespace compiler
 				file_reference = file_ref;
 			}
 
-			virtual void accept(ASTVisitor& visitor) override
-			{
-				visitor.visit(*this);
-			}
+			AST_NODE(Identifier)
 
 			virtual void print(Printer& out) override
 			{

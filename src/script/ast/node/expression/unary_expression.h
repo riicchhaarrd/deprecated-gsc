@@ -12,11 +12,7 @@ namespace compiler
 			std::unique_ptr<Expression> argument;
 			int op;
 			bool prefix;
-
-			virtual void accept(ASTVisitor& visitor) override
-			{
-				visitor.visit(*this);
-			}
+			AST_NODE(UnaryExpression)
 
 			virtual void print(Printer &out) override
 			{

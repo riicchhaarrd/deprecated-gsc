@@ -12,10 +12,7 @@ namespace compiler
 		{
 			std::vector<std::unique_ptr<Statement>> body;
 
-			virtual void accept(ASTVisitor& visitor)
-			{
-				visitor.visit(*this);
-			}
+			AST_NODE(BlockStatement)
 
 			virtual void print(Printer& out) override
 			{

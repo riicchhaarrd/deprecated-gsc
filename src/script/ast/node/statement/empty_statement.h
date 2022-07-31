@@ -13,10 +13,7 @@ namespace compiler
 				out.print("empty statement");
 			}
 
-			virtual void accept(ASTVisitor& visitor)
-			{
-				visitor.visit(*this);
-			}
+			AST_NODE(EmptyStatement)
 		};
 	}; // namespace ast
 };	   // namespace compiler

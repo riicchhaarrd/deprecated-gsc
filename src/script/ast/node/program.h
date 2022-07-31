@@ -20,11 +20,7 @@ namespace compiler
 					n->print(out);
 				out.unindent();
 			}
-
-			virtual void accept(ASTVisitor& visitor)
-			{
-				visitor.visit(*this);
-			}
+			AST_NODE(Program)
 		};
 	}; // namespace ast
 };	   // namespace compiler

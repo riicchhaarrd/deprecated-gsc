@@ -19,10 +19,7 @@ namespace compiler
 				out.unindent();
 			}
 
-			virtual void accept(ASTVisitor& visitor)
-			{
-				visitor.visit(*this);
-			}
+			AST_NODE(ExpressionStatement)
 		};
 	}; // namespace ast
 };	   // namespace compiler

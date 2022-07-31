@@ -13,10 +13,7 @@ namespace compiler
 			std::unique_ptr<Expression> right;
 			int op;
 
-			virtual void accept(ASTVisitor& visitor) override
-			{
-				visitor.visit(*this);
-			}
+			AST_NODE(BinaryExpression)
 
 			virtual void print(Printer& out) override
 			{

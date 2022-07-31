@@ -11,7 +11,7 @@ namespace compiler
 	{
 		struct FunctionDeclaration : Node
 		{
-			std::unique_ptr<Identifier> id;
+			std::string function_name;
 			std::vector<std::unique_ptr<Identifier>> parameters;
 			std::unique_ptr<Statement> body;
 			//std::unique_ptr<Node> return_data_type;
@@ -19,20 +19,12 @@ namespace compiler
 			std::vector<std::unique_ptr<Identifier>> declarations;
 			virtual void print(Printer& out) override
 			{
-				out.print("function declaration:");
-				out.indent();
-				id->print(out);
-				out.unindent();
-
+				out.print("function '%s':", function_name.c_str());
 				out.indent();
 				body->print(out);
 				out.unindent();
 			}
-
-			virtual void accept(ASTVisitor& visitor)
-			{
-				visitor.visit(*this);
-			}
+			AST_NODE(FunctionDeclaration)
 		};
 	}; // namespace ast
 };	   // namespace compiler

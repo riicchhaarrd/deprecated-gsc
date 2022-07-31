@@ -10,12 +10,8 @@ namespace compiler
 	{
 		struct ArrayExpression : Expression
 		{
+			AST_NODE(ArrayExpression)
 			std::vector<std::unique_ptr<Expression>> elements;
-
-			virtual void accept(ASTVisitor& visitor) override
-			{
-				visitor.visit(*this);
-			}
 
 			virtual void print(Printer& out) override
 			{

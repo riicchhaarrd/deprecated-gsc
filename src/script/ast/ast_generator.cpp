@@ -7,34 +7,7 @@
 
 #include "ast_generator.h"
 #include "printer.h"
-
-#include <script/ast/node/statement.h>
-#include <script/ast/node/expression/assignment_expression.h>
-#include <script/ast/node/expression/binary_expression.h>
-#include <script/ast/node/statement/block_statement.h>
-#include <script/ast/node/statement/break_statement.h>
-#include <script/ast/node/expression/call_expression.h>
-#include <script/ast/node/expression/conditional_expression.h>
-#include <script/ast/node/statement/do_while_statement.h>
-#include <script/ast/node/statement/expression_statement.h>
-#include <script/ast/node/statement/for_statement.h>
-#include <script/ast/node/function_declaration.h>
-#include <script/ast/node/expression/identifier.h>
-#include <script/ast/node/statement/if_statement.h>
-#include <script/ast/node/expression/literal.h>
-#include <script/ast/node/expression/member_expression.h>
-#include <script/ast/node/program.h>
-#include <script/ast/node/statement/return_statement.h>
-#include <script/ast/node/expression/unary_expression.h>
-#include <script/ast/node/statement/while_statement.h>
-#include <script/ast/node/expression.h>
-#include <script/ast/node/expression/array_expression.h>
-#include <script/ast/node/expression/vector_expression.h>
-#include <script/ast/node/expression/function_pointer.h>
-#include <script/ast/node/expression/localized_string.h>
-#include <script/ast/node/statement/wait_statement.h>
-#include <script/ast/node/statement/wait_till_frame_end_statement.h>
-#include <script/ast/node/statement/empty_statement.h>
+#include "nodes.h"
 
 namespace compiler
 {
@@ -246,7 +219,7 @@ namespace compiler
 	void ASTGenerator::postfix(ExpressionPtr& expr)
 	{
 		factor(expr);
-		while (accept(parse::TokenType_kPlusPlus) || accept(parse::TokenType_kMinusMinus))
+		if (accept(parse::TokenType_kPlusPlus) || accept(parse::TokenType_kMinusMinus))
 		{
 			int op = token.type_as_int();
 			auto n = node<ast::UnaryExpression>();
@@ -268,6 +241,7 @@ namespace compiler
 			if (op == '[')
 				expect(']');
 			auto n = node<ast::MemberExpression>();
+			n->op = op;
 			n->object = std::move(expr);
 			n->prop = std::move(rhs);
 			expr = std::move(n);
@@ -630,7 +604,8 @@ namespace compiler
 	void ASTGenerator::function_declaration(ast::Program &program)
 	{
 		auto decl = node<ast::FunctionDeclaration>();
-		decl->id = identifier();
+		expect(parse::TokenType_kIdentifier);
+		decl->function_name = token.to_string();
 		expect('(');
 		while (1)
 		{
@@ -650,12 +625,11 @@ namespace compiler
 
 	void ASTGenerator::program()
 	{
-		tree = node<ast::Program>();
 		while (1)
 		{
 			if (accept(parse::TokenType_kEof))
 				break;
-			function_declaration(*tree.get());
+			function_declaration(tree);
 		}
 	}
 

@@ -23,10 +23,7 @@ namespace compiler
 				}
 			}
 
-			virtual void accept(ASTVisitor& visitor)
-			{
-				visitor.visit(*this);
-			}
+			AST_NODE(ReturnStatement)
 		};
 	}; // namespace ast
 };	   // namespace compiler

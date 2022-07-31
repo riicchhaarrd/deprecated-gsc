@@ -17,10 +17,7 @@ namespace compiler
 			} type;
 			std::string value;
 
-			virtual void accept(ASTVisitor& visitor) override
-			{
-				visitor.visit(*this);
-			}
+			AST_NODE(Literal)
 
 			virtual void print(Printer& out) override
 			{

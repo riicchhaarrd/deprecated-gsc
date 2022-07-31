@@ -16,10 +16,7 @@ namespace compiler
 			std::unique_ptr<Expression> callee;
 			std::vector<std::unique_ptr<Expression>> arguments;
 
-			virtual void accept(ASTVisitor& visitor) override
-			{
-				visitor.visit(*this);
-			}
+			AST_NODE(CallExpression)
 
 			virtual void print(Printer& out) override
 			{

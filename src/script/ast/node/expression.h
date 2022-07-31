@@ -1,5 +1,5 @@
 #pragma once
-#include "node.h"
+#include <script/ast/node/node.h>
 #include <string>
 
 namespace compiler

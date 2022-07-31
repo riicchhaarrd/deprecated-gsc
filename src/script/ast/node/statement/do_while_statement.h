@@ -29,11 +29,7 @@ namespace compiler
 
 				out.unindent();
 			}
-
-			virtual void accept(ASTVisitor& visitor)
-			{
-				visitor.visit(*this);
-			}
+			AST_NODE(DoWhileStatement)
 		};
 	}; // namespace ast
 };	   // namespace compiler

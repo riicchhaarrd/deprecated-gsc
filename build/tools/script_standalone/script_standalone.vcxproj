@@ -21,6 +21,8 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\src\core\filesystem\api.cpp" />
     <ClCompile Include="..\..\..\src\script\ast\ast_generator.cpp" />
+    <ClCompile Include="..\..\..\src\script\ast\recursive_visitor.cpp" />
+    <ClCompile Include="..\..\..\src\script\compiler\compiler.cpp" />
     <ClCompile Include="..\..\..\src\tools\script_standalone\script_standalone.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

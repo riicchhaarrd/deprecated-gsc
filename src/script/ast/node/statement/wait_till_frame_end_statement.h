@@ -10,10 +10,7 @@ namespace compiler
 	{
 		struct WaitTillFrameEndStatement : Statement
 		{
-			virtual void accept(ASTVisitor& visitor)
-			{
-				visitor.visit(*this);
-			}
+			AST_NODE(WaitTillFrameEndStatement)
 
 			virtual void print(Printer& out) override
 			{

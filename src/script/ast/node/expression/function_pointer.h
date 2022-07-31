@@ -10,10 +10,7 @@ namespace compiler
 		{
 			std::unique_ptr<Identifier> identifier;
 
-			virtual void accept(ASTVisitor& visitor) override
-			{
-				visitor.visit(*this);
-			}
+			AST_NODE(FunctionPointer)
 
 			virtual void print(Printer& out) override
 			{
