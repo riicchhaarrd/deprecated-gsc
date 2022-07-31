@@ -1,5 +1,5 @@
 #pragma once
-#include "../expression.h"
+#include <script/ast/node/expression.h>
 #include <string>
 
 namespace compiler
@@ -16,6 +16,11 @@ namespace compiler
 				kVector
 			} type;
 			std::string value;
+
+			virtual void accept(ASTVisitor& visitor) override
+			{
+				visitor.visit(*this);
+			}
 
 			virtual void print(Printer& out) override
 			{

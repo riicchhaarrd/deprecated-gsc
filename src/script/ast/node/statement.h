@@ -8,6 +8,7 @@ namespace compiler
 	{
 		struct Statement : Node
 		{
+			virtual void accept(ASTVisitor& visitor) = 0;
 		};
 	}; // namespace ast
 };	   // namespace compiler

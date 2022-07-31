@@ -12,6 +12,11 @@ namespace compiler
 			std::unique_ptr<Expression> object;
 			std::unique_ptr<Expression> prop;
 
+			virtual void accept(ASTVisitor& visitor) override
+			{
+				visitor.visit(*this);
+			}
+
 			virtual void print(Printer& out) override
 			{
 				out.print("member expression:");

@@ -8,6 +8,34 @@
 #include "ast_generator.h"
 #include "printer.h"
 
+#include <script/ast/node/statement.h>
+#include <script/ast/node/expression/assignment_expression.h>
+#include <script/ast/node/expression/binary_expression.h>
+#include <script/ast/node/statement/block_statement.h>
+#include <script/ast/node/statement/break_statement.h>
+#include <script/ast/node/expression/call_expression.h>
+#include <script/ast/node/expression/conditional_expression.h>
+#include <script/ast/node/statement/do_while_statement.h>
+#include <script/ast/node/statement/expression_statement.h>
+#include <script/ast/node/statement/for_statement.h>
+#include <script/ast/node/function_declaration.h>
+#include <script/ast/node/expression/identifier.h>
+#include <script/ast/node/statement/if_statement.h>
+#include <script/ast/node/expression/literal.h>
+#include <script/ast/node/expression/member_expression.h>
+#include <script/ast/node/program.h>
+#include <script/ast/node/statement/return_statement.h>
+#include <script/ast/node/expression/unary_expression.h>
+#include <script/ast/node/statement/while_statement.h>
+#include <script/ast/node/expression.h>
+#include <script/ast/node/expression/array_expression.h>
+#include <script/ast/node/expression/vector_expression.h>
+#include <script/ast/node/expression/function_pointer.h>
+#include <script/ast/node/expression/localized_string.h>
+#include <script/ast/node/statement/wait_statement.h>
+#include <script/ast/node/statement/wait_till_frame_end_statement.h>
+#include <script/ast/node/statement/empty_statement.h>
+
 namespace compiler
 {
 	ASTGenerator::ASTGenerator()
@@ -622,12 +650,12 @@ namespace compiler
 
 	void ASTGenerator::program()
 	{
+		tree = node<ast::Program>();
 		while (1)
 		{
 			if (accept(parse::TokenType_kEof))
 				break;
-			printf("token type = %s %s\n", token.to_string().c_str(), token.type_as_string().c_str());
-			function_declaration(tree);
+			function_declaration(*tree.get());
 		}
 	}
 
@@ -664,10 +692,12 @@ namespace compiler
 				tokens.erase(it, tokens.end());
 				m_token_parser = std::make_unique<parse::token_parser>(tokens);
 				program();
+				#if 0
 				FILE* fp = fopen("F:\\export\\dm.txt", "w");
 				BasicPrinter out(fp);
 				tree.print(out);
 				fclose(fp);
+				#endif
 			}
 		}
 		catch (std::exception& e)

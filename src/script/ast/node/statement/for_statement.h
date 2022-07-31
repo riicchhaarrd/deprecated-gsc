@@ -49,6 +49,11 @@ namespace compiler
 
 				out.unindent();
 			}
+
+			virtual void accept(ASTVisitor& visitor)
+			{
+				visitor.visit(*this);
+			}
 		};
 	}; // namespace ast
 };	   // namespace compiler

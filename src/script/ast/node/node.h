@@ -2,6 +2,7 @@
 #include <string>
 #include <functional>
 #include "../printer.h"
+#include <script/ast/visitor.h>
 
 namespace compiler
 {
@@ -11,11 +12,8 @@ namespace compiler
 		{
 			size_t start, end;
 			std::string raw;
-			using VisitorFunction = std::function<void(Node*)>;
-			virtual void visit(VisitorFunction)
-			{
-			}
 
+			virtual void accept(ASTVisitor& visitor) = 0;
 			virtual void print(Printer&) = 0;
 
 			virtual ~Node()

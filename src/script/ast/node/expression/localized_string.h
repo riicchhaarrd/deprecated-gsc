@@ -9,6 +9,12 @@ namespace compiler
 		struct LocalizedString : Expression
 		{
 			std::string reference;
+
+			virtual void accept(ASTVisitor& visitor) override
+			{
+				visitor.visit(*this);
+			}
+
 			virtual void print(Printer& out) override
 			{
 				out.print("localized string %s", reference.c_str());

@@ -1,5 +1,5 @@
 #pragma once
-#include "../expression.h"
+#include <script/ast/node/expression.h>
 #include <string>
 
 namespace compiler
@@ -19,6 +19,12 @@ namespace compiler
 				name = s;
 				file_reference = file_ref;
 			}
+
+			virtual void accept(ASTVisitor& visitor) override
+			{
+				visitor.visit(*this);
+			}
+
 			virtual void print(Printer& out) override
 			{
 				out.print("identifier: {file_reference: \"%s\", name: \"%s\"}", file_reference.c_str(), name.c_str());

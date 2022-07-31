@@ -1,5 +1,5 @@
 #pragma once
-#include "../statement.h"
+#include <script/ast/node/statement.h>
 #include <string>
 #include <vector>
 #include <memory>
@@ -11,6 +11,12 @@ namespace compiler
 		struct BlockStatement : Statement
 		{
 			std::vector<std::unique_ptr<Statement>> body;
+
+			virtual void accept(ASTVisitor& visitor)
+			{
+				visitor.visit(*this);
+			}
+
 			virtual void print(Printer& out) override
 			{
 				out.print("block statement:");

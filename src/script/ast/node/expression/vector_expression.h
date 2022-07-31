@@ -11,6 +11,12 @@ namespace compiler
 		struct VectorExpression : Expression
 		{
 			std::vector<std::unique_ptr<Expression>> elements;
+
+			virtual void accept(ASTVisitor& visitor) override
+			{
+				visitor.visit(*this);
+			}
+
 			virtual void print(Printer& out) override
 			{
 				out.print("vector expression: %d elements", elements.size());

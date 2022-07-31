@@ -9,6 +9,12 @@ namespace compiler
 		struct FunctionPointer : Expression
 		{
 			std::unique_ptr<Identifier> identifier;
+
+			virtual void accept(ASTVisitor& visitor) override
+			{
+				visitor.visit(*this);
+			}
+
 			virtual void print(Printer& out) override
 			{
 				out.print("function pointer:");

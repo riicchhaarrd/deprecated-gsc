@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <script/ast/node/statement.h>
 
 namespace compiler
 {
@@ -18,6 +19,11 @@ namespace compiler
 				for (auto& n : body)
 					n->print(out);
 				out.unindent();
+			}
+
+			virtual void accept(ASTVisitor& visitor)
+			{
+				visitor.visit(*this);
 			}
 		};
 	}; // namespace ast

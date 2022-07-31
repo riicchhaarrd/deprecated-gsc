@@ -12,6 +12,12 @@ namespace compiler
 		{
 			std::unique_ptr<Expression> test;
 			std::unique_ptr<Statement> body;
+			
+			virtual void accept(ASTVisitor& visitor)
+			{
+				visitor.visit(*this);
+			}
+
 			virtual void print(Printer& out) override
 			{
 				out.print("while:");

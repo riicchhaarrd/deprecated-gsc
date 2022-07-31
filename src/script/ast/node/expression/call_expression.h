@@ -15,12 +15,12 @@ namespace compiler
 			std::unique_ptr<Expression> object;
 			std::unique_ptr<Expression> callee;
 			std::vector<std::unique_ptr<Expression>> arguments;
-			virtual void visit(VisitorFunction fn) override
+
+			virtual void accept(ASTVisitor& visitor) override
 			{
-				fn(callee.get());
-				for (auto& arg : arguments)
-					fn(arg.get());
+				visitor.visit(*this);
 			}
+
 			virtual void print(Printer& out) override
 			{
 				out.print("%scall expression:", threaded ? "threaded " : "");

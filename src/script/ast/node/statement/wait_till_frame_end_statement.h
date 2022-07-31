@@ -10,6 +10,11 @@ namespace compiler
 	{
 		struct WaitTillFrameEndStatement : Statement
 		{
+			virtual void accept(ASTVisitor& visitor)
+			{
+				visitor.visit(*this);
+			}
+
 			virtual void print(Printer& out) override
 			{
 				out.print("waittillframeend statement:");

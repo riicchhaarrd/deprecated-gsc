@@ -1,5 +1,5 @@
 #pragma once
-#include "../expression.h"
+#include <script/ast/node/expression.h>
 #include <string>
 #include <memory>
 
@@ -12,6 +12,11 @@ namespace compiler
 			std::unique_ptr<Expression> argument;
 			int op;
 			bool prefix;
+
+			virtual void accept(ASTVisitor& visitor) override
+			{
+				visitor.visit(*this);
+			}
 
 			virtual void print(Printer &out) override
 			{
