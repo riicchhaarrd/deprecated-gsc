@@ -69,13 +69,83 @@ namespace compiler
 		return t;
 	}
 
+	bool ASTGenerator::accept_token_string(const std::string str)
+	{
+		m_token_parser->save();
+		for (auto c : str)
+		{
+			if (!accept(c))
+			{
+				m_token_parser->restore();
+				return false;
+			}
+		}
+		m_token_parser->pop();
+		return true;
+	}
+
 	ExpressionPtr ASTGenerator::factor_identifier()
 	{
-		auto ident = identifier();
+		if (accept_identifier_string("undefined"))
+		{
+			auto n = node<ast::Literal>();
+			n->type = ast::Literal::Type::kUndefined;
+			n->value = "undefined";
+			return n;
+		}
+		bool threaded = accept_identifier_string("thread");
+		
+		if (threaded && accept_token_string("[[")) // threaded function pointer call e.g thread [[ a ]]()
+		{
+			return function_pointer_call(true);
+		}
+		ExpressionPtr ident = identifier();
+		while (accept('[') || accept('.'))
+		{
+			int op = token.type_as_int();
+			auto n = node<ast::MemberExpression>();
+			n->op = op;
+			n->object = std::move(ident);
+			if (op == '[')
+			{
+				n->prop = expression();
+				expect(']');
+			}
+			else
+			{
+				n->prop = identifier();
+			}
+			ident = std::move(n);
+		}
 		if (accept('('))
 		{
-			return call_expression(std::move(ident));
+			return call_expression(std::move(ident), threaded); // either regular or threaded function call
 		}
+		if (threaded)
+			throw ASTException("Unexpected thread keyword");
+		threaded = accept_identifier_string("thread");
+		auto t = peek();
+		//method calls
+		if (accept_token_string("[["))
+		{
+			auto callee = factor_identifier();
+			if (!accept_token_string("]]"))
+				throw ASTException("Expected ]]");
+			expect('(');
+			auto n = call_expression(std::move(callee), threaded);
+			n->object = std::move(ident);
+			ident = std::move(n);
+		}
+		else if (t.type_as_int() == parse::TokenType_kIdentifier)
+		{
+			auto callee = identifier();
+			expect('(');
+			auto n = call_expression(std::move(callee), threaded);
+			n->object = std::move(ident);
+			ident = std::move(n);
+		}
+		else if (threaded)
+			throw ASTException("Unexpected thread keyword");
 		return ident;
 	}
 	ExpressionPtr ASTGenerator::factor_parentheses()
@@ -113,13 +183,26 @@ namespace compiler
 		n->identifier = identifier();
 		return n;
 	}
-	std::unique_ptr<ast::CallExpression> ASTGenerator::function_pointer_call()
+	
+	std::unique_ptr<ast::CallExpression> ASTGenerator::regular_function_pointer_call()
 	{
-		expect(parse::TokenType_kDoubleBracketLeft);
+		//if (!accept_token_string("[["))
+			//throw ASTException("Expected [[");
+		auto callee = factor_identifier();
+		if (!accept_token_string("]]"))
+			throw ASTException("Expected ]]");
+		expect('(');
+		auto n = call_expression(std::move(callee));
+		return n;
+	}
+
+	std::unique_ptr<ast::CallExpression> ASTGenerator::function_pointer_call(bool threaded)
+	{
 		// function pointer call
-		auto ident = expression();
-		expect(parse::TokenType_kDoubleBracketRight);
-		return call_expression(std::move(ident));
+		auto ident = factor_identifier();
+		if (!accept_token_string("]]"))
+			throw ASTException("Expected ]]");
+		return call_expression(std::move(ident), threaded);
 	}
 	ExpressionPtr ASTGenerator::factor_array_expression()
 	{
@@ -164,6 +247,11 @@ namespace compiler
 
 	void ASTGenerator::factor(ExpressionPtr& expr)
 	{
+		if (accept_token_string("[["))
+		{
+			expr = regular_function_pointer_call();
+			return;
+		}
 		m_token_parser->save();
 		token = m_token_parser->read_token();
 		m_token_parser->restore();
@@ -180,7 +268,7 @@ namespace compiler
 			{'~', &ASTGenerator::factor_unary_expression},
 			{'&', &ASTGenerator::factor_localized_string},
 			{'[', &ASTGenerator::factor_array_expression},
-			{parse::TokenType_kDoubleBracketLeft, &ASTGenerator::function_pointer_call},
+			//{parse::TokenType_kDoubleBracketLeft, &ASTGenerator::regular_function_pointer_call},
 			{parse::TokenType_kDoubleColon, &ASTGenerator::factor_function_pointer}
 		};
 		auto fnd = factors.find(token.type_as_int());
@@ -229,7 +317,7 @@ namespace compiler
 			expr = std::move(n);
 		}
 	}
-
+	
 	void ASTGenerator::member_expression(ExpressionPtr& expr)
 	{
 		postfix(expr);
@@ -248,37 +336,15 @@ namespace compiler
 		}
 	}
 
-	void ASTGenerator::method_call_expression(ExpressionPtr& expr)
-	{
-		member_expression(expr);
-		bool threaded = accept_identifier_string("thread");
-		auto t = peek();
-		if (t.type_as_int() == parse::TokenType_kDoubleBracketLeft)
-		{
-			auto n = function_pointer_call();
-			n->threaded = threaded;
-			n->object = std::move(expr);
-			expr = std::move(n);
-		}
-		else if (t.type_as_int() == parse::TokenType_kIdentifier)
-		{
-			auto ident = identifier();
-			expect('(');
-			auto n = call_expression(std::move(ident));
-			n->threaded = threaded;
-			n->object = std::move(expr);
-			expr = std::move(n);
-		}
-	}
-	
+
 	void ASTGenerator::term(ExpressionPtr& expr)
 	{
-		method_call_expression(expr);
+		member_expression(expr);
 		while (accept('/') || accept('*') || accept('%'))
 		{
 			int op = token.type_as_int();
 			ExpressionPtr rhs;
-			method_call_expression(rhs);
+			member_expression(rhs);
 			expr = binary_expression(op, expr, rhs);
 		}
 	}
@@ -442,9 +508,10 @@ namespace compiler
 		return expr;
 	}
 
-	std::unique_ptr<ast::CallExpression> ASTGenerator::call_expression(std::unique_ptr<ast::Expression> ident)
+	std::unique_ptr<ast::CallExpression> ASTGenerator::call_expression(std::unique_ptr<ast::Expression> ident, bool threaded)
 	{
 		auto call = node<ast::CallExpression>();
+		call->threaded = threaded;
 		call->callee = std::move(ident);
 		while (1)
 		{
@@ -542,6 +609,79 @@ namespace compiler
 		expect(';');
 		return n;
 	}
+	StatementPtr ASTGenerator::break_statement()
+	{
+		expect_identifier_string("break");
+		auto n = node<ast::BreakStatement>();
+		expect(';');
+		return n;
+	}
+	StatementPtr ASTGenerator::switch_statement()
+	{
+		expect_identifier_string("switch");
+		expect('(');
+		auto n = node<ast::SwitchStatement>();
+		n->discriminant = expression();
+		expect(')');
+		expect('{');
+		std::vector<std::shared_ptr<ast::SwitchCase>> active_cases;
+		while (1)
+		{
+			if (accept('}'))
+				goto skip;
+		rep:
+			expect(parse::TokenType_kIdentifier);
+			auto sc = std::make_shared<ast::SwitchCase>();
+			if (token.to_string() != "default")
+			{
+				if (token.to_string() != "case")
+					throw ASTException("Expected default or case in switch statement");
+
+				auto t = peek();
+				if (t.type_as_int() != parse::TokenType_kInteger && t.type_as_int() != parse::TokenType_kString)
+					throw ASTException("Expected integer or string for switch statement case got {}",
+									   t.type_as_string());
+
+				if (t.type_as_int() == parse::TokenType_kInteger)
+					sc->test = factor_integer();
+				else
+					sc->test = factor_string();
+			}
+			expect(':');
+			active_cases.push_back(sc);
+
+			while (1)
+			{
+				if (accept('}'))
+					goto skip;
+				if (accept_identifier_string("case") || accept_identifier_string("default"))
+				{
+					m_token_parser->unread_token();
+					goto rep;
+				}
+				std::shared_ptr<ast::Statement> stmt = statement();
+				if (dynamic_cast<ast::BreakStatement*>(stmt.get()))
+				{
+					active_cases.clear();
+					break;
+				}
+				for (auto& ac : active_cases)
+					ac->consequent.push_back(stmt);
+			}
+
+			n->cases.push_back(std::move(sc));
+		}
+		expect('}');
+	skip:
+		return n;
+	}
+	StatementPtr ASTGenerator::continue_statement()
+	{
+		expect_identifier_string("continue");
+		auto n = node<ast::ContinueStatement>();
+		expect(';');
+		return n;
+	}
 	StatementPtr ASTGenerator::if_statement()
 	{
 		expect_identifier_string("if");
@@ -557,16 +697,16 @@ namespace compiler
 
 	std::unique_ptr<ast::Statement> ASTGenerator::statement()
 	{
+		if (accept(';'))
+			return empty_statement();
+		if (accept(parse::TokenType_kSlashPound))
+			return developer_block();
 		if (accept('{'))
 			return block_statement();
 		m_token_parser->save();
 		token = m_token_parser->read_token();
 		m_token_parser->restore(); // restore now otherwise we may call statement in a recursive way later again and
 								   // bugs will happen.
-		if (token.type_as_int() != parse::TokenType_kIdentifier)
-		{
-			throw ASTException("expected identifier or block statement got '{}' instead", token.type_as_string());
-		}
 		using StatementFunction = std::function<StatementPtr(ASTGenerator&)>;
 		std::unordered_map<std::string, StatementFunction> statements = {
 			{"for", &ASTGenerator::for_statement},
@@ -575,6 +715,9 @@ namespace compiler
 			{"waittillframeend", &ASTGenerator::waittillframeend_statement},
 			{"do", &ASTGenerator::do_while_statement},
 			{"if", &ASTGenerator::if_statement},
+			{"break", &ASTGenerator::break_statement},
+			{"continue", &ASTGenerator::continue_statement},
+			{"switch", &ASTGenerator::switch_statement},
 			{"return", &ASTGenerator::return_statement}
 		};
 
@@ -588,6 +731,11 @@ namespace compiler
 		expect(';');
 		return expr_stmt;
 	}
+	
+	StatementPtr ASTGenerator::empty_statement()
+	{
+		return node<ast::EmptyStatement>();
+	}
 
 	std::unique_ptr<ast::BlockStatement> ASTGenerator::block_statement()
 	{
@@ -597,6 +745,21 @@ namespace compiler
 			if (accept('}'))
 				break;
 			block->body.push_back(statement());
+		}
+		return block;
+	}
+	
+	std::unique_ptr<ast::DeveloperBlock> ASTGenerator::developer_block()
+	{
+		auto block = node<ast::DeveloperBlock>();
+		while (1)
+		{
+			if (accept(parse::TokenType_kPoundSlash))
+				break;
+			if (developer)
+				block->body.push_back(statement());
+			else
+				statement();
 		}
 		return block;
 	}
@@ -640,6 +803,7 @@ namespace compiler
 			parse::source_map sources;
 			parse::definition_map definitions;
 			parse::preprocessor proc;
+			proc.set_include_path_extension(".gsc");
 			parse::lexer_opts opts;
 
 			class custom_lexer : public parse::lexer

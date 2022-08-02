@@ -37,11 +37,11 @@ namespace parse
 											{"&=", token_type::and_assign},
 											{"++", token_type::plus_plus},
 											{"--", token_type::minus_minus},
-											{"[[", token_type::double_bracket_left},
-											{"]]", token_type::double_bracket_right},
 											{"::", token_type::double_colon},
 											{"&&", token_type::and_and},
-											{"||", token_type::or_or}
+											{"||", token_type::or_or},
+											{"/#", token_type::slash_pound},
+											{"#/", token_type::pound_slash}
 	};
 
 	struct lexer_error : std::exception
@@ -176,14 +176,26 @@ namespace parse
 			++m_cursor; //"
 			int start = m_cursor;
 			int ch;
+			bool escaped = false;
 			while (1)
 			{
+				rep:
 				ch = read_character();
 				if (ch == -1)
 					throw lexer_error("unexpected eof, this shouldn't happen halfway through a string.", start,
 									  m_cursor, m_source->line_number(start), m_source->line_number(m_cursor));
-				if (ch == quote)
-					break;
+				if(ch == '\\')
+				{
+					escaped = true;
+					++m_cursor;
+					goto rep;
+				}
+				if (!escaped)
+				{
+					if (ch == quote)
+						break;
+				}
+				escaped = false;
 				++m_cursor;
 			}
 			auto t = token(m_source, tt, start, m_cursor - start, m_lineno);

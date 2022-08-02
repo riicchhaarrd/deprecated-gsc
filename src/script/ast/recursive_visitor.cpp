@@ -96,6 +96,13 @@ void compiler::RecursiveASTVisitor::visit(ast::BreakStatement& n)
 	post_visit(n);
 }
 
+void compiler::RecursiveASTVisitor::visit(ast::ContinueStatement& n)
+{
+	if (!pre_visit(n))
+		return;
+	post_visit(n);
+}
+
 void compiler::RecursiveASTVisitor::visit(ast::WaitStatement& n)
 {
 	if (!pre_visit(n))
@@ -243,5 +250,39 @@ void compiler::RecursiveASTVisitor::visit(ast::ArrayExpression& n)
 	{
 		it->accept(*this);
 	}
+	post_visit(n);
+}
+
+void compiler::RecursiveASTVisitor::visit(ast::DeveloperBlock& n)
+{
+	if (!pre_visit(n))
+		return;
+	for (auto& it : n.body)
+	{
+		it->accept(*this);
+	}
+	post_visit(n);
+}
+
+void compiler::RecursiveASTVisitor::visit(ast::SwitchStatement& n)
+{
+	if (!pre_visit(n))
+		return;
+	n.discriminant->accept(*this);
+	for (auto& it : n.cases)
+	{
+		it->accept(*this);
+	}
+	post_visit(n);
+}
+
+void compiler::RecursiveASTVisitor::visit(ast::SwitchCase& n)
+{
+	if (!pre_visit(n))
+		return;
+	if (n.test)
+		n.test->accept(*this);
+	for (auto & it : n.consequent)
+		it->accept(*this);
 	post_visit(n);
 }

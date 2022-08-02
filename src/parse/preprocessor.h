@@ -20,7 +20,7 @@ namespace parse
 		std::string file;
 		std::string msg;
 		int linenumber;
-		preprocessor_error(const std::string &message, const std::string& _file, int _linenumber)
+		preprocessor_error(const std::string message, const std::string& _file, int _linenumber)
 			: file(_file), linenumber(_linenumber), msg(message)
 		{
 		}
@@ -30,9 +30,28 @@ namespace parse
 			return msg.c_str();
 		}
 	};
+
+	enum EPreprocessorFlags
+	{
+		k_EPreprocessorFlags_None = 0
+	};
+
 	class preprocessor
 	{
+		std::string include_path_extension; //default don't postfix
+		EPreprocessorFlags m_flags = k_EPreprocessorFlags_None;
 	  public:
+
+		void set_flags(EPreprocessorFlags flags)
+		{
+			m_flags = flags;
+		}
+		
+		void set_include_path_extension(const std::string ext)
+		{
+			include_path_extension = ext;
+		}
+
 		// recursively resolve
 		void resolve_identifier(parse::token& t, token_list& preprocessed_tokens, definition_map& definitions)
 		{
@@ -101,14 +120,25 @@ namespace parse
 					std::string directive = parser.read_identifier();
 					if (directive == "include")
 					{
-						if (parser.accept_token(t, parse::token_type::string))
+						if (parser.accept_token(t, parse::token_type::string) ||
+							parser.accept_token(t, parse::token_type::identifier))
 						{
+							if (t.type == parse::token_type::identifier)
+								parser.expect_token(';');
+							std::string fixed_path = t.to_string();
+							std::replace(fixed_path.begin(), fixed_path.end(), '\\', '/');
+							if (fixed_path.find('.') == std::string::npos)
+								fixed_path += include_path_extension;
 							// for (int i = 0; i < depth; ++i)
 							// putchar('\t');
 							// printf("including %s\n", t.to_string().c_str());
 							token_list tmp;
-							if (!preprocess(fs, path_base, path_base + t.to_string(), tmp, sources, definitions, opts, depth + 1))
-								throw preprocessor_error("failed to preprocess file", t.to_string(), t.line_number());
+							if (!preprocess_with_typed_lexer<T>(fs, path_base, path_base + fixed_path, tmp, sources,
+															 definitions, opts,
+											depth + 1))
+								throw preprocessor_error(
+									std::format("failed to preprocess file {} @ {}", path_base, fixed_path),
+														 fixed_path, t.line_number());
 							preprocessed_tokens.insert(preprocessed_tokens.end(), tmp.begin(), tmp.end());
 						}
 						else

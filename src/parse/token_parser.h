@@ -3,6 +3,7 @@
 #include <string>
 #include "token.h"
 #include <format>
+#include <stack>
 #include <sstream>
 #include <common/logger.h>
 
@@ -37,7 +38,8 @@ namespace parse
 		int m_tokenindex = 0;
 		parse_opts m_opts;
 
-		int m_tokenindex_saved = -1;
+		std::stack<int> m_tokenindex_stack;
+		//int m_tokenindex_saved = -1;
 
 	  public:
 		token_parser(const token_list& t) : m_tokens(t), m_tokenindex(0)
@@ -49,7 +51,7 @@ namespace parse
 
 		void dump()
 		{
-			for (size_t i = 0; i < 15; ++i)
+			for (size_t i = 0; i < 55; ++i)
 			{
 				if (m_tokenindex - i < 0 || m_tokenindex - i >= m_tokens.size())
 					continue;
@@ -68,17 +70,38 @@ namespace parse
 			return m_tokens.size();
 		}
 
+		void pop()
+		{
+			if (m_tokenindex_stack.empty())
+				__debugbreak();
+			m_tokenindex_stack.pop();
+		}
+
 		void save()
 		{
+			#if 0
 			if (m_tokenindex_saved != -1)
+			{
+				printf("tokenindex will be overwritten...");
+				getchar();
+				__debugbreak();
 				return; // LOG_ERROR("can't save parser");
+			}
 			m_tokenindex_saved = m_tokenindex;
+			#endif
+			m_tokenindex_stack.push(m_tokenindex);
 		}
 
 		void restore()
 		{
+			#if 0
 			m_tokenindex = m_tokenindex_saved;
 			m_tokenindex_saved = -1;
+			#endif
+			if (m_tokenindex_stack.empty())
+				__debugbreak();
+			m_tokenindex = m_tokenindex_stack.top();
+			m_tokenindex_stack.pop();
 		}
 
 		std::string current_token_string() const

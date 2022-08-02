@@ -13,7 +13,8 @@ namespace compiler
 				kString,
 				kInteger,
 				kNumber,
-				kVector
+				kVector,
+				kUndefined
 			} type;
 			std::string value;
 

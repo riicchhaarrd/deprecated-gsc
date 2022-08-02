@@ -31,6 +31,10 @@ namespace compiler
 		struct LocalizedString;
 		struct ExpressionStatement;
 		struct EmptyStatement;
+		struct DeveloperBlock;
+		struct ContinueStatement;
+		struct SwitchStatement;
+		struct SwitchCase;
 	}; // namespace ast
 
 	class ASTVisitor
@@ -41,6 +45,7 @@ namespace compiler
 		}
 		virtual void visit(ast::Program&) = 0;
 		virtual void visit(ast::FunctionDeclaration&) = 0;
+		virtual void visit(ast::SwitchCase&) = 0;
 
 		//statements
 		virtual void visit(ast::BlockStatement&) = 0;
@@ -54,6 +59,8 @@ namespace compiler
 		virtual void visit(ast::WaitTillFrameEndStatement&) = 0;
 		virtual void visit(ast::ExpressionStatement&) = 0;
 		virtual void visit(ast::EmptyStatement&) = 0;
+		virtual void visit(ast::ContinueStatement&) = 0;
+		virtual void visit(ast::SwitchStatement&) = 0;
 
 		//expressions
 		virtual void visit(ast::LocalizedString&) = 0;
@@ -68,6 +75,7 @@ namespace compiler
 		virtual void visit(ast::UnaryExpression&) = 0;
 		virtual void visit(ast::VectorExpression&) = 0;
 		virtual void visit(ast::ArrayExpression&) = 0;
+		virtual void visit(ast::DeveloperBlock&) = 0;
 	};
 
 }; // namespace compiler

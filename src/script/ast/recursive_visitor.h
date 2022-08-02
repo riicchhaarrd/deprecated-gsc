@@ -25,6 +25,7 @@ namespace compiler
 		virtual void visit(ast::ForStatement&) override;
 		virtual void visit(ast::DoWhileStatement&) override;
 		virtual void visit(ast::ReturnStatement&) override;
+		virtual void visit(ast::ContinueStatement&) override;
 		virtual void visit(ast::BreakStatement&) override;
 		virtual void visit(ast::WaitStatement&) override;
 		virtual void visit(ast::WaitTillFrameEndStatement&) override;
@@ -42,7 +43,27 @@ namespace compiler
 		virtual void visit(ast::UnaryExpression&) override;
 		virtual void visit(ast::VectorExpression&) override;
 		virtual void visit(ast::ArrayExpression&) override;
+		virtual void visit(ast::Program&) override;
+		virtual void visit(ast::DeveloperBlock&) override;
+		virtual void visit(ast::SwitchCase&) override;
+		virtual void visit(ast::SwitchStatement&) override;
 	  public:
+		virtual bool pre_visit(ast::SwitchCase&)
+		{
+			return true;
+		}
+		virtual bool pre_visit(ast::SwitchStatement&)
+		{
+			return true;
+		}
+		virtual bool pre_visit(ast::DeveloperBlock&)
+		{
+			return true;
+		}
+		virtual bool pre_visit(ast::ContinueStatement&)
+		{
+			return true;
+		}
 		virtual bool pre_visit(ast::Program&)
 		{
 			return true;
@@ -219,7 +240,22 @@ namespace compiler
 		virtual void post_visit(ast::ArrayExpression&)
 		{
 		}
-		virtual void visit(ast::Program&) override;
+		virtual void post_visit(ast::DeveloperBlock&)
+		{
+		}
+		virtual void post_visit(ast::ContinueStatement&)
+		{
+		}
+		virtual void post_visit(ast::SwitchCase&)
+		{
+		}
+		virtual void post_visit(ast::SwitchStatement&)
+		{
+		}
+		void visit(ast::Node& n)
+		{
+			n.accept(*this);
+		}
 	};
 
 }; // namespace compiler
