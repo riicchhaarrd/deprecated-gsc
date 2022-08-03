@@ -2,9 +2,9 @@
 #include "ostream_indent.h"
 #include <script/ast/visitor.h>
 
-namespace compiler
+namespace script
 {
-	class GSCWriter : public ASTVisitor
+	class GSCWriter : public ast::ASTVisitor
 	{
 		ostream_indent os;
 
@@ -67,7 +67,7 @@ namespace compiler
 			os >> "}" << std::endl;
 		}
 
-		void visit_statement(StatementPtr& ptr)
+		void visit_statement(ast::StatementPtr& ptr)
 		{
 			if (dynamic_cast<ast::BlockStatement*>(ptr.get()))
 			{
@@ -223,7 +223,7 @@ namespace compiler
 				if (n.op >= 32 && n.op < 127)
 					os << (char)n.op;
 				else
-					throw ASTException("unhandled operator {}", n.op);
+					throw ast::ASTException("unhandled operator {}", n.op);
 				break;
 			}
 			os << " ";
@@ -263,7 +263,7 @@ namespace compiler
 				os << "%=";
 				break;
 			default:
-				throw ASTException("unhandled assignment operator {}", n.op);
+				throw ast::ASTException("unhandled assignment operator {}", n.op);
 				break;
 			}
 			os << " ";

@@ -2,7 +2,7 @@
 #include <script/ast/node/node.h>
 #include <string>
 
-namespace compiler
+namespace script
 {
 	namespace ast
 	{

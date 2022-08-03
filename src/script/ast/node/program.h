@@ -5,7 +5,7 @@
 #include <memory>
 #include <script/ast/node/statement.h>
 
-namespace compiler
+namespace script
 {
 	namespace ast
 	{

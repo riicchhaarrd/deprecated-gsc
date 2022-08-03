@@ -14,7 +14,7 @@ virtual void accept(ASTVisitor& visitor) override \
 	visitor.visit(*this); \
 }
 
-namespace compiler
+namespace script
 {
 	namespace ast
 	{

@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 
-namespace compiler
+namespace script
 {
 	namespace ast
 	{

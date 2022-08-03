@@ -1,6 +1,6 @@
 #pragma once
 
-namespace compiler
+namespace script
 {
 	namespace ast
 	{
@@ -34,46 +34,45 @@ namespace compiler
 		struct ContinueStatement;
 		struct SwitchStatement;
 		struct SwitchCase;
-	}; // namespace ast
 
-	class ASTVisitor
-	{
-	  public:
-		virtual ~ASTVisitor()
+		class ASTVisitor
 		{
-		}
-		virtual void visit(ast::Program&) = 0;
-		virtual void visit(ast::FunctionDeclaration&) = 0;
-		virtual void visit(ast::SwitchCase&) = 0;
+		  public:
+			virtual ~ASTVisitor()
+			{
+			}
+			virtual void visit(Program&) = 0;
+			virtual void visit(FunctionDeclaration&) = 0;
+			virtual void visit(SwitchCase&) = 0;
 
-		//statements
-		virtual void visit(ast::BlockStatement&) = 0;
-		virtual void visit(ast::IfStatement&) = 0;
-		virtual void visit(ast::WhileStatement&) = 0;
-		virtual void visit(ast::ForStatement&) = 0;
-		virtual void visit(ast::DoWhileStatement&) = 0;
-		virtual void visit(ast::ReturnStatement&) = 0;
-		virtual void visit(ast::BreakStatement&) = 0;
-		virtual void visit(ast::WaitStatement&) = 0;
-		virtual void visit(ast::WaitTillFrameEndStatement&) = 0;
-		virtual void visit(ast::ExpressionStatement&) = 0;
-		virtual void visit(ast::EmptyStatement&) = 0;
-		virtual void visit(ast::ContinueStatement&) = 0;
-		virtual void visit(ast::SwitchStatement&) = 0;
+			// statements
+			virtual void visit(BlockStatement&) = 0;
+			virtual void visit(IfStatement&) = 0;
+			virtual void visit(WhileStatement&) = 0;
+			virtual void visit(ForStatement&) = 0;
+			virtual void visit(DoWhileStatement&) = 0;
+			virtual void visit(ReturnStatement&) = 0;
+			virtual void visit(BreakStatement&) = 0;
+			virtual void visit(WaitStatement&) = 0;
+			virtual void visit(WaitTillFrameEndStatement&) = 0;
+			virtual void visit(ExpressionStatement&) = 0;
+			virtual void visit(EmptyStatement&) = 0;
+			virtual void visit(ContinueStatement&) = 0;
+			virtual void visit(SwitchStatement&) = 0;
 
-		//expressions
-		virtual void visit(ast::LocalizedString&) = 0;
-		virtual void visit(ast::Literal&) = 0;
-		virtual void visit(ast::Identifier&) = 0;
-		virtual void visit(ast::FunctionPointer&) = 0;
-		virtual void visit(ast::BinaryExpression&) = 0;
-		virtual void visit(ast::AssignmentExpression&) = 0;
-		virtual void visit(ast::CallExpression&) = 0;
-		virtual void visit(ast::ConditionalExpression&) = 0;
-		virtual void visit(ast::MemberExpression&) = 0;
-		virtual void visit(ast::UnaryExpression&) = 0;
-		virtual void visit(ast::VectorExpression&) = 0;
-		virtual void visit(ast::ArrayExpression&) = 0;
-	};
-
-}; // namespace compiler
+			// expressions
+			virtual void visit(LocalizedString&) = 0;
+			virtual void visit(Literal&) = 0;
+			virtual void visit(Identifier&) = 0;
+			virtual void visit(FunctionPointer&) = 0;
+			virtual void visit(BinaryExpression&) = 0;
+			virtual void visit(AssignmentExpression&) = 0;
+			virtual void visit(CallExpression&) = 0;
+			virtual void visit(ConditionalExpression&) = 0;
+			virtual void visit(MemberExpression&) = 0;
+			virtual void visit(UnaryExpression&) = 0;
+			virtual void visit(VectorExpression&) = 0;
+			virtual void visit(ArrayExpression&) = 0;
+		};
+	}; // namespace ast
+}; // namespace script
