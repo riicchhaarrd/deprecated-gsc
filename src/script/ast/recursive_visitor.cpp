@@ -253,17 +253,6 @@ void compiler::RecursiveASTVisitor::visit(ast::ArrayExpression& n)
 	post_visit(n);
 }
 
-void compiler::RecursiveASTVisitor::visit(ast::DeveloperBlock& n)
-{
-	if (!pre_visit(n))
-		return;
-	for (auto& it : n.body)
-	{
-		it->accept(*this);
-	}
-	post_visit(n);
-}
-
 void compiler::RecursiveASTVisitor::visit(ast::SwitchStatement& n)
 {
 	if (!pre_visit(n))
@@ -284,12 +273,5 @@ void compiler::RecursiveASTVisitor::visit(ast::SwitchCase& n)
 		n.test->accept(*this);
 	for (auto & it : n.consequent)
 		it->accept(*this);
-	post_visit(n);
-}
-
-void compiler::RecursiveASTVisitor::visit(ast::DirectiveStatement& n)
-{
-	if (!pre_visit(n))
-		return;
 	post_visit(n);
 }

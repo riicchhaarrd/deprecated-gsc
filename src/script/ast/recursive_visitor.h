@@ -44,24 +44,14 @@ namespace compiler
 		virtual void visit(ast::VectorExpression&) override;
 		virtual void visit(ast::ArrayExpression&) override;
 		virtual void visit(ast::Program&) override;
-		virtual void visit(ast::DeveloperBlock&) override;
 		virtual void visit(ast::SwitchCase&) override;
 		virtual void visit(ast::SwitchStatement&) override;
-		virtual void visit(ast::DirectiveStatement&) override;
 	  public:
-		virtual bool pre_visit(ast::DirectiveStatement&)
-		{
-			return true;
-		}
 		virtual bool pre_visit(ast::SwitchCase&)
 		{
 			return true;
 		}
 		virtual bool pre_visit(ast::SwitchStatement&)
-		{
-			return true;
-		}
-		virtual bool pre_visit(ast::DeveloperBlock&)
 		{
 			return true;
 		}
@@ -245,9 +235,6 @@ namespace compiler
 		virtual void post_visit(ast::ArrayExpression&)
 		{
 		}
-		virtual void post_visit(ast::DeveloperBlock&)
-		{
-		}
 		virtual void post_visit(ast::ContinueStatement&)
 		{
 		}
@@ -255,9 +242,6 @@ namespace compiler
 		{
 		}
 		virtual void post_visit(ast::SwitchStatement&)
-		{
-		}
-		virtual void post_visit(ast::DirectiveStatement&)
 		{
 		}
 		void visit(ast::Node& n)

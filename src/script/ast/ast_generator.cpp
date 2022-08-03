@@ -740,8 +740,6 @@ namespace compiler
 	{
 		if (accept(';'))
 			return empty_statement();
-		if (accept(parse::TokenType_kSlashPound))
-			return developer_block();
 		if (accept('{'))
 			return block_statement();
 		m_token_parser->save();
@@ -786,21 +784,6 @@ namespace compiler
 			if (accept('}'))
 				break;
 			block->body.push_back(statement());
-		}
-		return block;
-	}
-	
-	std::unique_ptr<ast::DeveloperBlock> ASTGenerator::developer_block()
-	{
-		auto block = node<ast::DeveloperBlock>();
-		while (1)
-		{
-			if (accept(parse::TokenType_kPoundSlash))
-				break;
-			if (developer)
-				block->body.push_back(statement());
-			else
-				statement();
 		}
 		return block;
 	}

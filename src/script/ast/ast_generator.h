@@ -32,7 +32,6 @@ namespace compiler
 		std::unique_ptr<parse::token_parser> m_token_parser;
 		void program();
 		ast::Program tree;
-		bool developer = false;
 
 		template<typename T, typename... Ts>
 		std::unique_ptr<T> node(Ts... ts)
@@ -94,7 +93,6 @@ namespace compiler
 		void logical_and(ExpressionPtr& expr);
 		void logical_or(ExpressionPtr& expr);
 		bool accept_token_string(const std::string str);
-		std::unique_ptr<ast::DeveloperBlock> developer_block();
 	  public:
 		ast::Program& root()
 		{

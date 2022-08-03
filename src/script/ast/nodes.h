@@ -28,6 +28,4 @@
 #include <script/ast/node/statement/wait_till_frame_end_statement.h>
 #include <script/ast/node/statement/empty_statement.h>
 #include <script/ast/node/statement/continue_statement.h>
-#include <script/ast/node/statement/developer_block.h>
 #include <script/ast/node/statement/switch_statement.h>
-#include <script/ast/node/statement/directive_statement.h>
