@@ -30,3 +30,4 @@
 #include <script/ast/node/statement/continue_statement.h>
 #include <script/ast/node/statement/developer_block.h>
 #include <script/ast/node/statement/switch_statement.h>
+#include <script/ast/node/statement/directive_statement.h>

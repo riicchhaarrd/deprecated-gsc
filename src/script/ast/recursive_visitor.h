@@ -47,7 +47,12 @@ namespace compiler
 		virtual void visit(ast::DeveloperBlock&) override;
 		virtual void visit(ast::SwitchCase&) override;
 		virtual void visit(ast::SwitchStatement&) override;
+		virtual void visit(ast::DirectiveStatement&) override;
 	  public:
+		virtual bool pre_visit(ast::DirectiveStatement&)
+		{
+			return true;
+		}
 		virtual bool pre_visit(ast::SwitchCase&)
 		{
 			return true;
@@ -250,6 +255,9 @@ namespace compiler
 		{
 		}
 		virtual void post_visit(ast::SwitchStatement&)
+		{
+		}
+		virtual void post_visit(ast::DirectiveStatement&)
 		{
 		}
 		void visit(ast::Node& n)

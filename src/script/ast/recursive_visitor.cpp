@@ -286,3 +286,10 @@ void compiler::RecursiveASTVisitor::visit(ast::SwitchCase& n)
 		it->accept(*this);
 	post_visit(n);
 }
+
+void compiler::RecursiveASTVisitor::visit(ast::DirectiveStatement& n)
+{
+	if (!pre_visit(n))
+		return;
+	post_visit(n);
+}

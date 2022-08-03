@@ -119,10 +119,13 @@ namespace compiler
 		}
 		if (accept('('))
 		{
-			return call_expression(std::move(ident), threaded); // either regular or threaded function call
+			ident = call_expression(std::move(ident), threaded); // either regular or threaded function call
 		}
-		if (threaded)
-			throw ASTException("Unexpected thread keyword");
+		else
+		{
+			if (threaded)
+				throw ASTException("Unexpected thread keyword");
+		}
 		threaded = accept_identifier_string("thread");
 		auto t = peek();
 		//method calls
@@ -202,7 +205,30 @@ namespace compiler
 		auto ident = factor_identifier();
 		if (!accept_token_string("]]"))
 			throw ASTException("Expected ]]");
+		expect('(');
 		return call_expression(std::move(ident), threaded);
+	}
+	ExpressionPtr ASTGenerator::factor_percent_symbol()
+	{
+		expect('%');
+		expect(parse::TokenType_kIdentifier);
+		auto n = node<ast::Literal>();
+		n->type = ast::Literal::Type::kAnimation;
+		n->value = token.to_string();
+		return n;
+	}
+	ExpressionPtr ASTGenerator::factor_pound()
+	{
+		expect('#');
+		expect(parse::TokenType_kIdentifier);
+		if (token.to_string() != "animtree")
+			throw ASTException("Expected animtree after #");
+
+		expect(parse::TokenType_kString);
+		auto n = node<ast::Literal>();
+		n->type = ast::Literal::Type::kString;
+		n->value = using_animtree_value;
+		return n;
 	}
 	ExpressionPtr ASTGenerator::factor_array_expression()
 	{
@@ -268,6 +294,8 @@ namespace compiler
 			{'~', &ASTGenerator::factor_unary_expression},
 			{'&', &ASTGenerator::factor_localized_string},
 			{'[', &ASTGenerator::factor_array_expression},
+			{'#', &ASTGenerator::factor_pound},
+			{'%', &ASTGenerator::factor_percent_symbol},
 			//{parse::TokenType_kDoubleBracketLeft, &ASTGenerator::regular_function_pointer_call},
 			{parse::TokenType_kDoubleColon, &ASTGenerator::factor_function_pointer}
 		};
@@ -682,6 +710,20 @@ namespace compiler
 		expect(';');
 		return n;
 	}
+	void ASTGenerator::directive()
+	{
+		expect(parse::TokenType_kIdentifier);
+		if (token.to_string() == "using_animtree")
+		{
+			expect('(');
+			expect(parse::TokenType_kString);
+			using_animtree_value = token.to_string();
+			expect(')');
+			expect(';');
+		}
+		else
+			throw ASTException("unexpected directive {}", token.to_string());
+	}
 	StatementPtr ASTGenerator::if_statement()
 	{
 		expect_identifier_string("if");
@@ -792,7 +834,11 @@ namespace compiler
 		{
 			if (accept(parse::TokenType_kEof))
 				break;
-			function_declaration(tree);
+			if (accept('#'))
+			{
+				directive();
+			} else
+				function_declaration(tree);
 		}
 	}
 
@@ -803,6 +849,7 @@ namespace compiler
 			parse::source_map sources;
 			parse::definition_map definitions;
 			parse::preprocessor proc;
+			proc.set_flags(parse::PreprocessorFlags::kInludeOnce | parse::PreprocessorFlags::kIgnoreUnknownDirectives);
 			proc.set_include_path_extension(".gsc");
 			parse::lexer_opts opts;
 

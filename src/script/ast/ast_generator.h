@@ -26,6 +26,7 @@ namespace compiler
 	using StatementPtr = std::unique_ptr<ast::Statement>;
 	class ASTGenerator
 	{
+		std::string using_animtree_value;
 		parse::token_list tokens;
 		parse::token token;
 		std::unique_ptr<parse::token_parser> m_token_parser;
@@ -53,6 +54,8 @@ namespace compiler
 		ExpressionPtr factor_unary_expression();
 		ExpressionPtr factor_identifier();
 		ExpressionPtr factor_parentheses();
+		ExpressionPtr factor_pound();
+		ExpressionPtr factor_percent_symbol();
 		void factor(ExpressionPtr&);
 		std::unique_ptr<ast::CallExpression> function_pointer_call(bool threaded = false);
 		std::unique_ptr<ast::CallExpression> regular_function_pointer_call();
@@ -80,6 +83,7 @@ namespace compiler
 		StatementPtr wait_statement();
 		StatementPtr empty_statement();
 		StatementPtr switch_statement();
+		void directive();
 		StatementPtr waittillframeend_statement();
 		bool accept_identifier_string(const std::string string);
 		ExpressionPtr factor_array_expression();

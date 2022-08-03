@@ -14,6 +14,7 @@ namespace compiler
 				kInteger,
 				kNumber,
 				kVector,
+				kAnimation,
 				kUndefined
 			} type;
 			std::string value;

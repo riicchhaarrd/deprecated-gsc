@@ -35,6 +35,7 @@ namespace compiler
 		struct ContinueStatement;
 		struct SwitchStatement;
 		struct SwitchCase;
+		struct DirectiveStatement;
 	}; // namespace ast
 
 	class ASTVisitor
@@ -61,6 +62,7 @@ namespace compiler
 		virtual void visit(ast::EmptyStatement&) = 0;
 		virtual void visit(ast::ContinueStatement&) = 0;
 		virtual void visit(ast::SwitchStatement&) = 0;
+		virtual void visit(ast::DirectiveStatement&) = 0;
 
 		//expressions
 		virtual void visit(ast::LocalizedString&) = 0;

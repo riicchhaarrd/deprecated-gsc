@@ -3,8 +3,10 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <set>
 #include <unordered_map>
 #include <exception>
+#include <common/flags.h>
 #include "token_parser.h"
 #include "lexer.h"
 
@@ -31,18 +33,22 @@ namespace parse
 		}
 	};
 
-	enum EPreprocessorFlags
+	enum class PreprocessorFlags
 	{
-		k_EPreprocessorFlags_None = 0
+		kNone = 0,
+		kInludeOnce = 1,
+		kIgnoreUnknownDirectives = 2
 	};
+	COMMON_DEFINE_ENUM_FLAG_OPERATORS(PreprocessorFlags)
 
 	class preprocessor
 	{
 		std::string include_path_extension; //default don't postfix
-		EPreprocessorFlags m_flags = k_EPreprocessorFlags_None;
+		PreprocessorFlags m_flags = PreprocessorFlags::kNone;
+		std::set<std::string> included;
 	  public:
 
-		void set_flags(EPreprocessorFlags flags)
+		void set_flags(PreprocessorFlags flags)
 		{
 			m_flags = flags;
 		}
@@ -129,17 +135,24 @@ namespace parse
 							std::replace(fixed_path.begin(), fixed_path.end(), '\\', '/');
 							if (fixed_path.find('.') == std::string::npos)
 								fixed_path += include_path_extension;
-							// for (int i = 0; i < depth; ++i)
-							// putchar('\t');
-							// printf("including %s\n", t.to_string().c_str());
-							token_list tmp;
-							if (!preprocess_with_typed_lexer<T>(fs, path_base, path_base + fixed_path, tmp, sources,
-															 definitions, opts,
-											depth + 1))
-								throw preprocessor_error(
-									std::format("failed to preprocess file {} @ {}", path_base, fixed_path),
-														 fixed_path, t.line_number());
-							preprocessed_tokens.insert(preprocessed_tokens.end(), tmp.begin(), tmp.end());
+							if (enum_flag_is_set(m_flags, PreprocessorFlags::kInludeOnce) &&
+								included.find(fixed_path) == included.end())
+							{
+								included.insert(fixed_path);
+
+								// for (int i = 0; i < depth; ++i)
+								// putchar('\t');
+								printf("including %s\n", t.to_string().c_str());
+								token_list tmp;
+								if (!preprocess_with_typed_lexer<T>(fs, path_base, path_base + fixed_path, tmp, sources,
+																	definitions, opts, depth + 1))
+									throw preprocessor_error(
+										std::format("failed to preprocess file {} @ {}", path_base, fixed_path),
+										fixed_path, t.line_number());
+								preprocessed_tokens.insert(preprocessed_tokens.end(), tmp.begin(), tmp.end());
+							}
+							else
+								printf("duplicate include '%s'\n", fixed_path.c_str());
 						}
 						else
 							throw preprocessor_error("invalid include directive", t.to_string(), t.line_number());
@@ -157,6 +170,18 @@ namespace parse
 						*/
 						// printf("definition %s -> %s\n", t.to_string().c_str(), definition.c_str());
 						definitions[t.to_string()] = deftokens;
+					}
+					else
+					{
+						if (enum_flag_is_set(m_flags, PreprocessorFlags::kIgnoreUnknownDirectives))
+						{
+							parser.unread_token();
+							parser.unread_token();
+							preprocessed_tokens.push_back(parser.read_token());
+							preprocessed_tokens.push_back(parser.read_token());
+						} else
+							throw preprocessor_error(std::format("invalid directive {}", directive), t.to_string(),
+												 t.line_number());
 					}
 				}
 				break;
