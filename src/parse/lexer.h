@@ -257,7 +257,8 @@ namespace parse
 			}
 			if (ch == '/')
 			{
-				if (peek_next_character() == '*')
+				int next_peek = peek_next_character();
+				if (next_peek == '*' || next_peek == '#') //TODO: FIXME when developer_script is enabled don't comment this out
 				{
 					m_cursor += 2; // read /*
 					int start = m_cursor;
@@ -265,7 +266,7 @@ namespace parse
 					{
 						ch = read_character();
 						int ch2 = peek_next_character();
-						if (ch == '*' && ch2 == '/')
+						if (ch == next_peek && ch2 == '/')
 							break;
 						if (ch == -1)
 						{
