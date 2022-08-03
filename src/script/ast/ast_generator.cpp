@@ -224,7 +224,6 @@ namespace compiler
 		if (token.to_string() != "animtree")
 			throw ASTException("Expected animtree after #");
 
-		expect(parse::TokenType_kString);
 		auto n = node<ast::Literal>();
 		n->type = ast::Literal::Type::kString;
 		n->value = using_animtree_value;
