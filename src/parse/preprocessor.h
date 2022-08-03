@@ -37,7 +37,8 @@ namespace parse
 	{
 		kNone = 0,
 		kInludeOnce = 1,
-		kIgnoreUnknownDirectives = 2
+		kIgnoreUnknownDirectives = 2,
+		kDoNotInclude = 4
 	};
 	COMMON_DEFINE_ENUM_FLAG_OPERATORS(PreprocessorFlags)
 
@@ -143,13 +144,27 @@ namespace parse
 								// for (int i = 0; i < depth; ++i)
 								// putchar('\t');
 								printf("including %s\n", t.to_string().c_str());
-								token_list tmp;
-								if (!preprocess_with_typed_lexer<T>(fs, path_base, path_base + fixed_path, tmp, sources,
-																	definitions, opts, depth + 1))
-									throw preprocessor_error(
-										std::format("failed to preprocess file {} @ {}", path_base, fixed_path),
-										fixed_path, t.line_number());
-								preprocessed_tokens.insert(preprocessed_tokens.end(), tmp.begin(), tmp.end());
+								if (!enum_flag_is_set(m_flags, PreprocessorFlags::kDoNotInclude))
+								{
+									token_list tmp;
+									if (!preprocess_with_typed_lexer<T>(fs, path_base, path_base + fixed_path, tmp,
+																		sources, definitions, opts, depth + 1))
+										throw preprocessor_error(
+											std::format("failed to preprocess file {} @ {}", path_base, fixed_path),
+											fixed_path, t.line_number());
+									preprocessed_tokens.insert(preprocessed_tokens.end(), tmp.begin(), tmp.end());
+								}
+								else
+								{
+									parser.unread_token();
+									parser.unread_token();
+									parser.unread_token();
+									parser.unread_token();
+									preprocessed_tokens.push_back(parser.read_token());
+									preprocessed_tokens.push_back(parser.read_token());
+									preprocessed_tokens.push_back(parser.read_token());
+									preprocessed_tokens.push_back(parser.read_token());
+								}
 							}
 							else
 								printf("duplicate include '%s'\n", fixed_path.c_str());

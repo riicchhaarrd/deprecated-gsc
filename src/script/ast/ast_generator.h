@@ -24,8 +24,6 @@ namespace script
 			}
 		};
 
-		using ExpressionPtr = std::unique_ptr<Expression>;
-		using StatementPtr = std::unique_ptr<Statement>;
 		class ASTGenerator
 		{
 			std::string using_animtree_value;
@@ -83,7 +81,7 @@ namespace script
 			StatementPtr wait_statement();
 			StatementPtr empty_statement();
 			StatementPtr switch_statement();
-			void directive();
+			std::unique_ptr<Directive> directive();
 			StatementPtr waittillframeend_statement();
 			bool accept_identifier_string(const std::string string);
 			ExpressionPtr factor_array_expression();

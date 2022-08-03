@@ -279,5 +279,11 @@ namespace script
 				it->accept(*this);
 			post_visit(n);
 		}
+		void RecursiveASTVisitor::visit(Directive& n)
+		{
+			if (!pre_visit(n))
+				return;
+			post_visit(n);
+		}
 	}; // namespace ast
 };	   // namespace script

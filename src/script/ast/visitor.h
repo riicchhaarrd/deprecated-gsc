@@ -4,6 +4,7 @@ namespace script
 {
 	namespace ast
 	{
+		struct Node;
 		struct Program;
 		struct FunctionDeclaration;
 		struct BlockStatement;
@@ -34,6 +35,7 @@ namespace script
 		struct ContinueStatement;
 		struct SwitchStatement;
 		struct SwitchCase;
+		struct Directive;
 
 		class ASTVisitor
 		{
@@ -41,9 +43,11 @@ namespace script
 			virtual ~ASTVisitor()
 			{
 			}
+			void visit_node(Node& n);
 			virtual void visit(Program&) = 0;
 			virtual void visit(FunctionDeclaration&) = 0;
 			virtual void visit(SwitchCase&) = 0;
+			virtual void visit(Directive&) = 0;
 
 			// statements
 			virtual void visit(BlockStatement&) = 0;

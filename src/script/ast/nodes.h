@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 
 #include <script/ast/node/statement.h>
 #include <script/ast/node/expression/assignment_expression.h>
@@ -29,3 +30,13 @@
 #include <script/ast/node/statement/empty_statement.h>
 #include <script/ast/node/statement/continue_statement.h>
 #include <script/ast/node/statement/switch_statement.h>
+#include <script/ast/node/directive.h>
+
+namespace script
+{
+	namespace ast
+	{
+		using ExpressionPtr = std::unique_ptr<Expression>;
+		using StatementPtr = std::unique_ptr<Statement>;
+	};
+};

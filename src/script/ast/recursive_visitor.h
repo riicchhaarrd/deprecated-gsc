@@ -48,9 +48,14 @@ namespace script
 			virtual void visit(Program&) override;
 			virtual void visit(SwitchCase&) override;
 			virtual void visit(SwitchStatement&) override;
+			virtual void visit(Directive&) override;
 
 		  public:
 			virtual bool pre_visit(SwitchCase&)
+			{
+				return true;
+			}
+			virtual bool pre_visit(Directive&)
 			{
 				return true;
 			}
@@ -245,6 +250,9 @@ namespace script
 			{
 			}
 			virtual void post_visit(SwitchStatement&)
+			{
+			}
+			virtual void post_visit(Directive&)
 			{
 			}
 			void visit(Node& n)

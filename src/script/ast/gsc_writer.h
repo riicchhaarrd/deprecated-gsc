@@ -1,6 +1,8 @@
 #pragma once
+#include <parse/token.h>
 #include "ostream_indent.h"
 #include <script/ast/visitor.h>
+#include <script/ast/nodes.h>
 
 namespace script
 {
@@ -143,7 +145,7 @@ namespace script
 		}
 		virtual void visit(ast::BreakStatement& n) override
 		{
-			os >> "break;";
+			os >> "break;" << std::endl;
 		}
 		virtual void visit(ast::WaitStatement& n) override
 		{
@@ -174,6 +176,10 @@ namespace script
 		{
 			if (n.type == ast::Literal::Type::kString)
 				os << "\"" << n.value << "\"";
+			else if (n.type == ast::Literal::Type::kUndefined)
+				os << "undefined";
+			else if (n.type == ast::Literal::Type::kAnimation)
+				os << "%" << n.value;
 			else
 				os << n.value;
 		}
@@ -223,7 +229,7 @@ namespace script
 				if (n.op >= 32 && n.op < 127)
 					os << (char)n.op;
 				else
-					throw ast::ASTException("unhandled operator {}", n.op);
+					throw std::exception("unhandled operator {}", n.op);
 				break;
 			}
 			os << " ";
@@ -263,7 +269,7 @@ namespace script
 				os << "%=";
 				break;
 			default:
-				throw ast::ASTException("unhandled assignment operator {}", n.op);
+				throw std::exception("unhandled assignment operator {}", n.op);
 				break;
 			}
 			os << " ";
@@ -280,7 +286,11 @@ namespace script
 			{
 				os << "thread ";
 			}
+			if (n.pointer)
+				os << "[[";
 			n.callee->accept(*this);
+			if (n.pointer)
+				os << "]]";
 			os << "(";
 			int i = 0;
 			for (auto& arg : n.arguments)
@@ -350,5 +360,11 @@ namespace script
 			}
 			os << "]";
 		}
+
+		// Inherited via ASTVisitor
+		virtual void visit(ast::SwitchCase&) override;
+		virtual void visit(ast::ContinueStatement&) override;
+		virtual void visit(ast::SwitchStatement&) override;
+		virtual void visit(ast::Directive&) override;
 	};
 }; // namespace compiler

@@ -12,6 +12,7 @@ namespace script
 		struct CallExpression : Expression
 		{
 			bool threaded = false;
+			bool pointer = false;
 			std::unique_ptr<Expression> object;
 			std::unique_ptr<Expression> callee;
 			std::vector<std::unique_ptr<Expression>> arguments;

@@ -139,6 +139,7 @@ namespace script
 				expect('(');
 				auto n = call_expression(std::move(callee), threaded);
 				n->object = std::move(ident);
+				n->pointer = true;
 				ident = std::move(n);
 			}
 			else if (t.type_as_int() == parse::TokenType_kIdentifier)
@@ -198,6 +199,7 @@ namespace script
 				throw ASTException("Expected ]]");
 			expect('(');
 			auto n = call_expression(std::move(callee));
+			n->pointer = true;
 			return n;
 		}
 
@@ -208,7 +210,9 @@ namespace script
 			if (!accept_token_string("]]"))
 				throw ASTException("Expected ]]");
 			expect('(');
-			return call_expression(std::move(ident), threaded);
+			auto call = call_expression(std::move(ident), threaded);
+			call->pointer = true;
+			return call;
 		}
 		ExpressionPtr ASTGenerator::factor_percent_symbol()
 		{
@@ -710,19 +714,28 @@ namespace script
 			expect(';');
 			return n;
 		}
-		void ASTGenerator::directive()
+		std::unique_ptr<Directive> ASTGenerator::directive()
 		{
 			expect(parse::TokenType_kIdentifier);
+			auto n = node<Directive>();
+			n->directive = token.to_string();
 			if (token.to_string() == "using_animtree")
 			{
 				expect('(');
 				expect(parse::TokenType_kString);
 				using_animtree_value = token.to_string();
+				n->value = token.to_string();
 				expect(')');
-				expect(';');
+			}
+			else if (token.to_string() == "include")
+			{
+				expect(parse::TokenType_kIdentifier);
+				n->value = token.to_string();
 			}
 			else
 				throw ASTException("unexpected directive {}", token.to_string());
+			expect(';');
+			return n;
 		}
 		StatementPtr ASTGenerator::if_statement()
 		{
@@ -818,7 +831,7 @@ namespace script
 					break;
 				if (accept('#'))
 				{
-					directive();
+					tree.body.push_back(directive());
 				}
 				else
 					function_declaration(tree);
@@ -833,7 +846,8 @@ namespace script
 				parse::definition_map definitions;
 				parse::preprocessor proc;
 				proc.set_flags(parse::PreprocessorFlags::kInludeOnce |
-							   parse::PreprocessorFlags::kIgnoreUnknownDirectives);
+							   parse::PreprocessorFlags::kIgnoreUnknownDirectives |
+							   parse::PreprocessorFlags::kDoNotInclude);
 				proc.set_include_path_extension(".gsc");
 				parse::lexer_opts opts;
 
