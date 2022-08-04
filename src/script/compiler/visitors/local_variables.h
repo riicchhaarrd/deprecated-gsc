@@ -1,6 +1,7 @@
 #pragma once
 #include <script/ast/recursive_visitor.h>
 #include <script/compiler/exception.h>
+#include <script/ast/type_visitor.h>
 
 namespace script
 {

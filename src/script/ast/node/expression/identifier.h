@@ -10,6 +10,14 @@ namespace script
 		{
 			std::string file_reference; //optional e.g util\string::tolower
 			std::string name;
+
+			std::string full_identifier_string()
+			{
+				if (file_reference.empty())
+					return name;
+				return file_reference + "::" + name;
+			}
+
 			Identifier(const std::string s)
 			{
 				name = s;

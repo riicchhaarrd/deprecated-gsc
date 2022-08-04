@@ -1,5 +1,8 @@
 #pragma once
 #include <script/ast/recursive_visitor.h>
+#include <set>
+#include <string>
+#include <algorithm>
 
 namespace script
 {
