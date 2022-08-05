@@ -27,10 +27,9 @@ namespace script
 			bool compile(ast::Node& program, vm::Constants& constants, std::vector<vm::Function>& functions)
 			{
 				ast::NodeTraverser nt;
-				TraverseInfo ti;
+				TraverseInfo ti("");
 				nt.add_visitor(&ti.local_variables_visitor);
 				nt.add_visitor(&ti.imported_functions_visitor);
-				nt.add_visitor(&ti.function_visitor);
 
 				nt.traverse(program);
 				default_filesystem fs;

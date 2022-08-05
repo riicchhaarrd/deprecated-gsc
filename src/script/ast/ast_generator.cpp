@@ -88,6 +88,20 @@ namespace script
 
 		ExpressionPtr ASTGenerator::factor_identifier()
 		{
+			if (accept_identifier_string("true"))
+			{
+				auto n = node<Literal>();
+				n->type = Literal::Type::kInteger;
+				n->value = "1";
+				return n;
+			}
+			if (accept_identifier_string("false"))
+			{
+				auto n = node<Literal>();
+				n->type = Literal::Type::kInteger;
+				n->value = "0";
+				return n;
+			}
 			if (accept_identifier_string("undefined"))
 			{
 				auto n = node<Literal>();
@@ -186,7 +200,8 @@ namespace script
 		{
 			expect(parse::TokenType_kDoubleColon);
 			auto n = node<FunctionPointer>();
-			n->identifier = identifier();
+			expect(parse::TokenType_kIdentifier);
+			n->function_name = token.to_string();
 			return n;
 		}
 
@@ -811,7 +826,9 @@ namespace script
 			{
 				if (accept(')'))
 					goto skip_rparen;
-				decl->parameters.push_back(identifier());
+				//decl->parameters.push_back(identifier());
+				expect(parse::TokenType_kIdentifier);
+				decl->parameters.push_back(token.to_string());
 				if (!accept(','))
 					break;
 			}
@@ -825,16 +842,17 @@ namespace script
 
 		void ASTGenerator::program()
 		{
+			tree = std::make_unique<ast::Program>();
 			while (1)
 			{
 				if (accept(parse::TokenType_kEof))
 					break;
 				if (accept('#'))
 				{
-					tree.body.push_back(directive());
+					tree->body.push_back(directive());
 				}
 				else
-					function_declaration(tree);
+					function_declaration(*tree.get());
 			}
 		}
 

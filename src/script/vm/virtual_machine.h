@@ -9,10 +9,10 @@ namespace script
 {
 	namespace vm
 	{
-		struct VMExceptionData
+		struct ExceptionData
 		{
 		};
-		using VMException = common::TypedDataMessageException<VMExceptionData>;
+		using Exception = common::TypedDataMessageException<ExceptionData>;
 		class VirtualMachine
 		{
 			//eh... i could combine all the "opcodes" into one large set and just use a singular instruction pointer

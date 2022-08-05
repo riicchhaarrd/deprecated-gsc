@@ -164,8 +164,8 @@ namespace script
 		{
 			if (!pre_visit(n))
 				return;
-			if (n.identifier)
-				n.identifier->accept(*this);
+			//if (n.identifier)
+				//n.identifier->accept(*this);
 			post_visit(n);
 		}
 

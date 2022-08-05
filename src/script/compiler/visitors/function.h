@@ -8,6 +8,7 @@ namespace script
 {
 	namespace compiler
 	{
+		template<typename T>
 		class FunctionVisitor : public ast::RecursiveASTVisitor
 		{
 		  public:
@@ -15,6 +16,7 @@ namespace script
 			{
 				std::string name;
 				size_t numparameters = 0;
+				ast::FunctionDeclaration* node;
 			};
 
 		  private:
@@ -38,10 +40,11 @@ namespace script
 			{
 				auto fnd = m_function_info.find(n.function_name);
 				if (fnd != m_function_info.end())
-					throw CompileException("Function '%s' already defined");
+					throw T("Function '%s' already defined");
 				auto &fi = m_function_info[n.function_name];
 				fi.name = n.function_name;
 				fi.numparameters = n.parameters.size();
+				fi.node = &n;
 				return false;
 			}
 		};

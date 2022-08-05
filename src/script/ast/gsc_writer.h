@@ -44,7 +44,8 @@ namespace script
 			size_t i = 0;
 			for (auto& parm : n.parameters)
 			{
-				parm->accept(*this);
+				os << parm;
+				//parm->accept(*this);
 				if (i != n.parameters.size() - 1)
 					os << ", ";
 				++i;
@@ -193,7 +194,8 @@ namespace script
 		virtual void visit(ast::FunctionPointer& n) override
 		{
 			os << "::";
-			n.identifier->accept(*this);
+			//n.identifier->accept(*this);
+			os << n.function_name;
 		}
 		virtual void visit(ast::BinaryExpression& n) override
 		{

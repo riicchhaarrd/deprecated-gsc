@@ -1,3 +1,4 @@
+#pragma once
 #include <vector>
 #include <string>
 #include <map>
@@ -31,7 +32,7 @@ namespace script
 			parse::token token;
 			std::unique_ptr<parse::token_parser> m_token_parser;
 			void program();
-			Program tree;
+			std::unique_ptr<Program> tree;
 
 			template <typename T, typename... Ts> std::unique_ptr<T> node(Ts... ts)
 			{
@@ -94,7 +95,7 @@ namespace script
 			bool accept_token_string(const std::string str);
 
 		  public:
-			Program& root()
+			std::unique_ptr<Program>& root()
 			{
 				return tree;
 			}

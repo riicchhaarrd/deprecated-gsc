@@ -20,14 +20,14 @@ namespace script
 
 			if (!main_function)
 			{
-				throw VMException("No main function found");
+				throw Exception("No main function found");
 			}
 			set_function(main_function->index);
 		}
 		void VirtualMachine::set_function(size_t index)
 		{
 			if (index >= m_functions.size())
-				throw VMException("invalid function index");
+				throw Exception("invalid function index");
 			function_index = index;
 			m_function = &m_functions[function_index];
 		}
@@ -39,7 +39,7 @@ namespace script
 		std::unique_ptr<Instruction>& VirtualMachine::fetch()
 		{
 			if (instruction_index >= m_function->instructions.size())
-				throw VMException("invalid instruction index");
+				throw Exception("invalid instruction index");
 			return m_function->instructions[instruction_index++];
 		}
 

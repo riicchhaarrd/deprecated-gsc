@@ -21,17 +21,22 @@ namespace script
 
 		struct Object;
 		struct Array;
-		using ObjectPtr = std::weak_ptr<Object>;
-		using ArrayPtr = std::weak_ptr<Array>;
+		using ObjectPtr = std::shared_ptr<Object>;
+		using ArrayPtr = std::shared_ptr<Array>;
 
 		struct LocalizedString
 		{
 			size_t index;
 		};
 
+		struct Animation
+		{
+			std::string reference;
+		};
+
 		struct FunctionPointer
 		{
-			size_t pointer;
+			std::string name;
 		};
 
 		struct Identifier
@@ -44,17 +49,49 @@ namespace script
 		{
 		};
 
-		using Variant = std::variant<Vector, String, Integer, Number, ObjectPtr, ArrayPtr, LocalizedString,
-									 FunctionPointer, Identifier, Undefined>;
+		using Variant = std::variant<Undefined, Vector, String, Integer, Number, ObjectPtr, ArrayPtr, LocalizedString,
+									 FunctionPointer, Identifier, Animation>;
+		static const char* kVariantNames[] = {"Undefined", "Vector", "String", "Integer", "Float",
+											  "Object",	   "Array",	 "String Localized", "Function Pointer", "?",
+											  "Animation", NULL};
+
+		enum class Type
+		{
+			kUndefined,
+			kVector,
+			kString,
+			kInteger,
+			kFloat,
+			kObject,
+			kArray,
+			kLocalizedString,
+			kFunctionPointer,
+			kIdentifier,
+			kAnimation
+		};
+
+		template<typename T> inline size_t type_index()
+		{
+			return Variant(T()).index();
+		}
 
 		struct Object
 		{
-			std::unordered_map<std::string, Variant> fields;
+			std::unordered_map<std::string, std::shared_ptr<Variant>> fields;
+
+			std::shared_ptr<Variant> get_field(const std::string n)
+			{
+				if (fields.find(n) == fields.end())
+				{
+					fields[n] = std::make_shared<vm::Variant>(vm::Undefined());
+				}
+				return fields[n];
+			}
 		};
 
 		struct Array
 		{
-			std::vector<Variant> elements;
+			std::vector<std::shared_ptr<Variant>> elements;
 		};
 
 		using Constants = std::vector<Variant>;

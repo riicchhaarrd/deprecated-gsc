@@ -52,7 +52,7 @@ namespace script
 				it->accept(*this);
 		}
 
-		void BytecodeGenerator::visit(ast::IfStatement& n)
+		void BytecodeGenerator::visit(ast::IfStatement&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}

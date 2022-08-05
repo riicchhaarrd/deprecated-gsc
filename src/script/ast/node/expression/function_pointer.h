@@ -8,16 +8,14 @@ namespace script
 	{
 		struct FunctionPointer : Expression
 		{
-			std::unique_ptr<Identifier> identifier;
+			//std::unique_ptr<Identifier> identifier;
+			std::string function_name;
 
 			AST_NODE(FunctionPointer)
 
 			virtual void print(Printer& out) override
 			{
 				out.print("function pointer:");
-				out.indent();
-				identifier->print(out);
-				out.unindent();
 			}
 		};
 	}; // namespace ast

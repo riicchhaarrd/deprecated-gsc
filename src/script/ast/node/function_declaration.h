@@ -12,7 +12,8 @@ namespace script
 		struct FunctionDeclaration : Node
 		{
 			std::string function_name;
-			std::vector<std::unique_ptr<Identifier>> parameters;
+			//std::vector<std::unique_ptr<Identifier>> parameters;
+			std::vector<std::string> parameters;
 			std::unique_ptr<Statement> body;
 			//std::unique_ptr<Node> return_data_type;
 			bool variadic = false;
