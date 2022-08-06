@@ -627,7 +627,7 @@ namespace script
 			assert_cond(n, idx == vm::Type::kInteger || idx == vm::Type::kFloat, "not a number");
 			if (idx == vm::Type::kFloat)
 				push(-std::get<vm::Number>(arg));
-			else if (idx == vm::Type::kFloat)
+			else if (idx == vm::Type::kInteger)
 				push(-std::get<vm::Integer>(arg));
 			break;
 		case '!':
