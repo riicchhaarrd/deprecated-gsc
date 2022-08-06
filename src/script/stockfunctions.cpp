@@ -52,6 +52,8 @@ namespace script
 			{"setsavedcvar", unimplemented},
 			{"precachemodel", unimplemented},
 			{"precacheshader", unimplemented},
+			{"precacheturret", unimplemented},
+			{"precachevehicle", unimplemented},
 			{"print", print},
 			{"getcvar", get_cvar}
 		};

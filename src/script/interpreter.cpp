@@ -35,6 +35,8 @@ namespace script
 			return std::to_string(std::get<vm::Number>(v));
 		case vm::Type::kString:
 			return std::get<vm::String>(v);
+		case vm::Type::kUndefined:
+			return "undefined";
 		}
 		throw vm::Exception("cannot convert {} to string", vm::kVariantNames[v.index()]);
 		return "";
@@ -241,7 +243,7 @@ namespace script
 	vm::Variant Interpreter::call_function(const std::string name, FunctionArguments& args)
 	{
 		FunctionContext fc;
-		size_t i = 0;
+		size_t k = 0;
 		size_t ss = m_stack.size();
 		vm::Variant return_value = vm::Undefined();
 		auto fnd = m_program->function_map.find(util::string::to_lower(name));
@@ -251,8 +253,14 @@ namespace script
 			goto end;
 		}
 		m_callstack.push(&fc);
+		printf("calling function '%s'\n", name.c_str());
 		for (auto& parm : fnd->second->parameters)
-			fc.variables[parm] = i >= args.size() ? std::make_shared<vm::Variant>(vm::Undefined()) : args[i];
+		{
+			auto parmptr = k >= args.size() ? std::make_shared<vm::Variant>(vm::Undefined()) : args[k];
+			printf("setting parameter %d %s to %s\n", k, parm.c_str(), variant_to_string(*parmptr.get()).c_str());
+			fc.variables[parm] = parmptr;
+			++k;
+		}
 
 		try
 		{
@@ -296,10 +304,10 @@ namespace script
 	void Interpreter::visit(ast::BlockStatement& n)
 	{
 		dump_node(n);
-		printf("begin BlockStatement\n");
+		//printf("begin BlockStatement\n");
 		for (auto& it : n.body)
 			it->accept(*this);
-		printf("end BlockStatement\n");
+		//printf("end BlockStatement\n");
 	}
 
 	void Interpreter::dump()
@@ -323,12 +331,12 @@ namespace script
 	void Interpreter::visit(ast::IfStatement& n)
 	{
 		dump_node(n);
-		printf("begin IfStatement\n");
+		//printf("begin IfStatement\n");
 		n.test->accept(*this);
 		int cond = m_context->get_int(0);
 		pop();
 		printf("cond=%d\n", cond);
-		printf("end IfStatement\n");
+		//printf("end IfStatement\n");
 	}
 
 	void Interpreter::visit(ast::WhileStatement& n)
@@ -402,17 +410,34 @@ namespace script
 		dump_node(n);
 		n.discriminant->accept(*this);
 		auto d = variant_to_string(pop());
+		ast::SwitchCase* default_case = nullptr;
+		bool found = false;
 		for (auto& c : n.cases)
 		{
-			c->test->accept(*this);
-			auto str = variant_to_string(pop());
-			if (str == d)
+			if (!c->test)
 			{
-				for (auto& stmt : c->consequent)
+				default_case = c.get();
+			}
+			else
+			{
+				c->test->accept(*this);
+				auto str = variant_to_string(pop());
+				if (str == d)
 				{
-					stmt->accept(*this);
+					for (auto& stmt : c->consequent)
+					{
+						stmt->accept(*this);
+					}
+					found=true;
+					break;
 				}
-				break;
+			}
+		}
+		if (!found)
+		{
+			for (auto& stmt : default_case->consequent)
+			{
+				stmt->accept(*this);
 			}
 		}
 	}
@@ -426,7 +451,7 @@ namespace script
 	void Interpreter::visit(ast::Literal& n)
 	{
 		dump_node(n);
-		printf("begin Literal\n");
+		//printf("begin Literal\n");
 		switch (n.type)
 		{
 		case ast::Literal::Type::kInteger:
@@ -452,7 +477,7 @@ namespace script
 			throw vm::Exception("unimplemented {}", __LINE__);
 			break;
 		}
-		printf("end Literal\n");
+		//printf("end Literal\n");
 	}
 
 	std::shared_ptr<vm::Object> create_object()
@@ -472,7 +497,7 @@ namespace script
 	void Interpreter::visit(ast::Identifier& n)
 	{
 		dump_node(n);
-		printf("begin Identifier\n");
+		//printf("begin Identifier\n");
 		if(!n.file_reference.empty())
 			throw vm::Exception("can't use file references {}::{}", n.name, n.file_reference);
 		printf("variable %s\n", n.name.c_str());
@@ -490,7 +515,7 @@ namespace script
 			push_pointer(vars[n.name]);
 		}
 
-		printf("end Identifier\n");
+		//printf("end Identifier\n");
 	}
 
 	void Interpreter::visit(ast::FunctionPointer& n)
@@ -502,7 +527,7 @@ namespace script
 	void Interpreter::visit(ast::BinaryExpression& n)
 	{
 		dump_node(n);
-		printf("begin BinaryExpression\n");
+		//printf("begin BinaryExpression\n");
 		n.left->accept(*this);
 		auto lhs = m_context->get_variant(0);
 		pop();
@@ -511,13 +536,13 @@ namespace script
 		pop();
 		vm::Variant result = binop(lhs, rhs, n.op);
 		push(result);
-		printf("end BinaryExpression\n");
+		//printf("end BinaryExpression\n");
 	}
 
 	void Interpreter::visit(ast::AssignmentExpression& n)
 	{
 		dump_node(n);
-		printf("begin AssignmentExpression\n");
+		//printf("begin AssignmentExpression\n");
 		//load lhs
 		n.lhs->accept(*this);
 		auto ptr = pop_pointer();
@@ -528,14 +553,18 @@ namespace script
 		auto rhs = pop(); //might want to pop_pointer, but cba to support multiple assignments
 		if (ptr)
 			*(ptr.get()) = rhs;
-		printf("end AssignmentExpression\n");
+		//printf("end AssignmentExpression\n");
 		push_pointer(ptr);
 	}
 
 	void Interpreter::visit(ast::CallExpression& n)
 	{
 		dump_node(n);
-		printf("begin CallExpression\n");
+		//printf("begin CallExpression\n");
+		if (n.object)
+			throw vm::Exception("object calls not working yet");
+		if (n.threaded)
+			throw vm::Exception("threaded calls not working yet");
 		FunctionArguments args;
 		for (auto it = n.arguments.rbegin(); it != n.arguments.rend(); ++it)
 		{
@@ -558,7 +587,7 @@ namespace script
 		else
 			throw vm::Exception("unhandled function pointer call");
 		push(return_value);
-		printf("end CallExpression\n");
+		//printf("end CallExpression\n");
 	}
 
 	void Interpreter::visit(ast::ConditionalExpression& n)
@@ -590,7 +619,7 @@ namespace script
 	void Interpreter::visit(ast::MemberExpression& n)
 	{
 		dump_node(n);
-		printf("begin MemberExpression\n");
+		//printf("begin MemberExpression\n");
 		n.object->accept(*this);
 		auto obj = pop_pointer();
 		if (obj->index() != vm::type_index<vm::ObjectPtr>())
@@ -611,13 +640,13 @@ namespace script
 		printf("field: %s\n", field_name.c_str());
 		push_pointer(ptr->get_field(field_name));
 		//throw vm::Exception("unimplemented {}", __LINE__);
-		printf("end MemberExpression\n");
+		//printf("end MemberExpression\n");
 	}
 
 	void Interpreter::visit(ast::UnaryExpression& n)
 	{
 		dump_node(n);
-		printf("begin UnaryExpression\n");
+		//printf("begin UnaryExpression\n");
 		n.argument->accept(*this);
 		auto arg = pop();
 		vm::Type idx = (vm::Type)arg.index();
@@ -633,8 +662,17 @@ namespace script
 		case '!':
 		{
 			printf("! %s\n", vm::kVariantNames[arg.index()]);
-			assert_cond(n, idx == vm::Type::kInteger, "not a integer");
-			push(!std::get<vm::Integer>(arg));
+			auto *p = m_program->m_parent_visitor.get_parent_by_type<ast::BlockStatement>(&n);
+			if (p)
+			{
+				GSCWriter wr(std::cout);
+				wr.visit_node(*p);
+			}
+			assert_cond(n, idx == vm::Type::kInteger || idx == vm::Type::kUndefined, "not a integer {} {} {}", vm::kVariantNames[arg.index()], variant_to_string(arg), m_program->name);
+			if (idx == vm::Type::kUndefined)
+				push(1);
+			else
+				push(!std::get<vm::Integer>(arg));
 		} break;
 		case '~':
 			printf("~ %d\n", arg.index());
@@ -645,7 +683,7 @@ namespace script
 			throw vm::Exception("unhandled operator {}", n.op);
 			break;
 		}
-		printf("end UnaryExpression\n");
+		//printf("end UnaryExpression\n");
 	}
 
 	void Interpreter::visit(ast::VectorExpression& n)

@@ -15,6 +15,7 @@
 
 #include <script/ast/gsc_writer.h>
 #include <iostream>
+#include <script/compiler/visitors/parent.h>
 
 namespace script
 {
@@ -23,6 +24,7 @@ namespace script
 		std::unique_ptr<ast::Program> program;
 		std::string name;
 		std::unordered_map<std::string, ast::FunctionDeclaration*> function_map;
+		script::compiler::ParentVisitor m_parent_visitor;
 	};
 	using FunctionArguments = std::vector<std::shared_ptr<vm::Variant>>;
 	using ReferenceMap = std::unordered_map<std::string, LoadedProgramReference>;
@@ -62,6 +64,7 @@ namespace script
 	  public:
 		void dump_node(ast::Node &n)
 		{
+			return;
 			std::cout << "\t{";
 			GSCWriter wr(std::cout);
 			wr.visit_node(n);
@@ -96,10 +99,12 @@ namespace script
 				throw vm::Exception("stack empty");
 			}
 			auto v = m_stack[m_stack.size() - 1];
+			#if 0
 			if (v)
 				printf("popping variant(%s) from stack\n", vm::kVariantNames[v->index()]);
 			else
 				printf("popping variant(nullptr) from stack\n");
+			#endif
 			m_stack.pop_back();
 			return v;
 		}
@@ -118,15 +123,17 @@ namespace script
 		}
 		void push_pointer(std::shared_ptr<vm::Variant> v)
 		{
+			#if 0
 			if (v)
 				printf("pushing variant(%s) to stack\n", vm::kVariantNames[v->index()]);
 			else
 				printf("pushing variant(nullptr) to stack\n");
+			#endif
 			m_stack.push_back(v ? v : std::make_shared<vm::Variant>(vm::Undefined()));
 		}
 		void push(vm::Variant v)
 		{
-			printf("pushing variant(%s) to stack\n", vm::kVariantNames[v.index()]);
+			//printf("pushing variant(%s) to stack\n", vm::kVariantNames[v.index()]);
 			m_stack.push_back(std::make_shared<vm::Variant>(v));
 		}
 		void dump();
