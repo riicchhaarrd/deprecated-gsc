@@ -37,6 +37,11 @@ namespace script
 			return std::get<vm::String>(v);
 		case vm::Type::kUndefined:
 			return "undefined";
+		case vm::Type::kVector:
+		{
+			auto vec = std::get<vm::Vector>(v);
+			return std::format("({}, {}, {})", vec.x, vec.y, vec.z);
+		} break;
 		}
 		throw vm::Exception("cannot convert {} to string", vm::kVariantNames[v.index()]);
 		return "";
@@ -216,7 +221,8 @@ namespace script
 			throw vm::Exception("no function named {}", name);
 		for (auto it = args.begin(); it != args.end(); ++it)
 			push_pointer(*it);
-		int num_pushed = fnd->second(*m_context.get(), nullptr);
+		auto obj = get_function_object();
+		int num_pushed = fnd->second(*m_context.get(), obj.get());
 		vm::Variant rt = vm::Undefined();
 		// TODO: put checks in place to check whether stack has shifted
 		if (num_pushed != 0)
@@ -229,15 +235,23 @@ namespace script
 	}
 	vm::Variant Interpreter::call_function(const std::string filepath_, const std::string name, FunctionArguments& args)
 	{
-		std::string ref = filepath_;
-		std::replace(ref.begin(), ref.end(), '\\', '/');
-		auto fnd = m_refmap.find(ref);
-		assert_cond(fnd != m_refmap.end(), "file {} is not loaded", ref);
-		m_programstack.push(m_program);
-		m_program = &fnd->second;
-		auto rv = call_function(name, args);
-		m_program = m_programstack.top();
-		m_programstack.pop();
+		vm::Variant rv = vm::Undefined();
+		try
+		{
+			std::string ref = filepath_;
+			std::replace(ref.begin(), ref.end(), '\\', '/');
+			auto fnd = m_refmap.find(ref);
+			assert_cond(fnd != m_refmap.end(), "file {} is not loaded", ref);
+			m_programstack.push(m_program);
+			m_program = &fnd->second;
+			rv = call_function(name, args);
+			m_program = m_programstack.top();
+			m_programstack.pop();
+		}
+		catch (vm::Exception& e)
+		{
+			error(*get_last_visited_node(), e.what());
+		}
 		return rv;
 	}
 	vm::Variant Interpreter::call_function(const std::string name, FunctionArguments& args)
@@ -253,10 +267,11 @@ namespace script
 			goto end;
 		}
 		m_callstack.push(&fc);
-		printf("calling function '%s'\n", name.c_str());
+		printf("calling function '%s' %d parms, %d args\n", name.c_str(), fnd->second->parameters.size(), args.size());
 		for (auto& parm : fnd->second->parameters)
 		{
-			auto parmptr = k >= args.size() ? std::make_shared<vm::Variant>(vm::Undefined()) : args[k];
+			auto parmptr =
+				k >= args.size() ? std::make_shared<vm::Variant>(vm::Undefined()) : args[args.size() - 1 - k];
 			printf("setting parameter %d %s to %s\n", k, parm.c_str(), variant_to_string(*parmptr.get()).c_str());
 			fc.variables[parm] = parmptr;
 			++k;
@@ -278,30 +293,30 @@ namespace script
 		printf("return value for %s = %s\n", name.c_str(), vm::kVariantNames[return_value.index()]);
 		return return_value;
 	}
-	void Interpreter::visit(ast::Program& n)
+	void Interpreter::visit_impl(ast::Program& n)
 	{
 		throw vm::Exception("invalid {}", __LINE__);
 	}
 
-	void Interpreter::visit(ast::FunctionDeclaration& n)
+	void Interpreter::visit_impl(ast::FunctionDeclaration& n)
 	{
 		throw vm::Exception("invalid {}", __LINE__);
 	}
 
-	void Interpreter::visit(ast::SwitchCase& n)
+	void Interpreter::visit_impl(ast::SwitchCase& n)
 	{
 		dump_node(n);
 		throw vm::Exception("unimplemented {}", __LINE__);
 	}
 
-	void Interpreter::visit(ast::Directive& n)
+	void Interpreter::visit_impl(ast::Directive& n)
 	{
 		dump_node(n);
 		// throw vm::Exception("unimplemented {}", __LINE__);
 		printf("directive unimplemented, skipping\n");
 	}
 
-	void Interpreter::visit(ast::BlockStatement& n)
+	void Interpreter::visit_impl(ast::BlockStatement& n)
 	{
 		dump_node(n);
 		//printf("begin BlockStatement\n");
@@ -328,7 +343,7 @@ namespace script
 		}
 	}
 
-	void Interpreter::visit(ast::IfStatement& n)
+	void Interpreter::visit_impl(ast::IfStatement& n)
 	{
 		dump_node(n);
 		//printf("begin IfStatement\n");
@@ -339,25 +354,25 @@ namespace script
 		//printf("end IfStatement\n");
 	}
 
-	void Interpreter::visit(ast::WhileStatement& n)
+	void Interpreter::visit_impl(ast::WhileStatement& n)
 	{
 		dump_node(n);
 		throw vm::Exception("unimplemented {}", __LINE__);
 	}
 
-	void Interpreter::visit(ast::ForStatement& n)
+	void Interpreter::visit_impl(ast::ForStatement& n)
 	{
 		dump_node(n);
 		throw vm::Exception("unimplemented {}", __LINE__);
 	}
 
-	void Interpreter::visit(ast::DoWhileStatement& n)
+	void Interpreter::visit_impl(ast::DoWhileStatement& n)
 	{
 		dump_node(n);
 		throw vm::Exception("unimplemented {}", __LINE__);
 	}
 
-	void Interpreter::visit(ast::ReturnStatement& n)
+	void Interpreter::visit_impl(ast::ReturnStatement& n)
 	{
 		dump_node(n);
 		if (n.argument)
@@ -368,44 +383,44 @@ namespace script
 		throw vm::control::Return{.value = vm::Undefined()};
 	}
 
-	void Interpreter::visit(ast::BreakStatement& n)
+	void Interpreter::visit_impl(ast::BreakStatement& n)
 	{
 		dump_node(n);
 		throw vm::Exception("unimplemented {}", __LINE__);
 	}
 
-	void Interpreter::visit(ast::WaitStatement& n)
+	void Interpreter::visit_impl(ast::WaitStatement& n)
 	{
 		dump_node(n);
 		throw vm::Exception("unimplemented {}", __LINE__);
 	}
 
-	void Interpreter::visit(ast::WaitTillFrameEndStatement& n)
+	void Interpreter::visit_impl(ast::WaitTillFrameEndStatement& n)
 	{
 		dump_node(n);
 		throw vm::Exception("unimplemented {}", __LINE__);
 	}
 
-	void Interpreter::visit(ast::ExpressionStatement& n)
+	void Interpreter::visit_impl(ast::ExpressionStatement& n)
 	{
 		dump_node(n);
 		n.expression->accept(*this);
 		pop();
 	}
 
-	void Interpreter::visit(ast::EmptyStatement& n)
+	void Interpreter::visit_impl(ast::EmptyStatement& n)
 	{
 		dump_node(n);
 		throw vm::Exception("unimplemented {}", __LINE__);
 	}
 
-	void Interpreter::visit(ast::ContinueStatement& n)
+	void Interpreter::visit_impl(ast::ContinueStatement& n)
 	{
 		dump_node(n);
 		throw vm::Exception("unimplemented {}", __LINE__);
 	}
 
-	void Interpreter::visit(ast::SwitchStatement& n)
+	void Interpreter::visit_impl(ast::SwitchStatement& n)
 	{
 		dump_node(n);
 		n.discriminant->accept(*this);
@@ -433,7 +448,7 @@ namespace script
 				}
 			}
 		}
-		if (!found)
+		if (!found && default_case)
 		{
 			for (auto& stmt : default_case->consequent)
 			{
@@ -442,13 +457,13 @@ namespace script
 		}
 	}
 
-	void Interpreter::visit(ast::LocalizedString& n)
+	void Interpreter::visit_impl(ast::LocalizedString& n)
 	{
 		dump_node(n);
 		throw vm::Exception("unimplemented {}", __LINE__);
 	}
 
-	void Interpreter::visit(ast::Literal& n)
+	void Interpreter::visit_impl(ast::Literal& n)
 	{
 		dump_node(n);
 		//printf("begin Literal\n");
@@ -494,37 +509,47 @@ namespace script
 		return std::make_shared<vm::Variant>(vm::Undefined());
 	}
 
-	void Interpreter::visit(ast::Identifier& n)
+	void Interpreter::visit_impl(ast::Identifier& n)
 	{
 		dump_node(n);
 		//printf("begin Identifier\n");
-		if(!n.file_reference.empty())
-			throw vm::Exception("can't use file references {}::{}", n.name, n.file_reference);
-		printf("variable %s\n", n.name.c_str());
-		if (n.name == "level")
-			push(level_object);
-		else if (n.name == "game")
-			push(game_object);
-		else if (n.name == "self")
-			throw vm::Exception("self not implemented");
+		if (!n.file_reference.empty())
+		{
+			//dump2(n);
+			//throw vm::Exception("can't use file references {}::{}", n.name, n.file_reference);
+
+			push(vm::FunctionPointer{.file = n.file_reference, .name = n.name});
+		}
 		else
 		{
-			auto& vars = function()->variables;
-			if (vars.find(n.name) == vars.end())
-				vars[n.name] = create_variant_undefined();
-			push_pointer(vars[n.name]);
+			printf("variable %s\n", n.name.c_str());
+			if (n.name == "level")
+				push(level_object);
+			else if (n.name == "game")
+				push(game_object);
+			else if (n.name == "self")
+			{
+				push(get_function_object());
+			}
+			else
+			{
+				auto& vars = function()->variables;
+				if (vars.find(n.name) == vars.end())
+					vars[n.name] = create_variant_undefined();
+				push_pointer(vars[n.name]);
+			}
 		}
 
 		//printf("end Identifier\n");
 	}
 
-	void Interpreter::visit(ast::FunctionPointer& n)
+	void Interpreter::visit_impl(ast::FunctionPointer& n)
 	{
 		dump_node(n);
-		push(vm::FunctionPointer{.name = n.function_name});
+		push(vm::FunctionPointer{.file = m_program->name, .name = n.function_name});
 	}
 
-	void Interpreter::visit(ast::BinaryExpression& n)
+	void Interpreter::visit_impl(ast::BinaryExpression& n)
 	{
 		dump_node(n);
 		//printf("begin BinaryExpression\n");
@@ -539,7 +564,7 @@ namespace script
 		//printf("end BinaryExpression\n");
 	}
 
-	void Interpreter::visit(ast::AssignmentExpression& n)
+	void Interpreter::visit_impl(ast::AssignmentExpression& n)
 	{
 		dump_node(n);
 		//printf("begin AssignmentExpression\n");
@@ -557,12 +582,19 @@ namespace script
 		push_pointer(ptr);
 	}
 
-	void Interpreter::visit(ast::CallExpression& n)
+	void Interpreter::visit_impl(ast::CallExpression& n)
 	{
 		dump_node(n);
 		//printf("begin CallExpression\n");
 		if (n.object)
-			throw vm::Exception("object calls not working yet");
+		{
+			n.object->accept(*this);
+			auto o = pop();
+			if (o.index() != (int)vm::Type::kObject)
+				error(n, "not an object");
+			m_objectstack.push(std::get<vm::ObjectPtr>(o));
+			//im lazy just make a new stack called objectstack..
+		}
 		if (n.threaded)
 			throw vm::Exception("threaded calls not working yet");
 		FunctionArguments args;
@@ -586,11 +618,17 @@ namespace script
 		}
 		else
 			throw vm::Exception("unhandled function pointer call");
+		if (n.object)
+		{
+			if (m_objectstack.empty())
+				throw vm::Exception("object stack empty");
+			m_objectstack.pop();
+		}
 		push(return_value);
 		//printf("end CallExpression\n");
 	}
 
-	void Interpreter::visit(ast::ConditionalExpression& n)
+	void Interpreter::visit_impl(ast::ConditionalExpression& n)
 	{
 		dump_node(n);
 		throw vm::Exception("unimplemented {}", __LINE__);
@@ -616,7 +654,7 @@ namespace script
 		return false;
 	}
 
-	void Interpreter::visit(ast::MemberExpression& n)
+	void Interpreter::visit_impl(ast::MemberExpression& n)
 	{
 		dump_node(n);
 		//printf("begin MemberExpression\n");
@@ -643,7 +681,7 @@ namespace script
 		//printf("end MemberExpression\n");
 	}
 
-	void Interpreter::visit(ast::UnaryExpression& n)
+	void Interpreter::visit_impl(ast::UnaryExpression& n)
 	{
 		dump_node(n);
 		//printf("begin UnaryExpression\n");
@@ -686,15 +724,25 @@ namespace script
 		//printf("end UnaryExpression\n");
 	}
 
-	void Interpreter::visit(ast::VectorExpression& n)
+	void Interpreter::visit_impl(ast::VectorExpression& n)
 	{
 		dump_node(n);
-		throw vm::Exception("unimplemented {}", __LINE__);
+		if (n.elements.size() != 3)
+			throw vm::Exception("more or less than 3 vector elements unsupported {}", __LINE__);
+		vm::Number scalars[3];
+		for (size_t i = 0; i < 3; ++i)
+		{
+			n.elements[i]->accept(*this);
+			scalars[i] = m_context->get_float(0);
+			pop();
+		}
+		push(vm::Vector{.x = scalars[0], .y = scalars[1], .z = scalars[2]});
 	}
 
-	void Interpreter::visit(ast::ArrayExpression& n)
+	void Interpreter::visit_impl(ast::ArrayExpression& n)
 	{
 		dump_node(n);
-		throw vm::Exception("unimplemented {}", __LINE__);
+		push_pointer(create_variant_object());
+		//throw vm::Exception("unimplemented {}", __LINE__);
 	}
 }; // namespace script

@@ -52,6 +52,7 @@ namespace script
 			{"setsavedcvar", unimplemented},
 			{"precachemodel", unimplemented},
 			{"precacheshader", unimplemented},
+			{"assertex", unimplemented},
 			{"precacheturret", unimplemented},
 			{"precachevehicle", unimplemented},
 			{"print", print},

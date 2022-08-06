@@ -1,7 +1,7 @@
 #pragma once
 #include <script/ast/ast_generator.h>
 #include <memory>
-#include <script/ast/visitor.h>
+#include <script/ast/recall_visitor.h>
 #include <script/vm/instructions/instructions.h>
 #include <script/vm/types.h>
 #include <string>
@@ -45,7 +45,7 @@ namespace script
 
 	using StockFunction = std::function<int(VMContext&, vm::Object*)>;
 
-	class Interpreter : public ast::ASTVisitor
+	class Interpreter : public ast::ASTRecallVisitor
 	{
 		friend class InterpreterVMContext;
 		struct FunctionContext
@@ -56,12 +56,38 @@ namespace script
 		vm::ObjectPtr game_object;
 		std::vector<std::shared_ptr<vm::Variant>> m_stack;
 		std::stack<FunctionContext*> m_callstack;
+		std::stack<vm::ObjectPtr> m_objectstack;
 		std::stack<LoadedProgramReference*> m_programstack;
 		std::unordered_map<std::string, StockFunction> m_stockfunctions;
 		std::unique_ptr<VMContext> m_context;
 		script::ReferenceMap& m_refmap;
 		LoadedProgramReference* m_program = nullptr;
 	  public:
+		void dump2(ast::Node& n)
+		{
+			auto* f = m_program->m_parent_visitor.get_parent_by_type<ast::FunctionDeclaration>(&n);
+			auto* p = m_program->m_parent_visitor.get_parent_by_type<ast::BlockStatement>(&n);
+			printf("file: %s, function: %s\n", m_program->name.c_str(), f->function_name.c_str());
+			if (p)
+			{
+				GSCWriter wr(std::cout);
+				wr.visit_node(*p);
+			}
+		}
+
+		vm::ObjectPtr get_function_object()
+		{
+			if (m_objectstack.empty())
+				return level_object;
+			return m_objectstack.top();
+		}
+
+		template <typename... Ts> void error(ast::Node& n, std::string_view fmt, Ts&&... ts)
+		{
+			GSCWriter wr(std::cout);
+			wr.visit_node(n);
+			throw vm::Exception(std::vformat(fmt, std::make_format_args(std::forward<Ts>(ts)...)));
+		}
 		void dump_node(ast::Node &n)
 		{
 			return;
@@ -152,34 +178,34 @@ namespace script
 		vm::Variant call_function(const std::string, const std::string, FunctionArguments&);
 
 		// Inherited via ASTVisitor
-		virtual void visit(ast::Program&) override;
-		virtual void visit(ast::FunctionDeclaration&) override;
-		virtual void visit(ast::SwitchCase&) override;
-		virtual void visit(ast::Directive&) override;
-		virtual void visit(ast::BlockStatement&) override;
-		virtual void visit(ast::IfStatement&) override;
-		virtual void visit(ast::WhileStatement&) override;
-		virtual void visit(ast::ForStatement&) override;
-		virtual void visit(ast::DoWhileStatement&) override;
-		virtual void visit(ast::ReturnStatement&) override;
-		virtual void visit(ast::BreakStatement&) override;
-		virtual void visit(ast::WaitStatement&) override;
-		virtual void visit(ast::WaitTillFrameEndStatement&) override;
-		virtual void visit(ast::ExpressionStatement&) override;
-		virtual void visit(ast::EmptyStatement&) override;
-		virtual void visit(ast::ContinueStatement&) override;
-		virtual void visit(ast::SwitchStatement&) override;
-		virtual void visit(ast::LocalizedString&) override;
-		virtual void visit(ast::Literal&) override;
-		virtual void visit(ast::Identifier&) override;
-		virtual void visit(ast::FunctionPointer&) override;
-		virtual void visit(ast::BinaryExpression&) override;
-		virtual void visit(ast::AssignmentExpression&) override;
-		virtual void visit(ast::CallExpression&) override;
-		virtual void visit(ast::ConditionalExpression&) override;
-		virtual void visit(ast::MemberExpression&) override;
-		virtual void visit(ast::UnaryExpression&) override;
-		virtual void visit(ast::VectorExpression&) override;
-		virtual void visit(ast::ArrayExpression&) override;
+		void visit_impl(ast::Program&);
+		void visit_impl(ast::FunctionDeclaration&);
+		void visit_impl(ast::SwitchCase&);
+		void visit_impl(ast::Directive&);
+		void visit_impl(ast::BlockStatement&);
+		void visit_impl(ast::IfStatement&);
+		void visit_impl(ast::WhileStatement&);
+		void visit_impl(ast::ForStatement&);
+		void visit_impl(ast::DoWhileStatement&);
+		void visit_impl(ast::ReturnStatement&);
+		void visit_impl(ast::BreakStatement&);
+		void visit_impl(ast::WaitStatement&);
+		void visit_impl(ast::WaitTillFrameEndStatement&);
+		void visit_impl(ast::ExpressionStatement&);
+		void visit_impl(ast::EmptyStatement&);
+		void visit_impl(ast::ContinueStatement&);
+		void visit_impl(ast::SwitchStatement&);
+		void visit_impl(ast::LocalizedString&);
+		void visit_impl(ast::Literal&);
+		void visit_impl(ast::Identifier&);
+		void visit_impl(ast::FunctionPointer&);
+		void visit_impl(ast::BinaryExpression&);
+		void visit_impl(ast::AssignmentExpression&);
+		void visit_impl(ast::CallExpression&);
+		void visit_impl(ast::ConditionalExpression&);
+		void visit_impl(ast::MemberExpression&);
+		void visit_impl(ast::UnaryExpression&);
+		void visit_impl(ast::VectorExpression&);
+		void visit_impl(ast::ArrayExpression&);
 	};
 }; // namespace script

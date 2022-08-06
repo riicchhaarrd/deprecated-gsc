@@ -36,6 +36,7 @@ namespace script
 
 		struct FunctionPointer
 		{
+			std::string file;
 			std::string name;
 		};
 
