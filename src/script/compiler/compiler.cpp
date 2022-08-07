@@ -1,154 +1,154 @@
-#include "bytecode_generator.h"
+#include "compiler.h"
 #include <script/ast/nodes.h>
 
 namespace script
 {
 	namespace compiler
 	{
-		BytecodeGenerator::BytecodeGenerator()
+		Compiler::Compiler()
 		{
 		}
-		void BytecodeGenerator::visit(ast::Program& n)
-		{
-			throw CompileException("unimplemented {}", __LINE__);
-		}
-
-		void BytecodeGenerator::visit(ast::FunctionDeclaration& n)
+		void Compiler::visit(ast::Program& n)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::SwitchCase&)
+		void Compiler::visit(ast::FunctionDeclaration& n)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::Directive& n)
+		void Compiler::visit(ast::SwitchCase&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::BlockStatement& n)
+		void Compiler::visit(ast::Directive& n)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::IfStatement&)
+		void Compiler::visit(ast::BlockStatement& n)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::WhileStatement&)
+		void Compiler::visit(ast::IfStatement&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::ForStatement&)
+		void Compiler::visit(ast::WhileStatement&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::DoWhileStatement&)
+		void Compiler::visit(ast::ForStatement&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::ReturnStatement&)
+		void Compiler::visit(ast::DoWhileStatement&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::BreakStatement&)
+		void Compiler::visit(ast::ReturnStatement&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::WaitStatement&)
+		void Compiler::visit(ast::BreakStatement&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::WaitTillFrameEndStatement&)
+		void Compiler::visit(ast::WaitStatement&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::ExpressionStatement& n)
+		void Compiler::visit(ast::WaitTillFrameEndStatement&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::EmptyStatement&)
+		void Compiler::visit(ast::ExpressionStatement& n)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::ContinueStatement&)
+		void Compiler::visit(ast::EmptyStatement&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::SwitchStatement&)
+		void Compiler::visit(ast::ContinueStatement&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::LocalizedString&)
+		void Compiler::visit(ast::SwitchStatement&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::Literal&)
+		void Compiler::visit(ast::LocalizedString&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::Identifier&)
+		void Compiler::visit(ast::Literal&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::FunctionPointer&)
+		void Compiler::visit(ast::Identifier&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::BinaryExpression&)
+		void Compiler::visit(ast::FunctionPointer&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::AssignmentExpression&)
+		void Compiler::visit(ast::BinaryExpression&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::CallExpression& n)
+		void Compiler::visit(ast::AssignmentExpression&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::ConditionalExpression&)
+		void Compiler::visit(ast::CallExpression& n)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::MemberExpression&)
+		void Compiler::visit(ast::ConditionalExpression&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::UnaryExpression&)
+		void Compiler::visit(ast::MemberExpression&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::VectorExpression&)
+		void Compiler::visit(ast::UnaryExpression&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void BytecodeGenerator::visit(ast::ArrayExpression&)
+		void Compiler::visit(ast::VectorExpression&)
+		{
+			throw CompileException("unimplemented {}", __LINE__);
+		}
+
+		void Compiler::visit(ast::ArrayExpression&)
 		{
 			throw CompileException("unimplemented {}", __LINE__);
 		}

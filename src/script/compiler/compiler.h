@@ -14,11 +14,11 @@ namespace script
 {
 	namespace compiler
 	{
-		class BytecodeGenerator : public ast::ASTVisitor
+		class Compiler : public ast::ASTVisitor
 		{
 
 		  public:
-			BytecodeGenerator();
+			Compiler();
 
 			template <typename T, typename... Ts> std::unique_ptr<T> instruction(Ts... ts)
 			{
