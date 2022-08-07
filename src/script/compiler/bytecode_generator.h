@@ -16,14 +16,9 @@ namespace script
 	{
 		class BytecodeGenerator : public ast::ASTVisitor
 		{
-			vm::Constants& m_constants;
-			std::vector<vm::Function>& m_functions;
-			std::unordered_map<std::string, size_t> strings;
-			std::unordered_map<std::string, vm::Function*> m_function_by_name;
-			vm::Function* m_function = nullptr;
-			TraverseInfo& ti;
+
 		  public:
-			BytecodeGenerator(TraverseInfo& ti_, vm::Constants&, std::vector<vm::Function>&);
+			BytecodeGenerator();
 
 			template <typename T, typename... Ts> std::unique_ptr<T> instruction(Ts... ts)
 			{
