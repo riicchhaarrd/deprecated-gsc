@@ -1,12 +1,184 @@
 #include "compiler.h"
 #include <script/ast/nodes.h>
+#include <parse/token.h>
+#include <script/ast/gsc_writer.h>
+#include <iostream>
 
 namespace script
 {
 	namespace compiler
 	{
-		Compiler::Compiler()
+		class CompileVisitor : public ast::ASTVisitor
 		{
+		  public:
+			virtual void visit(ast::Program& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::FunctionDeclaration& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::SwitchCase& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::Directive& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+
+			// statements
+			virtual void visit(ast::BlockStatement& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::IfStatement& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::WhileStatement& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::ForStatement& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::DoWhileStatement& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::ReturnStatement& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::BreakStatement& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::WaitStatement& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::WaitTillFrameEndStatement& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::ExpressionStatement& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::EmptyStatement& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::ContinueStatement& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::SwitchStatement& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+
+			// expressions
+			virtual void visit(ast::LocalizedString& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::Literal& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::Identifier& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::FunctionPointer& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::BinaryExpression& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::AssignmentExpression& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::CallExpression& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::ConditionalExpression& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::MemberExpression& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::UnaryExpression& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::VectorExpression& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+			virtual void visit(ast::ArrayExpression& n)
+			{
+				throw CompileException("invalid node {}", __LINE__);
+			}
+		};
+
+		using namespace vm;
+
+		Compiler::Compiler(script::ReferenceMap& refmap) : m_refmap(refmap)
+		{
+		}
+		void Compiler::compile()
+		{
+			ast::FunctionDeclaration* func = nullptr;
+			std::string file;
+			try
+			{
+				for (auto& refmap_iter : m_refmap)
+				{
+					file = refmap_iter.first;
+					printf("compiling program %s\n", refmap_iter.first.c_str());
+					m_currentfile = refmap_iter.first;
+					for (auto& fun_iter : refmap_iter.second.function_map)
+					{
+						func = fun_iter.second;
+						printf("\tcompiling function: %s\n", fun_iter.first.c_str());
+						fun_iter.second->accept(*this);
+					}
+				}
+				printf("-------------------------------------------------------------------------------\n");
+				printf("Compile done!\n");
+				for (auto& cf : m_compiledfunctions)
+				{
+					printf("===function: %s\n", cf.first.c_str());
+					for (auto& instr : cf.second.instructions)
+					{
+						printf("\t%s\n", instr->to_string().c_str());
+					}
+				}
+			}
+			catch (CompileException& e)
+			{
+				printf("===============================================================================\n");
+				printf("File: %s\n", file.c_str());
+				if (last_expression_statement)
+				{
+					GSCWriter wr(std::cout);
+					wr.visit(*last_expression_statement);
+				}
+				printf("Failed to compile %s\n", e.what());
+				printf("===============================================================================\n");
+			}
 		}
 		void Compiler::visit(ast::Program& n)
 		{
@@ -15,7 +187,8 @@ namespace script
 
 		void Compiler::visit(ast::FunctionDeclaration& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			m_function = &m_compiledfunctions[n.function_name];
+			n.body->accept(*this);
 		}
 
 		void Compiler::visit(ast::SwitchCase&)
@@ -30,22 +203,87 @@ namespace script
 
 		void Compiler::visit(ast::BlockStatement& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			for (auto& stmt : n.body)
+				stmt->accept(*this);
 		}
 
-		void Compiler::visit(ast::IfStatement&)
+		void Compiler::visit(ast::IfStatement& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			n.test->accept(*this);
+			auto test = instruction<Test>();
+			add(test);
+			auto jz = instruction<JumpZero>();
+			add(jz);
+			n.consequent->accept(*this);
+			auto skip = instruction<Label>();
+			jz->dest = skip;
+			add(skip);
+			if (n.alternative)
+			{
+				n.test->accept(*this);
+				auto test2 = instruction<Test>();
+				add(test2);
+				auto jz2 = instruction<JumpNotZero>();
+				add(jz2);
+				n.consequent->accept(*this);
+				auto skip2 = instruction<Label>();
+				jz2->dest = skip2;
+				add(skip2);
+			}
 		}
 
-		void Compiler::visit(ast::WhileStatement&)
+		void Compiler::visit(ast::WhileStatement& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			auto beg = instruction<Label>();
+			auto end = instruction<Label>();
+			add(beg);
+			n.test->accept(*this);
+			auto test = instruction<Test>();
+			add(test);
+			auto jz = instruction<JumpZero>();
+			jz->dest = end;
+			add(jz);
+			continue_labels.push(beg);
+			exit_labels.push(end);
+			n.body->accept(*this);
+			exit_labels.pop();
+			continue_labels.pop();
+			auto jmp = instruction<Jump>();
+			jmp->dest = beg;
+			add(jmp);
+			add(end);
 		}
 
-		void Compiler::visit(ast::ForStatement&)
+		void Compiler::visit(ast::ForStatement& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			if (n.init)
+				n.init->accept(*this);
+			auto beg = instruction<Label>();
+			auto end = instruction<Label>();
+			add(beg);
+			if (n.test)
+				n.test->accept(*this);
+			else
+			{
+				auto constant1 = instruction<Constant1>();
+				add(constant1);
+			}
+			auto test = instruction<Test>();
+			add(test);
+			auto jz = instruction<JumpZero>();
+			jz->dest = end;
+			add(jz);
+			continue_labels.push(beg);
+			exit_labels.push(end);
+			n.body->accept(*this);
+			exit_labels.pop();
+			continue_labels.pop();
+			auto jmp = instruction<Jump>();
+			jmp->dest = beg;
+			if (n.update)
+				n.update->accept(*this);
+			add(jmp);
+			add(end);
 		}
 
 		void Compiler::visit(ast::DoWhileStatement&)
@@ -53,79 +291,449 @@ namespace script
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void Compiler::visit(ast::ReturnStatement&)
+		void Compiler::visit(ast::ReturnStatement& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			auto instr = instruction<Ret>();
+			add(instr);
 		}
 
-		void Compiler::visit(ast::BreakStatement&)
+		void Compiler::visit(ast::BreakStatement& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			if (exit_labels.empty())
+				throw CompileException("no exit label for break statement");
+			auto instr = instruction<Jump>();
+			instr->dest = exit_labels.top();
+			add(instr);
 		}
 
-		void Compiler::visit(ast::WaitStatement&)
+		void Compiler::visit(ast::WaitStatement& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			n.duration->accept(*this);
+			auto instr = instruction<Wait>();
+			add(instr);
 		}
 
 		void Compiler::visit(ast::WaitTillFrameEndStatement&)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			auto instr = instruction<WaitTillFrameEnd>();
+			add(instr);
 		}
 
 		void Compiler::visit(ast::ExpressionStatement& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			last_expression_statement = &n;
+			n.expression->accept(*this);
+			auto instr = instruction<Pop>();
+			add(instr);
 		}
 
-		void Compiler::visit(ast::EmptyStatement&)
+		void Compiler::visit(ast::EmptyStatement& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			//auto instr = instruction<Nop>();
+			//add(instr);
 		}
 
-		void Compiler::visit(ast::ContinueStatement&)
+		void Compiler::visit(ast::ContinueStatement& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			if (continue_labels.empty())
+				throw CompileException("no label for continue statement");
+			auto instr = instruction<Jump>();
+			instr->dest = continue_labels.top();
+			add(instr);
 		}
 
-		void Compiler::visit(ast::SwitchStatement&)
+		void Compiler::visit(ast::SwitchStatement& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			ast::SwitchCase* default_switch_case = nullptr;
+			size_t numcases = 0;
+			auto default_label = instruction<Label>();
+
+			std::vector<std::shared_ptr<Label>> labels;
+			for (auto& sc : n.cases)
+			{
+				if (sc->test)
+				{
+					auto label = instruction<Label>();
+					auto jmp = instruction<Jump>();
+					jmp->dest = label;
+					labels.push_back(label);
+					add(jmp);
+					sc->test->accept(*this);
+					++numcases;
+					continue;
+				}
+				default_switch_case = sc.get();
+			}
+			auto sw = instruction<Switch>();
+			sw->numcases = numcases;
+			auto default_jmp = instruction<Jump>();
+			default_jmp->dest = default_label;
+			add(default_jmp);
+
+			n.discriminant->accept(*this);
+			add(sw);
+
+			auto end = instruction<Label>();
+			auto jmpend = instruction<Jump>();
+			jmpend->dest = end;
+			add(jmpend);
+			int i = 0;
+			for (auto& sc : n.cases)
+			{
+				if (!sc->test)
+					continue;
+				add(labels[i]);
+				auto ce = instruction<CaseEnd>();
+				for (auto& stmt : sc->consequent)
+				{
+					exit_labels.push(ce);
+					stmt->accept(*this);
+					exit_labels.pop();
+				}
+				add(ce);
+				++i;
+			}
+
+			add(default_label);
+			auto default_ce = instruction<CaseEnd>();
+			if (default_switch_case)
+			{
+				exit_labels.push(default_ce);
+				for (auto& stmt : default_switch_case->consequent)
+					stmt->accept(*this);
+				exit_labels.pop();
+			}
+			add(default_ce);
+
+			add(end);
+				
+
+			#if 0
+			// dont really wanna bother with hacking in default statement
+			for (auto& sc : n.cases)
+			{
+				n.discriminant->accept(*this);
+				sc->test->accept(*this);
+				auto cmp = instruction<Compare>();
+				add(cmp);
+				auto jnz = instruction<JumpNotZero>();
+				auto skip = instruction<Label>();
+				jnz->dest = skip;
+				add(jnz);
+				for (auto& stmt : sc->consequent)
+					stmt->accept(*this);
+				add(skip);
+			}
+			#endif
 		}
 
-		void Compiler::visit(ast::LocalizedString&)
+		void Compiler::visit(ast::LocalizedString& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			auto instr = instruction<PushLocalizedString>();
+			instr->value = n.reference;
+			instr->length = n.reference.size();
+			add(instr);
 		}
 
-		void Compiler::visit(ast::Literal&)
+		void Compiler::visit(ast::Literal& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			switch (n.type)
+			{
+			case ast::Literal::Type::kInteger:
+			{
+				auto instr = instruction<PushInteger>();
+				instr->value = atoi(n.value.c_str());
+				add(instr);
+			} break;
+			case ast::Literal::Type::kNumber:
+			{
+				auto instr = instruction<PushNumber>();
+				instr->value = atof(n.value.c_str());
+				add(instr);
+			} break;
+			case ast::Literal::Type::kString:
+			{
+				auto instr = instruction<PushString>();
+				instr->value = n.value;
+				instr->length = n.value.size();
+				add(instr);
+			} break;
+			case ast::Literal::Type::kAnimation:
+			{
+				auto instr = instruction<PushAnimationString>();
+				instr->value = n.value;
+				add(instr);
+			} break;
+			case ast::Literal::Type::kUndefined:
+			{
+				auto instr = instruction<PushUndefined>();
+				add(instr);
+			} break;
+			default:
+				throw CompileException("unhandled literal type {}", (int)n.type);
+				break;
+			}
 		}
 
-		void Compiler::visit(ast::Identifier&)
+		void Compiler::visit(ast::Identifier& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			if (!n.file_reference.empty())
+			{
+				auto instr = instruction<PushFunctionPointer>();
+				instr->file = n.file_reference;
+				instr->function = n.name;
+				add(instr);
+			}
+			else
+			{
+				auto instr = instruction<LoadValue>();
+				instr->variable_name = n.name;
+				add(instr);
+			}
 		}
 
-		void Compiler::visit(ast::FunctionPointer&)
+		void Compiler::visit(ast::FunctionPointer& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			auto instr = instruction<PushFunctionPointer>();
+			instr->file = m_currentfile;
+			instr->function = n.function_name;
+			add(instr);
 		}
 
-		void Compiler::visit(ast::BinaryExpression&)
+		void Compiler::visit(ast::BinaryExpression& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			n.left->accept(*this);
+			n.right->accept(*this);
+			switch (n.op)
+			{
+				// got "lazy" and just wanted to get things working so i'm kinda mapping ast nodes 1:1 to instructions
+				// now
+				case parse::TokenType_kAndAnd:
+				case parse::TokenType_kOrOr:
+				case parse::TokenType_kGeq:
+				case parse::TokenType_kLeq:
+				case '<':
+				case '>':
+				{
+					auto instr = instruction<BinOp>();
+					instr->op = n.op;
+					add(instr);
+				} break;
+				case '+':
+				{
+					auto instr = instruction<Add>();
+					add(instr);
+				} break;
+				case '&':
+				{
+					auto instr = instruction<And>();
+					add(instr);
+				} break;
+				case '|':
+				{
+					auto instr = instruction<Or>();
+					add(instr);
+				} break;
+				case '-':
+				{
+					auto instr = instruction<Sub>();
+					add(instr);
+				} break;
+				case parse::TokenType_kEq:
+				{
+					auto instr = instruction<Compare>();
+					add(instr);
+					auto jz = instruction<JumpZero>();
+					auto label = instruction<Label>();
+					jz->dest = label;
+					add(jz);
+					auto constant0 = instruction<Constant0>();
+					add(constant0);
+					auto jnz = instruction<JumpNotZero>();
+					auto label2 = instruction<Label>();
+					jnz->dest = label2;
+					add(jnz);
+					add(label);
+					auto constant1 = instruction<Constant1>();
+					add(constant1);
+					add(label2);
+				} break;
+				case parse::TokenType_kNeq:
+				{
+					auto instr = instruction<Compare>();
+					add(instr);
+					auto jz = instruction<JumpZero>();
+					auto label = instruction<Label>();
+					jz->dest = label;
+					add(jz);
+					auto constant0 = instruction<Constant1>();
+					add(constant0);
+					auto jnz = instruction<JumpNotZero>();
+					auto label2 = instruction<Label>();
+					jnz->dest = label2;
+					add(jnz);
+					add(label);
+					auto constant1 = instruction<Constant0>();
+					add(constant1);
+					add(label2);
+				} break;
+				case '*':
+				{
+					auto instr = instruction<Mul>();
+					add(instr);
+				} break;
+				case '/':
+				{
+					auto instr = instruction<Div>();
+					add(instr);
+				} break;
+				case '%':
+				{
+					auto instr = instruction<Mod>();
+					add(instr);
+				} break;
+				default:
+					throw CompileException("unimplemented operator {}", n.op);
+					break;
+			}
 		}
 
-		void Compiler::visit(ast::AssignmentExpression&)
+		class LValueVisitor : public CompileVisitor
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			Compiler* compiler;
+		  public:
+			LValueVisitor(Compiler* c) : compiler(c)
+			{
+			}
+			virtual void visit(ast::MemberExpression& n)
+			{
+				n.prop->accept(*compiler);
+				n.object->accept(*this);
+				auto instr = compiler->instruction<LoadObjectFieldRef>();
+				compiler->add(instr);
+			}
+			virtual void visit(ast::Identifier& n)
+			{
+				if (!n.file_reference.empty())
+				{
+					throw CompileException("unsupported file reference in lvalue expression");
+				}
+				else
+				{
+					auto instr = compiler->instruction<LoadRef>();
+					instr->variable_name = n.name;
+					compiler->add(instr);
+				}
+			}
+		};
+
+		void Compiler::visit(ast::AssignmentExpression& n)
+		{
+			if (n.op == '=')
+			{
+				LValueVisitor vis(this);
+				n.lhs->accept(vis);
+
+				n.rhs->accept(*this);
+
+			}
+			else
+			{
+				LValueVisitor vis(this);
+				n.lhs->accept(vis);
+
+				n.rhs->accept(*this);
+				n.lhs->accept(*this);
+				switch (n.op)
+				{
+				case parse::TokenType_kPlusAssign:
+				{
+					auto instr = instruction<Add>();
+					add(instr);
+				}
+				break;
+				case parse::TokenType_kMinusAssign:
+				{
+					auto instr = instruction<Sub>();
+					add(instr);
+				}
+				break;
+				case parse::TokenType_kMultiplyAssign:
+				{
+					auto instr = instruction<Mul>();
+					add(instr);
+				}
+				break;
+				case parse::TokenType_kDivideAssign:
+				{
+					auto instr = instruction<Div>();
+					add(instr);
+				}
+				break;
+				case parse::TokenType_kModAssign:
+				{
+					auto instr = instruction<Mod>();
+					add(instr);
+				}
+				break;
+				default:
+					throw CompileException("unimplemented operator {}", n.op);
+					break;
+				}
+			}
+			auto instr = instruction<StoreRef>();
+			add(instr);
+			LValueVisitor vis(this);
+			n.lhs->accept(vis);
 		}
 
 		void Compiler::visit(ast::CallExpression& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			for (auto it = n.arguments.rbegin(); it != n.arguments.rend(); ++it)
+				(*it)->accept(*this);
+			std::shared_ptr<Call> instr;
+
+			auto* id = dynamic_cast<ast::Identifier*>(n.callee.get());
+			if (id)
+			{
+				if (!id->file_reference.empty())
+				{
+					auto call = instruction<CallFunctionFile>();
+					call->file = id->file_reference;
+					call->function = id->name;
+					instr = std::move(call);
+				}
+				else
+				{
+					auto call = instruction<CallFunction>();
+					call->function = id->name;
+					instr = std::move(call);
+				}
+			}
+			else
+			{
+				if (!n.pointer)
+				{
+					throw CompileException("expected pointer");
+				}
+				n.callee->accept(*this);
+				auto call = instruction<CallFunctionPointer>();
+				instr = std::move(call);
+			}
+
+			instr->numargs = n.arguments.size();
+			instr->is_threaded = n.threaded;
+			instr->is_method_call = n.object != nullptr;
+			if (instr->is_method_call)
+			{
+				n.object->accept(*this);
+			}
+			else
+			{
+				//auto instr = instruction<PushUndefined>();
+				//add(instr);
+			}
+			add(instr);
 		}
 
 		void Compiler::visit(ast::ConditionalExpression&)
@@ -133,24 +741,92 @@ namespace script
 			throw CompileException("unimplemented {}", __LINE__);
 		}
 
-		void Compiler::visit(ast::MemberExpression&)
+		void Compiler::visit(ast::MemberExpression& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			n.prop->accept(*this);
+			n.object->accept(*this);
+			auto instr = instruction<LoadObjectFieldValue>();
+			add(instr);
 		}
 
-		void Compiler::visit(ast::UnaryExpression&)
+		void Compiler::visit(ast::UnaryExpression& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			switch (n.op)
+			{
+			case '-':
+			{
+				n.argument->accept(*this);
+				auto instr = instruction<Negate>();
+				add(instr);
+			} break;
+			case '!':
+			{
+				n.argument->accept(*this);
+				auto test = instruction<Test>();
+				add(test);
+				auto jz = instruction<JumpZero>();
+				add(jz);
+				auto constant1 = instruction<Constant1>();
+				add(constant1);
+				auto jmp = instruction<Jump>();
+				auto skip2 = instruction<Label>();
+				jmp->dest = skip2;
+				auto skip = instruction<Label>();
+				jz->dest = skip;
+				add(skip);
+				auto constant0 = instruction<Constant0>();
+				add(constant0);
+				add(skip2);
+			} break;
+			case '~':
+			{
+				n.argument->accept(*this);
+				auto instr = instruction<Not>();
+				add(instr);
+			} break;
+			case parse::TokenType_kPlusPlus:
+			case parse::TokenType_kMinusMinus:
+			{
+				if (n.prefix)
+					throw CompileException("unsupported prefix operator -- or ++");
+				n.argument->accept(*this);
+				auto constant1 = instruction<Constant1>();
+				add(constant1);
+				std::shared_ptr<vm::Instruction> instr;
+				if (n.op == parse::TokenType_kPlusPlus)
+					instr = instruction<Add>();
+				else
+					instr = instruction<Sub>();
+				add(instr);
+				LValueVisitor vis(this);
+				n.argument->accept(vis);
+				auto sr = instruction<StoreRef>();
+				add(sr);
+				n.argument->accept(*this);
+			} break;
+			default:
+				throw CompileException("invalid operator {}", n.op);
+				break;
+			}
 		}
 
-		void Compiler::visit(ast::VectorExpression&)
+		void Compiler::visit(ast::VectorExpression& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			for (auto it = n.elements.rbegin(); it != n.elements.rend(); ++it)
+				(*it)->accept(*this);
+			auto instr = instruction<PushVector>();
+			instr->nelements = n.elements.size();
+			add(instr);
 		}
 
-		void Compiler::visit(ast::ArrayExpression&)
+		void Compiler::visit(ast::ArrayExpression& n)
 		{
-			throw CompileException("unimplemented {}", __LINE__);
+			//maybe better to PushArray once then iterate over the elements and then do AddArray or something, probably better for calling functions from C/C++
+			for (auto it = n.elements.rbegin(); it != n.elements.rend(); ++it)
+				(*it)->accept(*this);
+			auto instr = instruction<PushArray>();
+			instr->nelements = n.elements.size();
+			add(instr);
 		}
 	}; // namespace compiler
 }; // namespace script

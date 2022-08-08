@@ -4,49 +4,77 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <stack>
 #include <script/vm/instructions/instructions.h>
 #include <script/vm/types.h>
 #include "traverse_info.h"
 
 #include <script/vm/function.h>
+#include <script/vm/instruction.h>
 
 namespace script
 {
+	struct LoadedProgramReference
+	{
+		std::unique_ptr<ast::Program> program;
+		std::string name;
+		std::unordered_map<std::string, ast::FunctionDeclaration*> function_map;
+	};
+	using ReferenceMap = std::unordered_map<std::string, LoadedProgramReference>;
+
 	namespace compiler
 	{
 		class Compiler : public ast::ASTVisitor
 		{
+			script::ReferenceMap& m_refmap;
 
+			struct CompiledFunction
+			{
+				std::vector<std::shared_ptr<vm::Instruction>> instructions;
+			};
+			std::unordered_map<std::string, CompiledFunction> m_compiledfunctions;
+			CompiledFunction *m_function;
+			std::string m_currentfile;
+			std::stack<std::weak_ptr<vm::Label>> exit_labels;
+			std::stack<std::weak_ptr<vm::Label>> continue_labels;
+			ast::ExpressionStatement* last_expression_statement = nullptr;
 		  public:
-			Compiler();
+			Compiler(script::ReferenceMap&);
+			void compile();
 
-			template <typename T, typename... Ts> std::unique_ptr<T> instruction(Ts... ts)
+			template <typename T, typename... Ts> std::shared_ptr<T> instruction(Ts... ts)
 			{
 				// printf("node(%s)\n", typeid(T).name());
-				return std::move(std::make_unique<T>(ts...));
+				return std::move(std::make_shared<T>(ts...));
 			}
 
 			template <typename T>
-			void add(std::unique_ptr<T>& instr)
+			void add(std::shared_ptr<T>& t)
 			{
-				m_function->instructions.push_back(std::move(instr));
+				m_function->instructions.push_back(t);
 			}
 
 			size_t register_string(const vm::String s)
 			{
+				return 0;
+				#if 0
 				auto fnd = strings.find(s);
 				if (fnd == strings.end())
 				{
 					strings[s] = register_constant(s);
 				}
 				return strings[s];
+				#endif
 			}
 			template <typename T> size_t register_constant(T t)
 			{
+#if 0
 				vm::Variant u;
 				u = t;
 				m_constants.push_back(u);
 				return m_constants.size() - 1;
+				#endif
+				return 0;
 			}
 
 			// Inherited via ASTVisitor

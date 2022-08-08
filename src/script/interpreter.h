@@ -19,29 +19,7 @@
 
 namespace script
 {
-	struct LoadedProgramReference
-	{
-		std::unique_ptr<ast::Program> program;
-		std::string name;
-		std::unordered_map<std::string, ast::FunctionDeclaration*> function_map;
-		script::compiler::ParentVisitor m_parent_visitor;
-	};
 	using FunctionArguments = std::vector<std::shared_ptr<vm::Variant>>;
-	using ReferenceMap = std::unordered_map<std::string, LoadedProgramReference>;
-	struct VMContext
-	{
-		virtual std::string get_string(size_t) = 0;
-		virtual int get_int(size_t) = 0;
-		virtual float get_float(size_t) = 0;
-		virtual vm::Variant get_variant(size_t) = 0;
-		virtual void add_bool(const bool b)
-		{
-			add_int(b ? 1 : 0);
-		}
-		virtual void add_int(const int) = 0;
-		virtual void add_float(const float) = 0;
-		virtual void add_string(const std::string) = 0;
-	};
 
 	using StockFunction = std::function<int(VMContext&, vm::Object*)>;
 

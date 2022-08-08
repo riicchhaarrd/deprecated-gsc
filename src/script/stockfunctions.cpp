@@ -1,5 +1,5 @@
 #include "stockfunctions.h"
-#include <script/interpreter.h>
+#include <script/vm/virtual_machine.h>
 #include <unordered_map>
 #include <string>
 
@@ -60,11 +60,11 @@ namespace script
 		};
 	}; // namespace functions
 
-	void register_stockfunctions(Interpreter& vm)
+	void register_stockfunctions(vm::VirtualMachine& vm)
 	{
 		for (auto& it : functions::stockfunctions)
 		{
-			vm.register_function(it.first, it.second);
+			//vm.register_function(it.first, it.second);
 		}
 		//vm.register_function("setExpFog", [](script::VMContext& context, script::vm::Object* obj) -> int { return 0; });
 	}

@@ -4,9 +4,27 @@
 #include <script/vm/instructions/instructions.h>
 #include "types.h"
 #include "function.h"
+#include <functional>
 
 namespace script
 {
+	struct VMContext
+	{
+		virtual std::string get_string(size_t) = 0;
+		virtual int get_int(size_t) = 0;
+		virtual float get_float(size_t) = 0;
+		virtual vm::Variant get_variant(size_t) = 0;
+		virtual void add_bool(const bool b)
+		{
+			add_int(b ? 1 : 0);
+		}
+		virtual void add_int(const int) = 0;
+		virtual void add_float(const float) = 0;
+		virtual void add_string(const std::string) = 0;
+	};
+
+	using StockFunction = std::function<int(VMContext&, vm::Object*)>;
+
 	namespace vm
 	{
 		struct ExceptionData
