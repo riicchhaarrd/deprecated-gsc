@@ -116,9 +116,15 @@ namespace script
 				return function_pointer_call(true);
 			}
 			ExpressionPtr ident = identifier();
+			bool is_function_ptr_call = false;
 			while (accept('[') || accept('.'))
 			{
 				int op = token.type_as_int();
+				if (op == '[' && accept('['))
+				{
+					is_function_ptr_call = true;
+					break;
+				}
 				auto n = node<MemberExpression>();
 				n->op = op;
 				n->object = std::move(ident);
@@ -133,19 +139,23 @@ namespace script
 				}
 				ident = std::move(n);
 			}
-			if (accept('('))
+			if (!is_function_ptr_call)
 			{
-				ident = call_expression(std::move(ident), threaded); // either regular or threaded function call
+				if (accept('('))
+				{
+					ident = call_expression(std::move(ident), threaded); // either regular or threaded function call
+				}
+				else
+				{
+					if (threaded)
+						throw ASTException("Unexpected thread keyword");
+				}
+				threaded = accept_identifier_string("thread");
 			}
-			else
-			{
-				if (threaded)
-					throw ASTException("Unexpected thread keyword");
-			}
-			threaded = accept_identifier_string("thread");
 			auto t = peek();
 			// method calls
-			if (accept_token_string("[["))
+			//TODO: FIXME well... we kinda don't want to accept another [[ after we already accepted it before with is_function_ptr_call
+			if (accept_token_string("[[") || is_function_ptr_call)
 			{
 				auto callee = factor_identifier();
 				if (!accept_token_string("]]"))
