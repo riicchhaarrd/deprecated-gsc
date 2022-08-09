@@ -2,5 +2,9 @@
 
 namespace script
 {
-	void register_stockfunctions(class Interpreter&);
+	namespace vm
+	{
+		class VirtualMachine;
+	};
+	void register_stockfunctions(vm::VirtualMachine&);
 };

@@ -15,7 +15,7 @@ namespace script
 		{
 			auto v = ctx.get_variant(0);
 			printf("adding bool \n");
-			ctx.add_bool(v.index() != 0);
+			ctx.add_bool(v->index() != 0);
 			return 1;
 		}
 		int loadfx(script::VMContext& ctx, script::vm::Object* obj)
@@ -64,7 +64,7 @@ namespace script
 	{
 		for (auto& it : functions::stockfunctions)
 		{
-			//vm.register_function(it.first, it.second);
+			vm.register_function(it.first, it.second);
 		}
 		//vm.register_function("setExpFog", [](script::VMContext& context, script::vm::Object* obj) -> int { return 0; });
 	}

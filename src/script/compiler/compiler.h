@@ -24,15 +24,20 @@ namespace script
 
 	namespace compiler
 	{
+		struct CompiledFunction
+		{
+			std::string name;
+			std::vector<std::string> parameters;
+			std::vector<std::shared_ptr<vm::Instruction>> instructions;
+		};
+		using CompiledFunctions = std::unordered_map<std::string, CompiledFunction>;
+		using CompiledFiles = std::unordered_map<std::string, CompiledFunctions>;
+
 		class Compiler : public ast::ASTVisitor
 		{
 			script::ReferenceMap& m_refmap;
-
-			struct CompiledFunction
-			{
-				std::vector<std::shared_ptr<vm::Instruction>> instructions;
-			};
-			std::unordered_map<std::string, CompiledFunction> m_compiledfunctions;
+			CompiledFiles m_files;
+			CompiledFunctions *m_compiledfunctions;
 			CompiledFunction *m_function;
 			std::string m_currentfile;
 			std::stack<std::weak_ptr<vm::Label>> exit_labels;
@@ -40,7 +45,7 @@ namespace script
 			ast::ExpressionStatement* last_expression_statement = nullptr;
 		  public:
 			Compiler(script::ReferenceMap&);
-			void compile();
+			CompiledFiles compile();
 
 			template <typename T, typename... Ts> std::shared_ptr<T> instruction(Ts... ts)
 			{

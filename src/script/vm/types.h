@@ -26,7 +26,7 @@ namespace script
 
 		struct LocalizedString
 		{
-			size_t index;
+			std::string reference;
 		};
 
 		struct Animation

@@ -138,7 +138,7 @@ namespace script
 		Compiler::Compiler(script::ReferenceMap& refmap) : m_refmap(refmap)
 		{
 		}
-		void Compiler::compile()
+		CompiledFiles Compiler::compile()
 		{
 			ast::FunctionDeclaration* func = nullptr;
 			std::string file;
@@ -147,17 +147,19 @@ namespace script
 				for (auto& refmap_iter : m_refmap)
 				{
 					file = refmap_iter.first;
+					m_compiledfunctions = &m_files[file];
 					printf("compiling program %s\n", refmap_iter.first.c_str());
 					m_currentfile = refmap_iter.first;
 					for (auto& fun_iter : refmap_iter.second.function_map)
 					{
 						func = fun_iter.second;
-						printf("\tcompiling function: %s\n", fun_iter.first.c_str());
+						//printf("\tcompiling function: %s\n", fun_iter.first.c_str());
 						fun_iter.second->accept(*this);
 					}
 				}
 				printf("-------------------------------------------------------------------------------\n");
 				printf("Compile done!\n");
+				#if 0
 				for (auto& cf : m_compiledfunctions)
 				{
 					printf("===function: %s\n", cf.first.c_str());
@@ -166,6 +168,7 @@ namespace script
 						printf("\t%s\n", instr->to_string().c_str());
 					}
 				}
+				#endif
 			}
 			catch (CompileException& e)
 			{
@@ -179,6 +182,7 @@ namespace script
 				printf("Failed to compile %s\n", e.what());
 				printf("===============================================================================\n");
 			}
+			return m_files;
 		}
 		void Compiler::visit(ast::Program& n)
 		{
@@ -187,8 +191,14 @@ namespace script
 
 		void Compiler::visit(ast::FunctionDeclaration& n)
 		{
-			m_function = &m_compiledfunctions[n.function_name];
+			m_function = &(*m_compiledfunctions)[n.function_name];
+			m_function->name = n.function_name;
+			m_function->parameters = n.parameters;
 			n.body->accept(*this);
+			auto instr = instruction<PushUndefined>();
+			add(instr);
+			auto ret = instruction<Ret>();
+			add(ret);
 		}
 
 		void Compiler::visit(ast::SwitchCase&)
@@ -293,6 +303,8 @@ namespace script
 
 		void Compiler::visit(ast::ReturnStatement& n)
 		{
+			if (n.argument)
+				n.argument->accept(*this);
 			auto instr = instruction<Ret>();
 			add(instr);
 		}
@@ -598,6 +610,25 @@ namespace script
 			}
 		}
 
+		bool get_property(ast::Expression& n, std::string& prop, int op)
+		{
+			auto* id = dynamic_cast<ast::Identifier*>(&n);
+			if (id && op == '.')
+			{
+				prop = id->name;
+				return true;
+			}
+			auto* lit = dynamic_cast<ast::Literal*>(&n);
+			if (lit)
+			{
+				if (lit->type == ast::Literal::Type::kInteger || lit->type == ast::Literal::Type::kString)
+				{
+					prop = lit->value;
+					return true;
+				}
+			}
+			return false;
+		}
 		class LValueVisitor : public CompileVisitor
 		{
 			Compiler* compiler;
@@ -607,7 +638,18 @@ namespace script
 			}
 			virtual void visit(ast::MemberExpression& n)
 			{
-				n.prop->accept(*compiler);
+				std::string field_name;
+				if (!get_property(*n.prop.get(), field_name, n.op))
+				{
+					n.prop->accept(*compiler);
+				}
+				else
+				{
+					auto instr = compiler->instruction<PushString>();
+					instr->value = field_name;
+					instr->length = field_name.size();
+					compiler->add(instr);
+				}
 				n.object->accept(*this);
 				auto instr = compiler->instruction<LoadObjectFieldRef>();
 				compiler->add(instr);
