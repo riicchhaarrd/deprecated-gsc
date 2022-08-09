@@ -31,6 +31,14 @@ namespace script
 
 	namespace vm
 	{
+		struct ThreadLock
+		{
+			virtual bool locked() = 0;
+			virtual ~ThreadLock()
+			{
+			}
+		};
+
 		struct ExceptionData
 		{
 		};
@@ -44,6 +52,7 @@ namespace script
 				std::string function_name;
 
 				std::unordered_map<std::string, std::shared_ptr<vm::Variant>> variables;
+				std::unordered_map<size_t, size_t> labels;
 				VariantPtr get_variable(const std::string var)
 				{
 					auto fnd = variables.find(var);
@@ -60,18 +69,19 @@ namespace script
 			{
 				std::vector<std::shared_ptr<vm::Variant>> m_stack;
 				std::stack<FunctionContext> m_callstack;
-
+				std::vector<std::unique_ptr<ThreadLock>> m_locks;
 				FunctionContext& function_context()
 				{
 					if (m_callstack.empty())
 						throw vm::Exception("callstack empty");
 					return m_callstack.top();
 				}
+				bool marked_for_deletion = false;
 			};
 			std::unordered_map<std::string, StockFunction> m_stockfunctions;
 			std::unique_ptr<VMContext> m_context;
 
-			std::vector<ThreadContext> m_threads;
+			std::vector<std::unique_ptr<ThreadContext>> m_threads;
 			ThreadContext* m_thread;
 
 			VariantPtr level_object;
@@ -82,6 +92,20 @@ namespace script
 			FunctionContext& function_context()
 			{
 				return m_thread->function_context();
+			}
+
+			ThreadContext* thread()
+			{
+				return m_thread;
+			}
+
+			void jump(size_t i)
+			{
+				auto& fc = function_context();
+				auto fnd = fc.labels.find(i);
+				if (fnd == fc.labels.end())
+					throw vm::Exception("cannot jump to non existing label {}", i);
+				fc.instruction_index = fnd->second;
 			}
 
 			VariantPtr get_variable(const std::string var);

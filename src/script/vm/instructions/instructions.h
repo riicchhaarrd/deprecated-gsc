@@ -222,6 +222,7 @@ namespace script
 
 		struct Label : Instruction
 		{
+			size_t label_index = 0;
 			DEFINE_INSTRUCTION(Label)
 			virtual void execute(VirtualMachine& vm);
 		};

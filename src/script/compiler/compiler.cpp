@@ -225,7 +225,7 @@ namespace script
 			auto jz = instruction<JumpZero>();
 			add(jz);
 			n.consequent->accept(*this);
-			auto skip = instruction<Label>();
+			auto skip = label();
 			jz->dest = skip;
 			add(skip);
 			if (n.alternative)
@@ -236,7 +236,7 @@ namespace script
 				auto jz2 = instruction<JumpNotZero>();
 				add(jz2);
 				n.consequent->accept(*this);
-				auto skip2 = instruction<Label>();
+				auto skip2 = label();
 				jz2->dest = skip2;
 				add(skip2);
 			}
@@ -244,8 +244,8 @@ namespace script
 
 		void Compiler::visit(ast::WhileStatement& n)
 		{
-			auto beg = instruction<Label>();
-			auto end = instruction<Label>();
+			auto beg = label();
+			auto end = label();
 			add(beg);
 			n.test->accept(*this);
 			auto test = instruction<Test>();
@@ -268,8 +268,8 @@ namespace script
 		{
 			if (n.init)
 				n.init->accept(*this);
-			auto beg = instruction<Label>();
-			auto end = instruction<Label>();
+			auto beg = label();
+			auto end = label();
 			add(beg);
 			if (n.test)
 				n.test->accept(*this);
@@ -358,17 +358,17 @@ namespace script
 		{
 			ast::SwitchCase* default_switch_case = nullptr;
 			size_t numcases = 0;
-			auto default_label = instruction<Label>();
+			auto default_label = label();
 
 			std::vector<std::shared_ptr<Label>> labels;
 			for (auto& sc : n.cases)
 			{
 				if (sc->test)
 				{
-					auto label = instruction<Label>();
+					auto l = label();
 					auto jmp = instruction<Jump>();
-					jmp->dest = label;
-					labels.push_back(label);
+					jmp->dest = l;
+					labels.push_back(l);
 					add(jmp);
 					sc->test->accept(*this);
 					++numcases;
@@ -385,7 +385,7 @@ namespace script
 			n.discriminant->accept(*this);
 			add(sw);
 
-			auto end = instruction<Label>();
+			auto end = label();
 			auto jmpend = instruction<Jump>();
 			jmpend->dest = end;
 			add(jmpend);
@@ -429,7 +429,7 @@ namespace script
 				auto cmp = instruction<Compare>();
 				add(cmp);
 				auto jnz = instruction<JumpNotZero>();
-				auto skip = instruction<Label>();
+				auto skip = label();
 				jnz->dest = skip;
 				add(jnz);
 				for (auto& stmt : sc->consequent)
@@ -556,16 +556,16 @@ namespace script
 					auto instr = instruction<Compare>();
 					add(instr);
 					auto jz = instruction<JumpZero>();
-					auto label = instruction<Label>();
-					jz->dest = label;
+					auto l = label();
+					jz->dest = l;
 					add(jz);
 					auto constant0 = instruction<Constant0>();
 					add(constant0);
 					auto jnz = instruction<JumpNotZero>();
-					auto label2 = instruction<Label>();
+					auto label2 = label();
 					jnz->dest = label2;
 					add(jnz);
-					add(label);
+					add(l);
 					auto constant1 = instruction<Constant1>();
 					add(constant1);
 					add(label2);
@@ -575,16 +575,16 @@ namespace script
 					auto instr = instruction<Compare>();
 					add(instr);
 					auto jz = instruction<JumpZero>();
-					auto label = instruction<Label>();
-					jz->dest = label;
+					auto l = label();
+					jz->dest = l;
 					add(jz);
 					auto constant0 = instruction<Constant1>();
 					add(constant0);
 					auto jnz = instruction<JumpNotZero>();
-					auto label2 = instruction<Label>();
+					auto label2 = label();
 					jnz->dest = label2;
 					add(jnz);
-					add(label);
+					add(l);
 					auto constant1 = instruction<Constant0>();
 					add(constant1);
 					add(label2);
@@ -811,9 +811,9 @@ namespace script
 				auto constant1 = instruction<Constant1>();
 				add(constant1);
 				auto jmp = instruction<Jump>();
-				auto skip2 = instruction<Label>();
+				auto skip2 = label();
 				jmp->dest = skip2;
-				auto skip = instruction<Label>();
+				auto skip = label();
 				jz->dest = skip;
 				add(skip);
 				auto constant0 = instruction<Constant0>();

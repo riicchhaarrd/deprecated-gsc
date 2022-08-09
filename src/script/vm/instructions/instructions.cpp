@@ -1,5 +1,6 @@
 #include "instructions.h"
 #include <script/vm/virtual_machine.h>
+#include <Windows.h>
 
 namespace script
 {
@@ -43,15 +44,40 @@ namespace script
 		}
 		void JumpZero::execute(VirtualMachine& vm)
 		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
+			int intval = vm.context()->get_int(0);
+			vm.pop();
+			if (intval == 0)
+			{
+				if (!this->dest.expired())
+				{
+					size_t idx = this->dest.lock()->label_index;
+					vm.jump(idx);
+				}
+			}
 		}
 		void Jump::execute(VirtualMachine& vm)
 		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
+			if (!this->dest.expired())
+			{
+				size_t idx = this->dest.lock()->label_index;
+				vm.jump(idx);
+			}
 		}
 		void Test::execute(VirtualMachine& vm)
 		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
+			auto v = vm.context()->get_variant(0);
+			vm.pop();
+			if (v->index() == (int)vm::Type::kInteger)
+			{
+				int intval = std::get<vm::Integer>(*v);
+				vm.push(vm.variant(intval != 0 ? 1 : 0));
+			}
+			else if (v->index() == (int)vm::Type::kUndefined)
+			{
+				vm.push(vm.variant(0));
+			}
+			else
+				throw vm::Exception("unexpected {}", v->index());
 		}
 		void Compare::execute(VirtualMachine& vm)
 		{
@@ -63,7 +89,8 @@ namespace script
 		}
 		void Label::execute(VirtualMachine& vm)
 		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
+			auto &fc = vm.function_context();
+			fc.labels[this->label_index] = fc.instruction_index;
 		}
 		void BinOp::execute(VirtualMachine& vm)
 		{
@@ -75,7 +102,19 @@ namespace script
 		}
 		void Wait::execute(VirtualMachine& vm)
 		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
+			float duration = vm.context()->get_float(0);
+			vm.pop();
+			struct ThreadLockWaitDuration : vm::ThreadLock
+			{
+				uint32_t end_time = 0;
+				virtual bool locked()
+				{
+					return GetTickCount() < end_time;
+				}
+			};
+			auto l = std::make_unique<ThreadLockWaitDuration>();
+			l->end_time = GetTickCount() + duration * 1000.f;
+			vm.thread()->m_locks.push_back(std::move(l));
 		}
 		void Ret::execute(VirtualMachine& vm)
 		{

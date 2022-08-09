@@ -1,4 +1,5 @@
 #include "virtual_machine.h"
+#include <Windows.h>
 
 namespace script
 {
@@ -139,8 +140,8 @@ namespace script
 
 		void VirtualMachine::exec_thread(const std::string file, const std::string function)
 		{
-			m_threads.push_back(ThreadContext());
-			m_thread = &m_threads[m_threads.size() - 1];
+			m_threads.push_back(std::make_unique<ThreadContext>());
+			m_thread = m_threads[m_threads.size() - 1].get();
 
 			call(file, function, 0);
 		}
@@ -184,8 +185,12 @@ namespace script
 		void VirtualMachine::ret()
 		{
 			if (m_thread->m_callstack.empty())
-				throw vm::Exception("empty callstack"); //remove current thread from active threads?
+				throw vm::Exception("empty callstack");
 			m_thread->m_callstack.pop();
+			if (m_thread->m_callstack.empty())
+			{
+				m_thread->marked_for_deletion = true;
+			}
 		}
 
 		void VirtualMachine::call(const std::string file, const std::string function, size_t numargs)
@@ -224,7 +229,7 @@ namespace script
 
 		void VirtualMachine::call_builtin(const std::string function, size_t numargs)
 		{
-			//dump();
+			dump();
 			auto fnd = m_stockfunctions.find(util::string::to_lower(function));
 			if (fnd == m_stockfunctions.end())
 				throw vm::Exception("no function named {}", function);
@@ -272,17 +277,44 @@ namespace script
 		{
 			while (1)
 			{
+				//remove deleted threads
+				for (auto it = m_threads.begin(); it != m_threads.end();)
+				{
+					if ((*it)->marked_for_deletion)
+						it = m_threads.erase(it);
+					else
+						++it;
+				}
+
+				if (m_threads.empty())
+					break;
+
 				for (auto& thread : m_threads)
 				{
 					while (1)
 					{
-						auto instr = fetch(&thread);
+						bool is_waiting = false;
+						for (auto lock_iterator = thread->m_locks.begin(); lock_iterator != thread->m_locks.end();)
+						{
+							if ((*lock_iterator)->locked())
+							{
+								is_waiting = true;
+								break;
+							}
+							lock_iterator = thread->m_locks.erase(lock_iterator);
+						}
+						if (is_waiting)
+							break;
+						if (thread->marked_for_deletion)
+							break;
+						auto instr = fetch(thread.get());
 						if (!instr)
 							throw vm::Exception("shouldn't be nullptr");
 						printf("\t\t-->%s\n", instr->to_string().c_str());
 						instr->execute(*this);
 					}
 				}
+				Sleep(1000 / 20);
 			}
 		}
 	}; // namespace vm

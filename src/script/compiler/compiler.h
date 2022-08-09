@@ -43,6 +43,7 @@ namespace script
 			std::stack<std::weak_ptr<vm::Label>> exit_labels;
 			std::stack<std::weak_ptr<vm::Label>> continue_labels;
 			ast::ExpressionStatement* last_expression_statement = nullptr;
+			size_t label_index = 0;
 		  public:
 			Compiler(script::ReferenceMap&);
 			CompiledFiles compile();
@@ -51,6 +52,12 @@ namespace script
 			{
 				// printf("node(%s)\n", typeid(T).name());
 				return std::move(std::make_shared<T>(ts...));
+			}
+			std::shared_ptr<vm::Label> label()
+			{
+				auto l = std::make_shared<vm::Label>();
+				l->label_index = label_index++;
+				return std::move(l);
 			}
 
 			template <typename T>
