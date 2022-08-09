@@ -785,9 +785,20 @@ namespace script
 
 		void Compiler::visit(ast::MemberExpression& n)
 		{
-			n.prop->accept(*this);
+			std::string field_name;
+			if (!get_property(*n.prop.get(), field_name, n.op))
+			{
+				n.prop->accept(*this);
+			}
+			else
+			{
+				auto instr = instruction<PushString>();
+				instr->value = field_name;
+				instr->length = field_name.size();
+				add(instr);
+			}
 			n.object->accept(*this);
-			auto instr = instruction<LoadObjectFieldValue>();
+			auto instr = instruction<LoadObjectFieldRef>();
 			add(instr);
 		}
 
