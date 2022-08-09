@@ -24,11 +24,14 @@ namespace script
 		}
 		void CallFunction::execute(VirtualMachine& vm)
 		{
-			if (is_threaded)
-				throw vm::Exception("threaded unhandled {}", __LINE__);
 			if (is_method_call)
 				throw vm::Exception("method unhandled {}", __LINE__);
-			vm.call(this->function, this->numargs);
+			if (is_threaded)
+			{
+				vm.exec_thread(this->function);
+			}
+			else
+				vm.call(this->function, this->numargs);
 		}
 		void JumpNotZero::execute(VirtualMachine& vm)
 		{

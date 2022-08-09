@@ -138,12 +138,19 @@ namespace script
 			game_object = std::make_shared<vm::Variant>(std::make_shared<vm::Object>());
 		}
 
+		void VirtualMachine::exec_thread(const std::string function)
+		{
+			auto& fc = function_context();
+			exec_thread(fc.file_name, function);
+		}
+
 		void VirtualMachine::exec_thread(const std::string file, const std::string function)
 		{
-			m_threads.push_back(std::make_unique<ThreadContext>());
-			m_thread = m_threads[m_threads.size() - 1].get();
-
-			call(file, function, 0);
+			m_newthreads.push_back(std::make_unique<ThreadContext>());
+			auto* thr = m_newthreads[m_newthreads.size() - 1].get();
+			//TODO: FIXME there's no guarantee in which order the thread runs, atm it runs after the thread that made a new thread
+			//but we could run the thread first till we hit a wait then return control to the former thread
+			call(thr, file, function, 0);
 		}
 
 		compiler::CompiledFunction* VirtualMachine::find_function_in_file(const std::string file,
@@ -193,14 +200,14 @@ namespace script
 			}
 		}
 
-		void VirtualMachine::call(const std::string file, const std::string function, size_t numargs)
+		void VirtualMachine::call(ThreadContext *thread, const std::string file, const std::string function, size_t numargs)
 		{
 			auto* fn = find_function_in_file(file, function);
 			if (!fn)
 				throw vm::Exception("can't find {}::{}", file, function);
 
-			m_thread->m_callstack.push(FunctionContext());
-			auto& fc = function_context();
+			thread->m_callstack.push(FunctionContext());
+			auto& fc = thread->function_context();
 
 			for (size_t i = 0; i < numargs; ++i)
 			{
@@ -223,13 +230,10 @@ namespace script
 				printf("$%s\n", instr->to_string().c_str());
 			}
 			printf("============================================\n");
-
-			dump();
 		}
 
 		void VirtualMachine::call_builtin(const std::string function, size_t numargs)
 		{
-			dump();
 			auto fnd = m_stockfunctions.find(util::string::to_lower(function));
 			if (fnd == m_stockfunctions.end())
 				throw vm::Exception("no function named {}", function);
@@ -249,7 +253,7 @@ namespace script
 				return;
 			}
 			auto& fc = function_context();
-			call(fc.file_name, function, numargs);
+			call(m_thread, fc.file_name, function, numargs);
 		}
 
 		std::shared_ptr<vm::Instruction> VirtualMachine::fetch(ThreadContext* tc)
@@ -286,11 +290,19 @@ namespace script
 						++it;
 				}
 
+				for (auto it = m_newthreads.begin(); it != m_newthreads.end();)
+				{
+					m_threads.push_back(std::move(*it));
+					it = m_newthreads.erase(it);
+				}
+
 				if (m_threads.empty())
 					break;
-
+				//probably would be better if the instructions did accept(*this)
+				//and then a InstructionRunner instantiated with a reference to the active thread with some other things
 				for (auto& thread : m_threads)
 				{
+					m_thread = thread.get();
 					while (1)
 					{
 						bool is_waiting = false;
@@ -307,7 +319,7 @@ namespace script
 							break;
 						if (thread->marked_for_deletion)
 							break;
-						auto instr = fetch(thread.get());
+						auto instr = fetch(m_thread);
 						if (!instr)
 							throw vm::Exception("shouldn't be nullptr");
 						printf("\t\t-->%s\n", instr->to_string().c_str());

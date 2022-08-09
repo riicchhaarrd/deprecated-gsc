@@ -82,6 +82,7 @@ namespace script
 			std::unique_ptr<VMContext> m_context;
 
 			std::vector<std::unique_ptr<ThreadContext>> m_threads;
+			std::vector<std::unique_ptr<ThreadContext>> m_newthreads;
 			ThreadContext* m_thread;
 
 			VariantPtr level_object;
@@ -153,7 +154,7 @@ namespace script
 			}
 			VirtualMachine(compiler::CompiledFiles&);
 			void run();
-			void call(const std::string, const std::string, size_t);
+			void call(ThreadContext*, const std::string, const std::string, size_t);
 			void call(const std::string, size_t);
 			void call_builtin(const std::string, size_t);
 			void ret();
@@ -161,6 +162,7 @@ namespace script
 			std::string variant_to_string(vm::Variant v);
 			float variant_to_number(vm::Variant v);
 			void exec_thread(const std::string file, const std::string function);
+			void exec_thread(const std::string function);
 
 			template <typename T> vm::Variant handle_binary_op(const T& a, const T& b, int op)
 			{
