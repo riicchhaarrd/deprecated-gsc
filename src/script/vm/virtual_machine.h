@@ -35,6 +35,15 @@ namespace script
 
 	namespace vm
 	{
+		namespace flags
+		{
+			enum
+			{
+				kNone = 0,
+				kZF = 1
+			};
+		};
+
 		struct ThreadLock
 		{
 			virtual bool locked() = 0;
@@ -49,6 +58,7 @@ namespace script
 		using Exception = common::TypedDataMessageException<ExceptionData>;
 		class VirtualMachine
 		{
+			int m_flags = flags::kNone;
 			compiler::CompiledFiles& m_compiledfiles;
 			struct FunctionContext
 			{
@@ -104,6 +114,16 @@ namespace script
 			FunctionContext& function_context()
 			{
 				return m_thread->function_context();
+			}
+			
+			void set_flags(int flags)
+			{
+				m_flags = flags;
+			}
+
+			int get_flags()
+			{
+				return m_flags;
 			}
 
 			ThreadContext* thread()

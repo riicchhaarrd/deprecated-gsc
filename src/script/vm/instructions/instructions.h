@@ -144,48 +144,6 @@ namespace script
 			DEFINE_INSTRUCTION(LoadObjectFieldValue)
 			virtual void execute(VirtualMachine& vm);
 		};
-
-		//all binary expressions instructions take two operands from the stack and push one result back to the stack
-		struct Add : Instruction
-		{
-			DEFINE_INSTRUCTION(Add)
-			virtual void execute(VirtualMachine& vm);
-		};
-		struct And : Instruction
-		{
-			DEFINE_INSTRUCTION(And)
-			virtual void execute(VirtualMachine& vm);
-		};
-		struct Or : Instruction
-		{
-			DEFINE_INSTRUCTION(Or)
-			virtual void execute(VirtualMachine& vm);
-		};
-		struct Sub : Instruction
-		{
-			DEFINE_INSTRUCTION(Sub)
-			virtual void execute(VirtualMachine& vm);
-		};
-		struct Mul : Instruction
-		{
-			DEFINE_INSTRUCTION(Mul)
-			virtual void execute(VirtualMachine& vm);
-		};
-		struct Div : Instruction
-		{
-			DEFINE_INSTRUCTION(Div)
-			virtual void execute(VirtualMachine& vm);
-		};
-		struct Mod : Instruction
-		{
-			DEFINE_INSTRUCTION(Mod)
-			virtual void execute(VirtualMachine& vm);
-		};
-		struct Negate : Instruction
-		{
-			DEFINE_INSTRUCTION(Negate)
-			virtual void execute(VirtualMachine& vm);
-		};
 		struct Not : Instruction
 		{
 			DEFINE_INSTRUCTION(Not)
@@ -221,11 +179,6 @@ namespace script
 			virtual void execute(VirtualMachine& vm);
 		};
 
-		struct Compare : Instruction
-		{
-			DEFINE_INSTRUCTION(Compare)
-			virtual void execute(VirtualMachine& vm);
-		};
 		struct Test : Instruction
 		{
 			DEFINE_INSTRUCTION(Test)
@@ -291,11 +244,6 @@ namespace script
 		struct CallFunctionPointer : Call
 		{
 			DEFINE_INSTRUCTION(CallFunctionPointer)
-			virtual void execute(VirtualMachine& vm);
-		};
-		struct Halt : Instruction
-		{
-			DEFINE_INSTRUCTION(Halt)
 			virtual void execute(VirtualMachine& vm);
 		};
 	}; // namespace vm

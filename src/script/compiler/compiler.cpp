@@ -267,7 +267,11 @@ namespace script
 		void Compiler::visit(ast::ForStatement& n)
 		{
 			if (n.init)
+			{
 				n.init->accept(*this);
+				auto instr = instruction<Pop>();
+				add(instr);
+			}
 			auto beg = label();
 			auto end = label();
 			add(beg);
@@ -291,7 +295,11 @@ namespace script
 			auto jmp = instruction<Jump>();
 			jmp->dest = beg;
 			if (n.update)
+			{
 				n.update->accept(*this);
+				auto instr = instruction<Pop>();
+				add(instr);
+			}
 			add(jmp);
 			add(end);
 		}
@@ -378,8 +386,9 @@ namespace script
 					add(labels[i]);
 				n.discriminant->accept(*this);
 				sc->test->accept(*this);
-				auto cmp = instruction<Compare>();
-				add(cmp);
+				auto instr = instruction<BinOp>();
+				instr->op = parse::TokenType_kEq;
+				add(instr);
 				auto jnz = instruction<JumpNotZero>();
 				jnz->dest = (i+1) >= labels.size() ? end : labels[i + 1];
 				add(jnz);
@@ -482,100 +491,11 @@ namespace script
 
 		void Compiler::visit(ast::BinaryExpression& n)
 		{
-			n.left->accept(*this);
 			n.right->accept(*this);
-			switch (n.op)
-			{
-				// got "lazy" and just wanted to get things working so i'm kinda mapping ast nodes 1:1 to instructions
-				// now
-				case parse::TokenType_kAndAnd:
-				case parse::TokenType_kOrOr:
-				case parse::TokenType_kGeq:
-				case parse::TokenType_kLeq:
-				case '<':
-				case '>':
-				{
-					auto instr = instruction<BinOp>();
-					instr->op = n.op;
-					add(instr);
-				} break;
-				case '+':
-				{
-					auto instr = instruction<Add>();
-					add(instr);
-				} break;
-				case '&':
-				{
-					auto instr = instruction<And>();
-					add(instr);
-				} break;
-				case '|':
-				{
-					auto instr = instruction<Or>();
-					add(instr);
-				} break;
-				case '-':
-				{
-					auto instr = instruction<Sub>();
-					add(instr);
-				} break;
-				case parse::TokenType_kEq:
-				{
-					auto instr = instruction<Compare>();
-					add(instr);
-					auto jz = instruction<JumpZero>();
-					auto l = label();
-					jz->dest = l;
-					add(jz);
-					auto constant0 = instruction<Constant0>();
-					add(constant0);
-					auto jnz = instruction<JumpNotZero>();
-					auto label2 = label();
-					jnz->dest = label2;
-					add(jnz);
-					add(l);
-					auto constant1 = instruction<Constant1>();
-					add(constant1);
-					add(label2);
-				} break;
-				case parse::TokenType_kNeq:
-				{
-					auto instr = instruction<Compare>();
-					add(instr);
-					auto jz = instruction<JumpZero>();
-					auto l = label();
-					jz->dest = l;
-					add(jz);
-					auto constant0 = instruction<Constant1>();
-					add(constant0);
-					auto jnz = instruction<JumpNotZero>();
-					auto label2 = label();
-					jnz->dest = label2;
-					add(jnz);
-					add(l);
-					auto constant1 = instruction<Constant0>();
-					add(constant1);
-					add(label2);
-				} break;
-				case '*':
-				{
-					auto instr = instruction<Mul>();
-					add(instr);
-				} break;
-				case '/':
-				{
-					auto instr = instruction<Div>();
-					add(instr);
-				} break;
-				case '%':
-				{
-					auto instr = instruction<Mod>();
-					add(instr);
-				} break;
-				default:
-					throw CompileException("unimplemented operator {}", n.op);
-					break;
-			}
+			n.left->accept(*this);
+			auto instr = instruction<BinOp>();
+			instr->op = n.op;
+			add(instr);
 		}
 
 		bool get_property(ast::Expression& n, std::string& prop, int op)
@@ -641,67 +561,23 @@ namespace script
 		{
 			if (n.op == '=')
 			{
-				LValueVisitor vis(this);
-				n.lhs->accept(vis);
 
 				n.rhs->accept(*this);
+				LValueVisitor vis(this);
+				n.lhs->accept(vis);
 
 			}
 			else
 			{
-				LValueVisitor vis(this);
-				n.lhs->accept(vis);
 
 				n.rhs->accept(*this);
 				n.lhs->accept(*this);
-				switch (n.op)
-				{
-				case parse::TokenType_kPlusAssign:
-				{
-					auto instr = instruction<Add>();
-					add(instr);
-				}
-				break;
-				case parse::TokenType_kMinusAssign:
-				{
-					auto instr = instruction<Sub>();
-					add(instr);
-				}
-				break;
-				case parse::TokenType_kMultiplyAssign:
-				{
-					auto instr = instruction<Mul>();
-					add(instr);
-				}
-				break;
-				case parse::TokenType_kOrAssign:
-				{
-					auto instr = instruction<Or>();
-					add(instr);
-				}
-				break;
-				case parse::TokenType_kAndAssign:
-				{
-					auto instr = instruction<And>();
-					add(instr);
-				}
-				break;
-				case parse::TokenType_kDivideAssign:
-				{
-					auto instr = instruction<Div>();
-					add(instr);
-				}
-				break;
-				case parse::TokenType_kModAssign:
-				{
-					auto instr = instruction<Mod>();
-					add(instr);
-				}
-				break;
-				default:
-					throw CompileException("unimplemented operator {}", n.op);
-					break;
-				}
+
+				auto instr = instruction<BinOp>();
+				instr->op = n.op;
+				add(instr);
+				LValueVisitor vis(this);
+				n.lhs->accept(vis);
 			}
 			auto instr = instruction<StoreRef>();
 			add(instr);
@@ -788,28 +664,38 @@ namespace script
 			{
 			case '-':
 			{
+				auto constant0 = instruction<Constant0>();
+				add(constant0);
 				n.argument->accept(*this);
-				auto instr = instruction<Negate>();
+				auto instr = instruction<BinOp>();
+				instr->op = '-';
 				add(instr);
 			} break;
 			case '!':
 			{
 				n.argument->accept(*this);
+				
 				auto test = instruction<Test>();
 				add(test);
+
+				auto l1 = label();
+				auto l2 = label();
+
 				auto jz = instruction<JumpZero>();
+				jz->dest = l1;
 				add(jz);
-				auto constant1 = instruction<Constant1>();
-				add(constant1);
-				auto jmp = instruction<Jump>();
-				auto skip2 = label();
-				jmp->dest = skip2;
-				auto skip = label();
-				jz->dest = skip;
-				add(skip);
+
 				auto constant0 = instruction<Constant0>();
 				add(constant0);
-				add(skip2);
+
+				auto jmp = instruction<Jump>();
+				jmp->dest = l2;
+				add(jmp);
+				add(l1);
+				auto constant1 = instruction<Constant1>();
+				add(constant1);
+				add(l2);
+
 			} break;
 			case '~':
 			{
@@ -825,12 +711,18 @@ namespace script
 				n.argument->accept(*this);
 				auto constant1 = instruction<Constant1>();
 				add(constant1);
-				std::shared_ptr<vm::Instruction> instr;
 				if (n.op == parse::TokenType_kPlusPlus)
-					instr = instruction<Add>();
+				{
+					auto instr = instruction<BinOp>();
+					instr->op = '+';
+					add(instr);
+				}
 				else
-					instr = instruction<Sub>();
-				add(instr);
+				{
+					auto instr = instruction<BinOp>();
+					instr->op = '-';
+					add(instr);
+				}
 				LValueVisitor vis(this);
 				n.argument->accept(vis);
 				auto sr = instruction<StoreRef>();

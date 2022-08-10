@@ -10,10 +10,6 @@ namespace script
 		{
 			return std::format("PushInteger {}", value);
 		}
-		void Halt::execute(VirtualMachine& vm)
-		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
-		}
 		void CallFunctionPointer::execute(VirtualMachine& vm)
 		{
 			throw vm::Exception("unhandled instruction {}", __LINE__);
@@ -54,9 +50,7 @@ namespace script
 		}
 		void JumpNotZero::execute(VirtualMachine& vm)
 		{
-			int intval = vm.context()->get_int(0);
-			vm.pop();
-			if (intval != 0)
+			if ((vm.get_flags() & vm::flags::kZF) != vm::flags::kZF)
 			{
 				if (!this->dest.expired())
 				{
@@ -75,9 +69,7 @@ namespace script
 		}
 		void JumpZero::execute(VirtualMachine& vm)
 		{
-			int intval = vm.context()->get_int(0);
-			vm.pop();
-			if (intval == 0)
+			if (vm.get_flags() & vm::flags::kZF)
 			{
 				if (!this->dest.expired())
 				{
@@ -101,22 +93,17 @@ namespace script
 			if (v->index() == (int)vm::Type::kInteger)
 			{
 				int intval = std::get<vm::Integer>(*v);
-				vm.push(vm.variant(intval != 0 ? 1 : 0));
+				if (intval == 0)
+					vm.set_flags(vm.get_flags() | vm::flags::kZF);
+				else
+					vm.set_flags(vm.get_flags() & ~vm::flags::kZF);
 			}
 			else if (v->index() == (int)vm::Type::kUndefined)
 			{
-				vm.push(vm.variant(0));
+				vm.set_flags(vm.get_flags() | vm::flags::kZF);
 			}
 			else
 				throw vm::Exception("unexpected {}", v->index());
-		}
-		void Compare::execute(VirtualMachine& vm)
-		{
-			auto a = vm.context()->get_variant(0);
-			auto b = vm.context()->get_variant(1);
-			vm.pop();
-			vm.pop();
-			vm.push(vm.variant(vm.binop(*a, *b, parse::TokenType_kEq)));
 		}
 		void Label::execute(VirtualMachine& vm)
 		{
@@ -159,69 +146,6 @@ namespace script
 			vm.pop();
 			vm.push(vm.variant(~i));
 		}
-		void Negate::execute(VirtualMachine& vm)
-		{
-			auto v = vm.context()->get_variant(0);
-			vm.pop();
-			vm::Variant zero(0);
-			vm.push(vm.variant(vm.binop(zero, *v, '-')));
-		}
-		void Mod::execute(VirtualMachine& vm)
-		{
-			auto a = vm.context()->get_variant(0);
-			auto b = vm.context()->get_variant(1);
-			vm.pop();
-			vm.pop();
-			vm.push(vm.variant(vm.binop(*a, *b, '%')));
-		}
-		void Div::execute(VirtualMachine& vm)
-		{
-			auto a = vm.context()->get_variant(0);
-			auto b = vm.context()->get_variant(1);
-			vm.pop();
-			vm.pop();
-			vm.push(vm.variant(vm.binop(*a, *b, '/')));
-		}
-		void Mul::execute(VirtualMachine& vm)
-		{
-			auto a = vm.context()->get_variant(0);
-			auto b = vm.context()->get_variant(1);
-			vm.pop();
-			vm.pop();
-			vm.push(vm.variant(vm.binop(*a, *b, '*')));
-		}
-		void Sub::execute(VirtualMachine& vm)
-		{
-			auto a = vm.context()->get_variant(0);
-			auto b = vm.context()->get_variant(1);
-			vm.pop();
-			vm.pop();
-			vm.push(vm.variant(vm.binop(*a, *b, '-')));
-		}
-		void Or::execute(VirtualMachine& vm)
-		{
-			auto a = vm.context()->get_variant(0);
-			auto b = vm.context()->get_variant(1);
-			vm.pop();
-			vm.pop();
-			vm.push(vm.variant(vm.binop(*a, *b, '|')));
-		}
-		void And::execute(VirtualMachine& vm)
-		{
-			auto a = vm.context()->get_variant(0);
-			auto b = vm.context()->get_variant(1);
-			vm.pop();
-			vm.pop();
-			vm.push(vm.variant(vm.binop(*a, *b, '&')));
-		}
-		void Add::execute(VirtualMachine& vm)
-		{
-			auto a = vm.context()->get_variant(0);
-			auto b = vm.context()->get_variant(1);
-			vm.pop();
-			vm.pop();
-			vm.push(vm.variant(vm.binop(*a, *b, '+')));
-		}
 		void LoadObjectFieldValue::execute(VirtualMachine& vm)
 		{
 			auto obj = vm.context()->get_object(0);
@@ -238,8 +162,8 @@ namespace script
 		}
 		void StoreRef::execute(VirtualMachine& vm)
 		{
-			auto v = vm.context()->get_variant(1);
-			auto val = vm.context()->get_variant(0);
+			auto v = vm.context()->get_variant(0);
+			auto val = vm.context()->get_variant(1);
 			*v = *val;
 			vm.pop(2);
 		}
