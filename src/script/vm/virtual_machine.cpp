@@ -324,7 +324,6 @@ namespace script
 				pop(numargs);
 				push(tmp);
 			}
-			//printf("------------>%d\n", m_thread->m_stack.size());
 		}
 		
 		void VirtualMachine::call(VariantPtr obj, const std::string function, size_t numargs)
@@ -421,7 +420,8 @@ namespace script
 						auto instr = fetch(m_thread);
 						if (!instr)
 							throw vm::Exception("shouldn't be nullptr");
-						printf("\t\t-->%s\n", instr->to_string().c_str());
+						auto& fc = m_thread->function_context();
+						printf("\t\t-->%s (%d)\t%s::%s\n", instr->to_string().c_str(), m_thread->m_stack.size(), fc.file_name.c_str(), fc.function_name.c_str());
 						instr->execute(*this);
 					}
 				}
