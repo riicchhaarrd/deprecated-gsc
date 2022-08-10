@@ -120,8 +120,6 @@ namespace script
 		}
 		void Label::execute(VirtualMachine& vm)
 		{
-			auto &fc = vm.function_context();
-			fc.labels[this->label_index] = fc.instruction_index;
 		}
 		void BinOp::execute(VirtualMachine& vm)
 		{
