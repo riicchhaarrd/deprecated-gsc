@@ -11,6 +11,12 @@ namespace script
 		{
 			return 0;
 		}
+		int exitlevel(script::VMContext& ctx, script::vm::Object* obj)
+		{
+			printf("============Shutting down level=============\n");
+			getchar();
+			return 0;
+		}
 		int tolower(script::VMContext& ctx, script::vm::Object* obj)
 		{
 			ctx.add_string(util::string::to_lower(ctx.get_string(0)));
@@ -69,9 +75,19 @@ namespace script
 			ctx.add_bool(false);
 			return 1;
 		}
+		int gettime(script::VMContext& ctx, script::vm::Object* obj)
+		{
+			ctx.add_int(0);
+			return 1;
+		}
 		int getentarray(script::VMContext& ctx, script::vm::Object* obj)
 		{
 			auto o = std::make_shared<vm::Object>();
+
+			auto entry = std::make_shared<vm::Object>();
+			entry->fields["origin"] = std::make_shared<vm::Variant>(vm::Vector{.x = 0.f, .y = 0.f, .z = 0.f});
+			
+			o->fields["0"] = std::make_shared<vm::Variant>(entry);
 			ctx.add_object(o);
 			return 1;
 		}
@@ -148,6 +164,7 @@ namespace script
 			{"tolower", tolower},
 			{"distance", distance},
 			{"spawnstruct", spawnstruct},
+			{"gettime", gettime},
 			{"getent", getent},
 			{"getentarray", getentarray},
 			{"getaiarray", getaiarray},
@@ -161,7 +178,9 @@ namespace script
 			{"precacheitem", unimplemented},
 			{"precacheshellshock", unimplemented},
 			{"prof_begin", unimplemented},
+			{"exitlevel", exitlevel},
 			{"prof_end", unimplemented},
+			{"placespawnpoint", unimplemented},
 			{"precacherumble", unimplemented},
 			{"precachestatusicon", unimplemented},
 			{"setarchive", unimplemented},
