@@ -674,6 +674,18 @@ namespace script
 					add(instr);
 				}
 				break;
+				case parse::TokenType_kOrAssign:
+				{
+					auto instr = instruction<Or>();
+					add(instr);
+				}
+				break;
+				case parse::TokenType_kAndAssign:
+				{
+					auto instr = instruction<And>();
+					add(instr);
+				}
+				break;
 				case parse::TokenType_kDivideAssign:
 				{
 					auto instr = instruction<Div>();
