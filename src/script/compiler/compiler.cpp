@@ -566,15 +566,12 @@ namespace script
 		{
 			if (n.op == '=')
 			{
-
 				n.rhs->accept(*this);
 				LValueVisitor vis(this);
 				n.lhs->accept(vis);
-
 			}
 			else
 			{
-
 				n.rhs->accept(*this);
 				n.lhs->accept(*this);
 
