@@ -311,7 +311,7 @@ namespace script
 			if (fnd == m_stockfunctions.end())
 				throw vm::Exception("no function named {}", function);
 			if (obj && obj->index() != (int)vm::Type::kObject)
-				throw vm::Exception("expected object");
+				throw vm::Exception("expected object got {}", obj->index());
 			int num_pushed = fnd->second(*m_context.get(), obj ? std::get<vm::ObjectPtr>(*obj).get() : nullptr);
 			if (num_pushed == 0)
 			{
