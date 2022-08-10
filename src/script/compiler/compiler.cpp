@@ -313,6 +313,11 @@ namespace script
 		{
 			if (n.argument)
 				n.argument->accept(*this);
+			else
+			{
+				auto instr = instruction<PushUndefined>();
+				add(instr);
+			}
 			auto instr = instruction<Ret>();
 			add(instr);
 		}
