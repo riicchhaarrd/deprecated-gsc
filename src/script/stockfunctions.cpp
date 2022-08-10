@@ -64,6 +64,11 @@ namespace script
 			ctx.add_object(o);
 			return 1;
 		}
+		int issplitscreen(script::VMContext& ctx, script::vm::Object* obj)
+		{
+			ctx.add_bool(false);
+			return 1;
+		}
 		int getentarray(script::VMContext& ctx, script::vm::Object* obj)
 		{
 			auto o = std::make_shared<vm::Object>();
@@ -104,6 +109,13 @@ namespace script
 			ctx.add_int(0);
 			return 1;
 		}
+		int get_cvarfloat(script::VMContext& ctx, script::vm::Object* obj)
+		{
+			auto var = ctx.get_string(0);
+			printf("getcvarfloat %s\n", var.c_str());
+			ctx.add_float(0.f);
+			return 1;
+		}
 		int distance(script::VMContext& ctx, script::vm::Object* obj)
 		{
 			vm::Vector a, b;
@@ -139,6 +151,7 @@ namespace script
 			{"getent", getent},
 			{"getentarray", getentarray},
 			{"getaiarray", getaiarray},
+			{"issplitscreen", issplitscreen},
 			{"getspawnerarray", getspawnerarray},
 			{"getallvehiclenodes", getallvehiclenodes},
 			{"getvehiclenodearray", getvehiclenodearray},
@@ -150,10 +163,16 @@ namespace script
 			{"prof_begin", unimplemented},
 			{"prof_end", unimplemented},
 			{"precacherumble", unimplemented},
+			{"precachestatusicon", unimplemented},
+			{"setarchive", unimplemented},
 			{"precachestring", unimplemented},
+			{"setclientnamemode", unimplemented},
 			{"setcvar", unimplemented},
 			{"println", println},
+			{"makecvarserverinfo", unimplemented},
 			{"setsavedcvar", unimplemented},
+			{"precachemenu", unimplemented},
+			{"assert", unimplemented},
 			{"giveweapon", unimplemented},
 			{"setnormalhealth", unimplemented},
 			{"takeallweapons", unimplemented},
@@ -165,7 +184,8 @@ namespace script
 			{"precachevehicle", unimplemented},
 			{"print", print},
 			{"getcvar", get_cvar},
-			{"getcvarint", get_cvarint}
+			{"getcvarint", get_cvarint},
+			{"getcvarfloat", get_cvarfloat}
 		};
 	}; // namespace functions
 
