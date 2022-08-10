@@ -33,13 +33,13 @@ namespace script
 			{
 				auto* id = dynamic_cast<ast::Identifier*>(n.callee.get());
 				if (!id)
-					return false;
+					return true;
 				std::string ref = m_file_name;
 				if (!id->file_reference.empty())
 					ref = id->file_reference;
 				std::replace(ref.begin(), ref.end(), '\\', '/');
 				m_references[util::string::to_lower(ref)].insert(util::string::to_lower(id->name));
-				return false;
+				return true;
 			}
 			#if 0
 			virtual bool pre_visit(ast::Identifier& n) override
