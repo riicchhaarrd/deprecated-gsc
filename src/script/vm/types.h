@@ -14,6 +14,31 @@ namespace script
 			float x = 0.f;
 			float y = 0.f;
 			float z = 0.f;
+
+			float dot(const Vector& o)
+			{
+				return x * o.x + y * o.y + z * o.z;
+			}
+
+			float length()
+			{
+				return sqrtf(dot(*this));
+			}
+
+			float distance(const Vector& o)
+			{
+				Vector v = (*this) - o;
+				return v.length();
+			}
+
+			Vector operator-(const Vector& o)
+			{
+				Vector v;
+				v.x = x - o.x;
+				v.y = y - o.y;
+				v.z = z - o.z;
+				return v;
+			}
 		};
 		using String = std::string;
 		using Integer = int;
@@ -82,6 +107,11 @@ namespace script
 
 			std::shared_ptr<Variant> get_field(const std::string n)
 			{
+				if (n == "size")
+				{
+					int i = fields.size();
+					return std::make_shared<Variant>(i);
+				}
 				if (fields.find(n) == fields.end())
 				{
 					fields[n] = std::make_shared<vm::Variant>(vm::Undefined());

@@ -147,7 +147,7 @@ namespace script
 				for (auto& refmap_iter : m_refmap)
 				{
 					file = refmap_iter.first;
-					m_compiledfunctions = &m_files[file];
+					m_compiledfunctions = &m_files[util::string::to_lower(file)];
 					printf("compiling program %s\n", refmap_iter.first.c_str());
 					m_currentfile = refmap_iter.first;
 					for (auto& fun_iter : refmap_iter.second.function_map)
@@ -191,7 +191,7 @@ namespace script
 
 		void Compiler::visit(ast::FunctionDeclaration& n)
 		{
-			m_function = &(*m_compiledfunctions)[n.function_name];
+			m_function = &(*m_compiledfunctions)[util::string::to_lower(n.function_name)];
 			m_function->name = n.function_name;
 			m_function->parameters = n.parameters;
 			n.body->accept(*this);
@@ -356,87 +356,55 @@ namespace script
 
 		void Compiler::visit(ast::SwitchStatement& n)
 		{
+			auto end = label();
 			ast::SwitchCase* default_switch_case = nullptr;
-			size_t numcases = 0;
-			auto default_label = label();
 
 			std::vector<std::shared_ptr<Label>> labels;
-			for (auto& sc : n.cases)
+			for (size_t i = 0; i < n.cases.size(); ++i)
 			{
-				if (sc->test)
-				{
-					auto l = label();
-					auto jmp = instruction<Jump>();
-					jmp->dest = l;
-					labels.push_back(l);
-					add(jmp);
-					sc->test->accept(*this);
-					++numcases;
-					continue;
-				}
-				default_switch_case = sc.get();
+				labels.push_back(label());
 			}
-			auto sw = instruction<Switch>();
-			sw->numcases = numcases;
-			auto default_jmp = instruction<Jump>();
-			default_jmp->dest = default_label;
-			add(default_jmp);
 
-			n.discriminant->accept(*this);
-			add(sw);
-
-			auto end = label();
-			auto jmpend = instruction<Jump>();
-			jmpend->dest = end;
-			add(jmpend);
-			int i = 0;
-			for (auto& sc : n.cases)
+			size_t numcases = 0;
+			for (size_t i = 0; i < n.cases.size(); ++i)
 			{
+				auto& sc = n.cases[i];
 				if (!sc->test)
-					continue;
-				add(labels[i]);
-				auto ce = instruction<CaseEnd>();
-				for (auto& stmt : sc->consequent)
 				{
-					exit_labels.push(ce);
-					stmt->accept(*this);
-					exit_labels.pop();
+					default_switch_case = sc.get();
+					continue;
 				}
-				add(ce);
-				++i;
-			}
-
-			add(default_label);
-			auto default_ce = instruction<CaseEnd>();
-			if (default_switch_case)
-			{
-				exit_labels.push(default_ce);
-				for (auto& stmt : default_switch_case->consequent)
-					stmt->accept(*this);
-				exit_labels.pop();
-			}
-			add(default_ce);
-
-			add(end);
-				
-
-			#if 0
-			// dont really wanna bother with hacking in default statement
-			for (auto& sc : n.cases)
-			{
+				if (i > 0)
+					add(labels[i]);
 				n.discriminant->accept(*this);
 				sc->test->accept(*this);
 				auto cmp = instruction<Compare>();
 				add(cmp);
 				auto jnz = instruction<JumpNotZero>();
-				auto skip = label();
-				jnz->dest = skip;
+				jnz->dest = (i+1) >= labels.size() ? end : labels[i + 1];
 				add(jnz);
+
 				for (auto& stmt : sc->consequent)
+				{
+					exit_labels.push(end);
 					stmt->accept(*this);
-				add(skip);
+					exit_labels.pop();
+				}
+				auto jmp = instruction<Jump>();
+				jmp->dest = end;
 			}
-			#endif
+			//add default case
+			if (default_switch_case)
+			{
+				add(labels[labels.size() - 1]);
+				for (auto& stmt : default_switch_case->consequent)
+				{
+					exit_labels.push(end);
+					stmt->accept(*this);
+					exit_labels.pop();
+				}
+			}
+			add(end);
 		}
 
 		void Compiler::visit(ast::LocalizedString& n)
@@ -798,7 +766,7 @@ namespace script
 				add(instr);
 			}
 			n.object->accept(*this);
-			auto instr = instruction<LoadObjectFieldRef>();
+			auto instr = instruction<LoadObjectFieldValue>();
 			add(instr);
 		}
 

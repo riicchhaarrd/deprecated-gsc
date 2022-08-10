@@ -20,30 +20,58 @@ namespace script
 		}
 		void CallFunctionFile::execute(VirtualMachine& vm)
 		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
+			VariantPtr obj = nullptr;
+			if (is_method_call)
+			{
+				obj = vm.context()->get_variant(0);
+				vm.pop();
+			}
+			std::string ref = file;
+			std::replace(ref.begin(), ref.end(), '\\', '/');
+			if (is_threaded)
+			{
+				vm.exec_thread(obj, ref, this->function, numargs);
+				vm.push(vm.variant(vm::Undefined())); // thread doesn't return
+			}
+			else
+				vm.call(vm.thread(), obj, ref, this->function, this->numargs);
 		}
 		void CallFunction::execute(VirtualMachine& vm)
 		{
+			VariantPtr obj = nullptr;
 			if (is_method_call)
-				throw vm::Exception("method unhandled {}", __LINE__);
+			{
+				obj = vm.context()->get_variant(0);
+				vm.pop();
+			}
 			if (is_threaded)
 			{
-				vm.exec_thread(this->function);
+				vm.exec_thread(obj, this->function, numargs);
+				vm.push(vm.variant(vm::Undefined())); //thread doesn't return
 			}
 			else
-				vm.call(this->function, this->numargs);
+				vm.call(obj, this->function, this->numargs);
 		}
 		void JumpNotZero::execute(VirtualMachine& vm)
 		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
+			int intval = vm.context()->get_int(0);
+			vm.pop();
+			if (intval != 0)
+			{
+				if (!this->dest.expired())
+				{
+					size_t idx = this->dest.lock()->label_index;
+					vm.jump(idx);
+				}
+			}
 		}
 		void Constant1::execute(VirtualMachine& vm)
 		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
+			vm.push(vm.variant(1));
 		}
 		void Constant0::execute(VirtualMachine& vm)
 		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
+			vm.push(vm.variant(0));
 		}
 		void JumpZero::execute(VirtualMachine& vm)
 		{
@@ -84,11 +112,11 @@ namespace script
 		}
 		void Compare::execute(VirtualMachine& vm)
 		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
-		}
-		void CaseEnd::execute(VirtualMachine& vm)
-		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
+			auto a = vm.context()->get_variant(0);
+			auto b = vm.context()->get_variant(1);
+			vm.pop();
+			vm.pop();
+			vm.push(vm.variant(vm.binop(*a, *b, parse::TokenType_kEq)));
 		}
 		void Label::execute(VirtualMachine& vm)
 		{
@@ -97,7 +125,11 @@ namespace script
 		}
 		void BinOp::execute(VirtualMachine& vm)
 		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
+			auto a = vm.context()->get_variant(0);
+			auto b = vm.context()->get_variant(1);
+			vm.pop();
+			vm.pop();
+			vm.push(vm.variant(vm.binop(*a, *b, op)));
 		}
 		void WaitTillFrameEnd::execute(VirtualMachine& vm)
 		{
@@ -125,7 +157,9 @@ namespace script
 		}
 		void Not::execute(VirtualMachine& vm)
 		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
+			auto i = vm.context()->get_int(0);
+			vm.pop();
+			vm.push(vm.variant(~i));
 		}
 		void Negate::execute(VirtualMachine& vm)
 		{
@@ -136,31 +170,59 @@ namespace script
 		}
 		void Mod::execute(VirtualMachine& vm)
 		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
+			auto a = vm.context()->get_variant(0);
+			auto b = vm.context()->get_variant(1);
+			vm.pop();
+			vm.pop();
+			vm.push(vm.variant(vm.binop(*a, *b, '%')));
 		}
 		void Div::execute(VirtualMachine& vm)
 		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
+			auto a = vm.context()->get_variant(0);
+			auto b = vm.context()->get_variant(1);
+			vm.pop();
+			vm.pop();
+			vm.push(vm.variant(vm.binop(*a, *b, '/')));
 		}
 		void Mul::execute(VirtualMachine& vm)
 		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
+			auto a = vm.context()->get_variant(0);
+			auto b = vm.context()->get_variant(1);
+			vm.pop();
+			vm.pop();
+			vm.push(vm.variant(vm.binop(*a, *b, '*')));
 		}
 		void Sub::execute(VirtualMachine& vm)
 		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
+			auto a = vm.context()->get_variant(0);
+			auto b = vm.context()->get_variant(1);
+			vm.pop();
+			vm.pop();
+			vm.push(vm.variant(vm.binop(*a, *b, '-')));
 		}
 		void Or::execute(VirtualMachine& vm)
 		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
+			auto a = vm.context()->get_variant(0);
+			auto b = vm.context()->get_variant(1);
+			vm.pop();
+			vm.pop();
+			vm.push(vm.variant(vm.binop(*a, *b, '|')));
 		}
 		void And::execute(VirtualMachine& vm)
 		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
+			auto a = vm.context()->get_variant(0);
+			auto b = vm.context()->get_variant(1);
+			vm.pop();
+			vm.pop();
+			vm.push(vm.variant(vm.binop(*a, *b, '&')));
 		}
 		void Add::execute(VirtualMachine& vm)
 		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
+			auto a = vm.context()->get_variant(0);
+			auto b = vm.context()->get_variant(1);
+			vm.pop();
+			vm.pop();
+			vm.push(vm.variant(vm.binop(*a, *b, '+')));
 		}
 		void LoadObjectFieldValue::execute(VirtualMachine& vm)
 		{
@@ -190,10 +252,6 @@ namespace script
 		void LoadRef::execute(VirtualMachine& vm)
 		{
 			vm.push(vm.get_variable(this->variable_name));
-		}
-		void Switch::execute(VirtualMachine& vm)
-		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
 		}
 		void Nop::execute(VirtualMachine& vm)
 		{

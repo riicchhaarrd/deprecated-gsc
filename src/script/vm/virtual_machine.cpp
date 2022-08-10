@@ -66,6 +66,17 @@ namespace script
 			return 0.f;
 		}
 
+		int VirtualMachine::variant_to_integer(vm::Variant v)
+		{
+			vm::Type index = (vm::Type)v.index();
+			if (index == vm::Type::kUndefined)
+				return -1; //TODO: FIXME proper bool types, otherwise undefined (0) would be true to false
+			else if (index == vm::Type::kInteger)
+				return std::get<vm::Integer>(v);
+			throw vm::Exception("cannot convert {} to integer", vm::kVariantNames[v.index()]);
+			return 0;
+		}
+
 		struct VMContextImpl : VMContext
 		{
 			class VirtualMachine& vm;
@@ -73,9 +84,21 @@ namespace script
 			{
 			}
 
+			virtual void add_object(std::shared_ptr<vm::Object>& o)
+			{
+				vm.push(vm.variant(std::move(o)));
+			}
+			virtual void add_vector(vm::Vector v)
+			{
+				vm.push(vm.variant(v));
+			}
 			virtual void add_int(const int i)
 			{
 				vm.push(vm.variant(i));
+			}
+			virtual void add_undefined()
+			{
+				vm.push(vm.variant(vm::Undefined()));
 			}
 			virtual void add_float(const float f)
 			{
@@ -99,6 +122,13 @@ namespace script
 				if (v->index() != (int)vm::Type::kObject)
 					throw vm::Exception("expected object got {}", v->index());
 				return std::get<vm::ObjectPtr>(*v);
+			}
+			virtual void get_vector(size_t index, vm::Vector& vec)
+			{
+				auto v = vm.top(index);
+				if (v->index() != (int)vm::Type::kVector)
+					throw vm::Exception("expected vector got {}", v->index());
+				vec = std::get<vm::Vector>(*v);
 			}
 			virtual std::string get_string(size_t index)
 			{
@@ -136,32 +166,45 @@ namespace script
 			m_context = std::make_unique<VMContextImpl>(*this);
 			level_object = std::make_shared<vm::Variant>(std::make_shared<vm::Object>());
 			game_object = std::make_shared<vm::Variant>(std::make_shared<vm::Object>());
+			for (auto& it : cf_)
+			{
+				for (auto& iter : it.second)
+				{
+					m_allcustomfunctions[iter.first] = &iter.second;
+				}
+			}
 		}
 
-		void VirtualMachine::exec_thread(const std::string function)
+		void VirtualMachine::exec_thread(VariantPtr obj, const std::string function, size_t numargs)
 		{
 			auto& fc = function_context();
-			exec_thread(fc.file_name, function);
+			exec_thread(obj, fc.file_name, function, numargs);
 		}
 
-		void VirtualMachine::exec_thread(const std::string file, const std::string function)
+		void VirtualMachine::exec_thread(VariantPtr obj, const std::string file, const std::string function,
+										 size_t numargs)
 		{
 			m_newthreads.push_back(std::make_unique<ThreadContext>());
 			auto* thr = m_newthreads[m_newthreads.size() - 1].get();
 			//TODO: FIXME there's no guarantee in which order the thread runs, atm it runs after the thread that made a new thread
 			//but we could run the thread first till we hit a wait then return control to the former thread
-			call(thr, file, function, 0);
+			call(thr, obj, file, function, numargs);
 		}
 
 		compiler::CompiledFunction* VirtualMachine::find_function_in_file(const std::string file,
 																		  const std::string function)
 		{
-			auto fnd = m_compiledfiles.find(file);
+			auto fnd = m_compiledfiles.find(util::string::to_lower(file));
 			if (fnd == m_compiledfiles.end())
 				return nullptr;
-			auto fnd2 = fnd->second.find(function);
+			auto fnd2 = fnd->second.find(util::string::to_lower(function));
 			if (fnd2 == fnd->second.end())
-				return nullptr;
+			{
+				auto fnd3 = m_allcustomfunctions.find(util::string::to_lower(function));
+				if (fnd3 == m_allcustomfunctions.end())
+					return nullptr;
+				return fnd3->second;
+			}
 			return &fnd2->second;
 		}
 
@@ -178,9 +221,9 @@ namespace script
 			}
 		}
 
-		void VirtualMachine::dump()
+		void VirtualMachine::dump(ThreadContext *tc)
 		{
-			auto& fc = function_context();
+			auto& fc = tc->function_context();
 			dump_object("level", level_object, 0);
 			dump_object("game", game_object, 0);
 			for (auto& it : fc.variables)
@@ -200,7 +243,8 @@ namespace script
 			}
 		}
 
-		void VirtualMachine::call(ThreadContext *thread, const std::string file, const std::string function, size_t numargs)
+		void VirtualMachine::call(ThreadContext* thread, VariantPtr obj, const std::string file,
+								  const std::string function, size_t numargs)
 		{
 			auto* fn = find_function_in_file(file, function);
 			if (!fn)
@@ -211,49 +255,104 @@ namespace script
 
 			for (size_t i = 0; i < numargs; ++i)
 			{
-				auto arg = pop();
+				auto arg = pop(); //we're still calling m_thread pop because we want to pop the arguments off that thread
 				if (i >= fn->parameters.size())
 					continue;
 				auto &parm = fn->parameters[i];
 				fc.variables[parm] = arg;
-				printf("setting parameter %s to %s\n", parm.c_str(), variant_to_string_for_dump(arg).c_str());
+				//printf("setting parameter %s to %s\n", parm.c_str(), variant_to_string_for_dump(arg).c_str());
 			}
 
 			fc.instruction_index = 0;
 			fc.file_name = file;
 			fc.function_name = function;
 			fc.function = fn;
+			fc.self_object = obj;
 
+			//TODO: FIXME
+			//scan forward for labels
+			for (size_t i = 0; i < fc.function->instructions.size(); ++i)
+			{
+				auto& instr = fc.function->instructions[i];
+				auto *l = dynamic_cast<Label*>(instr.get());
+				if (!l)
+					continue;
+				fc.labels[l->label_index] = i;
+			}
+			#if 0
 			printf("============================================\n");
 			for (auto& instr : fc.function->instructions)
 			{
 				printf("$%s\n", instr->to_string().c_str());
 			}
 			printf("============================================\n");
+			#endif
 		}
 
-		void VirtualMachine::call_builtin(const std::string function, size_t numargs)
+		void VirtualMachine::notify(VariantPtr obj, size_t numargs)
+		{
+			pop(numargs);
+			push(variant(vm::Undefined()));
+		}
+		void VirtualMachine::waittill(VariantPtr obj, size_t numargs)
+		{
+			pop(numargs);
+			push(variant(vm::Undefined()));
+		}
+		void VirtualMachine::endon(VariantPtr obj, size_t numargs)
+		{
+			pop(numargs);
+			push(variant(vm::Undefined()));
+		}
+
+		void VirtualMachine::call_builtin(VariantPtr obj, const std::string function, size_t numargs)
 		{
 			auto fnd = m_stockfunctions.find(util::string::to_lower(function));
 			if (fnd == m_stockfunctions.end())
 				throw vm::Exception("no function named {}", function);
-			int num_pushed = fnd->second(*m_context.get(), nullptr);
+			if (obj && obj->index() != (int)vm::Type::kObject)
+				throw vm::Exception("expected object");
+			int num_pushed = fnd->second(*m_context.get(), obj ? std::get<vm::ObjectPtr>(*obj).get() : nullptr);
 			if (num_pushed == 0)
 			{
+				pop(numargs);
 				push(variant(vm::Undefined()));
 			}
+			else
+			{
+				auto tmp = pop();
+				pop(numargs);
+				push(tmp);
+			}
+			//printf("------------>%d\n", m_thread->m_stack.size());
 		}
 		
-		void VirtualMachine::call(const std::string function, size_t numargs)
+		void VirtualMachine::call(VariantPtr obj, const std::string function, size_t numargs)
 		{
+			if (function == "endon")
+			{
+				endon(obj, numargs);
+				return;
+			}
+			else if (function == "notify")
+			{
+				notify(obj, numargs);
+				return;
+			} else if (function == "waittill")
+			{
+				waittill(obj, numargs);
+				return;
+			}
 			auto fnd = m_stockfunctions.find(util::string::to_lower(function));
 			if (fnd != m_stockfunctions.end())
 			{
-				call_builtin(function, numargs);
+
+				//dump(m_thread);
+				call_builtin(obj, function, numargs);
 				return;
 			}
 			auto& fc = function_context();
-			call(m_thread, fc.file_name, function, numargs);
+			call(m_thread, obj, fc.file_name, function, numargs);
 		}
 
 		std::shared_ptr<vm::Instruction> VirtualMachine::fetch(ThreadContext* tc)

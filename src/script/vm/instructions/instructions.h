@@ -108,12 +108,6 @@ namespace script
 			DEFINE_INSTRUCTION(Nop)
 			virtual void execute(VirtualMachine& vm);
 		};
-		struct Switch : Instruction
-		{
-			DEFINE_INSTRUCTION(Switch)
-			size_t numcases;
-			virtual void execute(VirtualMachine& vm);
-		};
 		struct LoadRef : Instruction
 		{
 			virtual std::string to_string()
@@ -224,12 +218,6 @@ namespace script
 		{
 			size_t label_index = 0;
 			DEFINE_INSTRUCTION(Label)
-			virtual void execute(VirtualMachine& vm);
-		};
-
-		struct CaseEnd : Label
-		{
-			DEFINE_INSTRUCTION(CaseEnd)
 			virtual void execute(VirtualMachine& vm);
 		};
 
