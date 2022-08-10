@@ -873,9 +873,8 @@ namespace script
 				parse::source_map sources;
 				parse::definition_map definitions;
 				parse::preprocessor proc;
-				proc.set_flags(parse::PreprocessorFlags::kInludeOnce |
-							   parse::PreprocessorFlags::kIgnoreUnknownDirectives |
-							   parse::PreprocessorFlags::kDoNotInclude);
+				proc.set_options(parse::k_EPreprocessorOption_IncludeOnce | parse::k_EPreprocessorOption_IgnoreUnknownDirectives |
+							   parse::k_EPreprocessorOption_DoNotInclude);
 				proc.set_include_path_extension(".gsc");
 				parse::lexer_opts opts;
 

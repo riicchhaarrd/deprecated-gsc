@@ -6,7 +6,6 @@
 #include <set>
 #include <unordered_map>
 #include <exception>
-#include <common/flags.h>
 #include "token_parser.h"
 #include "lexer.h"
 
@@ -33,25 +32,24 @@ namespace parse
 		}
 	};
 
-	enum class PreprocessorFlags
+	typedef enum
 	{
-		kNone = 0,
-		kInludeOnce = 1,
-		kIgnoreUnknownDirectives = 2,
-		kDoNotInclude = 4
-	};
-	COMMON_DEFINE_ENUM_FLAG_OPERATORS(PreprocessorFlags)
+		k_EPreprocessorOption_None = 0,
+		k_EPreprocessorOption_IncludeOnce = 1,
+		k_EPreprocessorOption_IgnoreUnknownDirectives = 2,
+		k_EPreprocessorOption_DoNotInclude = 4
+	} EPreprocessorOptionFlags;
 
 	class preprocessor
 	{
 		std::string include_path_extension; //default don't postfix
-		PreprocessorFlags m_flags = PreprocessorFlags::kNone;
+		EPreprocessorOptionFlags m_options = k_EPreprocessorOption_None;
 		std::set<std::string> included;
 	  public:
 
-		void set_flags(PreprocessorFlags flags)
+		void set_options(int opts)
 		{
-			m_flags = flags;
+			m_options = (EPreprocessorOptionFlags)opts;
 		}
 		
 		void set_include_path_extension(const std::string ext)
@@ -136,15 +134,18 @@ namespace parse
 							std::replace(fixed_path.begin(), fixed_path.end(), '\\', '/');
 							if (fixed_path.find('.') == std::string::npos)
 								fixed_path += include_path_extension;
-							if (enum_flag_is_set(m_flags, PreprocessorFlags::kInludeOnce) &&
+							bool include_cond = true;
+							if ((m_options & k_EPreprocessorOption_IncludeOnce) &&
 								included.find(fixed_path) == included.end())
+								include_cond = false;
+							if (include_cond)
 							{
 								included.insert(fixed_path);
 
 								// for (int i = 0; i < depth; ++i)
 								// putchar('\t');
 								printf("including %s\n", t.to_string().c_str());
-								if (!enum_flag_is_set(m_flags, PreprocessorFlags::kDoNotInclude))
+								if ((m_options & k_EPreprocessorOption_DoNotInclude) != k_EPreprocessorOption_DoNotInclude)
 								{
 									token_list tmp;
 									if (!preprocess_with_typed_lexer<T>(fs, path_base, path_base + fixed_path, tmp,
@@ -188,7 +189,7 @@ namespace parse
 					}
 					else
 					{
-						if (enum_flag_is_set(m_flags, PreprocessorFlags::kIgnoreUnknownDirectives))
+						if (m_options & k_EPreprocessorOption_IgnoreUnknownDirectives)
 						{
 							parser.unread_token();
 							parser.unread_token();
