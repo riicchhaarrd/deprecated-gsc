@@ -223,10 +223,10 @@ namespace script
 			auto test = instruction<Test>();
 			add(test);
 			auto jz = instruction<JumpZero>();
-			add(jz);
-			n.consequent->accept(*this);
 			auto skip = label();
 			jz->dest = skip;
+			add(jz);
+			n.consequent->accept(*this);
 			add(skip);
 			if (n.alternative)
 			{
@@ -234,10 +234,10 @@ namespace script
 				auto test2 = instruction<Test>();
 				add(test2);
 				auto jz2 = instruction<JumpNotZero>();
-				add(jz2);
-				n.consequent->accept(*this);
 				auto skip2 = label();
 				jz2->dest = skip2;
+				add(jz2);
+				n.alternative->accept(*this);
 				add(skip2);
 			}
 		}
