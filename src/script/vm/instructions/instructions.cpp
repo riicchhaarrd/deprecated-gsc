@@ -168,6 +168,21 @@ namespace script
 			vm.pop();
 			vm.push(vm.variant(~i));
 		}
+		void LogicalNot::execute(VirtualMachine& vm)
+		{
+			auto v = vm.context()->get_variant(0);
+			vm.pop();
+			if (v->index() == (int)vm::Type::kInteger)
+			{
+				vm.push(vm.variant(!std::get<vm::Integer>(*v)));
+			}
+			else if (v->index() == (int)vm::Type::kUndefined)
+			{
+				vm.push(vm.variant(1));
+			}
+			else
+				throw vm::Exception("unexpected {}", v->index());
+		}
 		void LoadObjectFieldValue::execute(VirtualMachine& vm)
 		{
 			auto obj = vm.context()->get_object(0);

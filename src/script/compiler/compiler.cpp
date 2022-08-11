@@ -676,28 +676,8 @@ namespace script
 			case '!':
 			{
 				n.argument->accept(*this);
-				
-				auto test = instruction<Test>();
-				add(test);
-
-				auto l1 = label();
-				auto l2 = label();
-
-				auto jz = instruction<JumpZero>();
-				jz->dest = l1;
-				add(jz);
-
-				auto constant0 = instruction<Constant0>();
-				add(constant0);
-
-				auto jmp = instruction<Jump>();
-				jmp->dest = l2;
-				add(jmp);
-				add(l1);
-				auto constant1 = instruction<Constant1>();
-				add(constant1);
-				add(l2);
-
+				auto instr = instruction<LogicalNot>();
+				add(instr);
 			} break;
 			case '~':
 			{

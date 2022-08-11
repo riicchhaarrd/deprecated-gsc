@@ -149,6 +149,11 @@ namespace script
 			DEFINE_INSTRUCTION(Not)
 			virtual void execute(VirtualMachine& vm);
 		};
+		struct LogicalNot : Instruction
+		{
+			DEFINE_INSTRUCTION(LogicalNot)
+			virtual void execute(VirtualMachine& vm);
+		};
 		struct Ret : Instruction
 		{
 			DEFINE_INSTRUCTION(Ret)
