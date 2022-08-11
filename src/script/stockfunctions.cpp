@@ -182,6 +182,8 @@ namespace script
 			{"prof_end", unimplemented},
 			{"placespawnpoint", unimplemented},
 			{"precacherumble", unimplemented},
+			{"updatescores", unimplemented},
+			{"setclientcvar", unimplemented},
 			{"precachestatusicon", unimplemented},
 			{"setarchive", unimplemented},
 			{"precachestring", unimplemented},

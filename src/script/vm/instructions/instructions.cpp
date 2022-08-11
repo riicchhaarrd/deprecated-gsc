@@ -127,6 +127,9 @@ namespace script
 			struct ThreadLockWaitDuration : vm::ThreadLock
 			{
 				uint32_t end_time = 0;
+				virtual void notify(const std::string str)
+				{
+				}
 				virtual bool locked()
 				{
 					return GetTickCount() < end_time;

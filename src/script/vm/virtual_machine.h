@@ -47,6 +47,7 @@ namespace script
 		struct ThreadLock
 		{
 			virtual bool locked() = 0;
+			virtual void notify(const std::string) = 0;
 			virtual ~ThreadLock()
 			{
 			}
@@ -98,6 +99,7 @@ namespace script
 			std::vector<std::unique_ptr<ThreadContext>> m_threads;
 			std::vector<std::unique_ptr<ThreadContext>> m_newthreads;
 			ThreadContext* m_thread;
+			std::vector<std::string> event_strings;
 
 			VariantPtr level_object;
 			VariantPtr game_object;
@@ -115,7 +117,10 @@ namespace script
 			{
 				return m_thread->function_context();
 			}
-			
+			size_t thread_count()
+			{
+				return m_threads.size();
+			}
 			void set_flags(int flags)
 			{
 				m_flags = flags;
@@ -150,6 +155,10 @@ namespace script
 			std::string variant_to_string_for_dump(VariantPtr v);
 			void dump_object(const std::string, VariantPtr ptr, int indent);
 			void dump(ThreadContext*);
+			void notify_event_string(const std::string str)
+			{
+				event_strings.push_back(str);
+			}
 			std::unique_ptr<VMContext>& context()
 			{
 				return m_context;

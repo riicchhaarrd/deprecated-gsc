@@ -296,8 +296,29 @@ namespace script
 		}
 		void VirtualMachine::waittill(VariantPtr obj, size_t numargs)
 		{
+			std::string event_str = context()->get_string(0);
 			pop(numargs);
 			push(variant(vm::Undefined()));
+
+			struct ThreadLockWaitForEventString : vm::ThreadLock
+			{
+				std::string string;
+				bool notified = false;
+
+				virtual void notify(const std::string str)
+				{
+					if (string == str)
+						notified = true;
+				}
+
+				virtual bool locked()
+				{
+					return !notified;
+				}
+			};
+			auto l = std::make_unique<ThreadLockWaitForEventString>();
+			l->string = event_str;
+			thread()->m_locks.push_back(std::move(l));
 		}
 		void VirtualMachine::endon(VariantPtr obj, size_t numargs)
 		{
@@ -372,12 +393,14 @@ namespace script
 				return game_object;
 			}
 			else if (var == "self")
-				throw vm::Exception("self unhandled");
+			{
+				return fc.self_object;
+			}
 			return fc.get_variable(var);
 		}
 		void VirtualMachine::run()
 		{
-			while (1)
+			//while (1)
 			{
 				//remove deleted threads
 				for (auto it = m_threads.begin(); it != m_threads.end();)
@@ -394,8 +417,25 @@ namespace script
 					it = m_newthreads.erase(it);
 				}
 
+				//may have to change the order depending on the behavior of endon/notify called right after eachother
+				//e.g
+				//level endon("test");
+				//level notify("test")
+
+				for (auto& event_str : event_strings)
+				{
+					for(auto & thr : m_threads)
+					{
+						for (auto& l : thr->m_locks)
+						{
+							l->notify(event_str);
+						}
+					}
+				}
+				event_strings.clear();
+
 				if (m_threads.empty())
-					break;
+					return;
 				//probably would be better if the instructions did accept(*this)
 				//and then a InstructionRunner instantiated with a reference to the active thread with some other things
 				for (auto& thread : m_threads)
@@ -425,7 +465,7 @@ namespace script
 						instr->execute(*this);
 					}
 				}
-				Sleep(1000 / 20);
+				//Sleep(1000 / 20);
 			}
 		}
 	}; // namespace vm
