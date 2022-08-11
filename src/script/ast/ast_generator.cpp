@@ -58,7 +58,9 @@ namespace script
 			int op = token.type_as_int();
 			auto n = node<UnaryExpression>();
 			n->op = op;
-			n->argument = expression();
+			ExpressionPtr expr;
+			member_expression(expr);
+			n->argument = std::move(expr);
 			n->prefix = true;
 			return n;
 		}
