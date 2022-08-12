@@ -104,9 +104,12 @@ namespace script
 
 		struct Object
 		{
+			virtual ~Object()
+			{
+			}
 			std::unordered_map<std::string, std::shared_ptr<Variant>> fields;
 
-			std::shared_ptr<Variant> get_field(const std::string n)
+			virtual std::shared_ptr<Variant> get_field(const std::string n)
 			{
 				if (n == "size")
 				{
