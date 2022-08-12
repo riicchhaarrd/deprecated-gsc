@@ -84,13 +84,15 @@ namespace script
 			m_vm.reset();
 		}
 	}
-	void ScriptEngine::execute_thread(const std::string file, const std::string function, size_t nargs)
+	void ScriptEngine::execute_thread(vm::VariantPtr object, const std::string file, const std::string function, size_t nargs)
 	{
 		if (!m_vm)
 			return;
+		if (!object)
+			object = m_vm->get_level_object();
 		try
 		{
-			m_vm->exec_thread(nullptr, file, function, nargs);
+			m_vm->exec_thread(object, file, function, nargs);
 		}
 		catch (vm::Exception& ex)
 		{

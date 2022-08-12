@@ -1,6 +1,7 @@
 #pragma once
 #include <core/filesystem/api.h>
 #include <script/compiler/compiler.h>
+#include <script/vm/types.h>
 
 namespace script
 {
@@ -18,7 +19,7 @@ namespace script
 		ScriptEngine(filesystem_api&);
 		~ScriptEngine();
 		bool load(const std::string);
-		void execute_thread(const std::string, const std::string, size_t);
+		void execute_thread(vm::VariantPtr, const std::string, const std::string, size_t);
 		void run();
 	};
 };
