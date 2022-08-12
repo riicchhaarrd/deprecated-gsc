@@ -63,6 +63,8 @@ namespace script
 		{
 			int m_flags = flags::kNone;
 			compiler::CompiledFiles& m_compiledfiles;
+			size_t frame_number = 0;
+
 			struct FunctionContext
 			{
 				std::string file_name;
@@ -123,6 +125,12 @@ namespace script
 			{
 				return m_threads.size();
 			}
+
+			size_t get_frame_number()
+			{
+				return frame_number;
+			}
+
 			void set_flags(int flags)
 			{
 				m_flags = flags;

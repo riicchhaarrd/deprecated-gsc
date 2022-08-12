@@ -485,6 +485,7 @@ namespace script
 				}
 				//Sleep(1000 / 20);
 			}
+			++frame_number;
 		}
 	}; // namespace vm
 };	   // namespace script
