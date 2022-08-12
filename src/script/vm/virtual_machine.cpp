@@ -479,7 +479,7 @@ namespace script
 						if (!instr)
 							throw vm::Exception("shouldn't be nullptr");
 						auto& fc = m_thread->function_context();
-						printf("\t\t-->%s (%d)\t%s::%s\n", instr->to_string().c_str(), m_thread->m_stack.size(), fc.file_name.c_str(), fc.function_name.c_str());
+						//printf("\t\t-->%s (%d)\t%s::%s\n", instr->to_string().c_str(), m_thread->m_stack.size(), fc.file_name.c_str(), fc.function_name.c_str());
 						instr->execute(*this);
 					}
 				}
