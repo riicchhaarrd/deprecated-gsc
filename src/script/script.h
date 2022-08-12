@@ -21,5 +21,10 @@ namespace script
 		bool load(const std::string);
 		void execute_thread(vm::VariantPtr, const std::string, const std::string, size_t);
 		void run();
+
+		template <typename T> vm::VariantPtr create_object()
+		{
+			return std::make_shared<vm::Variant>(std::make_shared<T>());
+		}
 	};
 };
