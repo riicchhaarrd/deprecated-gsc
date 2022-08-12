@@ -128,6 +128,11 @@ namespace script
 				m_flags = flags;
 			}
 
+			VariantPtr get_level_object()
+			{
+				return level_object;
+			}
+
 			int get_flags()
 			{
 				return m_flags;
