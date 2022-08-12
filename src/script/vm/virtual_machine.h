@@ -356,7 +356,38 @@ namespace script
 				}
 				else
 				{
-					if (a_index == vm::Type::kVector && b_index == vm::Type::kVector)
+					if (a_index == vm::Type::kObject || b_index == vm::Type::kObject)
+					{
+						if (op != parse::TokenType_kEq && op != parse::TokenType_kNeq)
+						{
+							throw vm::Exception("expected == or !=");
+						}
+						if (a_index == vm::Type::kUndefined|| b_index == vm::Type::kUndefined)
+						{
+							if (op == parse::TokenType_kEq)
+							{
+								result = 0;
+							}
+							else
+							{
+								result = 1;
+							}
+						}
+						else
+						{
+							auto obj_a = std::get<vm::ObjectPtr>(a);
+							auto obj_b = std::get<vm::ObjectPtr>(b);
+							if (op == parse::TokenType_kEq)
+							{
+								result = (obj_a.get() == obj_b.get()) ? 1 : 0;
+							}
+							else
+							{
+								result = (obj_a.get() != obj_b.get()) ? 1 : 0;
+							}
+						}
+					}
+					else if (a_index == vm::Type::kVector && b_index == vm::Type::kVector)
 					{
 						result = handle_binary_op(std::get<vm::Vector>(a), std::get<vm::Vector>(b), op);
 					}
