@@ -42,6 +42,8 @@ namespace script
 				return std::to_string(std::get<vm::Number>(v));
 			case vm::Type::kString:
 				return std::get<vm::String>(v);
+			case vm::Type::kLocalizedString:
+				return std::get<vm::LocalizedString>(v).reference;
 			case vm::Type::kUndefined:
 				return "undefined";
 			case vm::Type::kVector:
@@ -62,6 +64,10 @@ namespace script
 				return std::get<vm::Number>(v);
 			else if (index == vm::Type::kInteger)
 				return (float)std::get<vm::Integer>(v);
+			else if (index == vm::Type::kUndefined)
+				return 0.f;
+			else if (index == vm::Type::kString)
+				return atof(std::get<vm::String>(v).c_str());
 			throw vm::Exception("cannot convert {} to float", vm::kVariantNames[v.index()]);
 			return 0.f;
 		}
