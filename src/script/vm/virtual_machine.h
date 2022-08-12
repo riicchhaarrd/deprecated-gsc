@@ -10,7 +10,6 @@
 
 namespace script
 {
-	using VariantPtr = std::shared_ptr<vm::Variant>;
 	struct VMContext
 	{
 		virtual std::string get_string(size_t) = 0;
@@ -18,7 +17,7 @@ namespace script
 		virtual vm::ObjectPtr get_object(size_t) = 0;
 		virtual float get_float(size_t) = 0;
 		virtual void get_vector(size_t, vm::Vector&) = 0;
-		virtual VariantPtr get_variant(size_t) = 0;
+		virtual vm::VariantPtr get_variant(size_t) = 0;
 		virtual std::string variant_to_string(vm::Variant) = 0;
 		virtual float variant_to_number(vm::Variant) = 0;
 		virtual void add_bool(const bool b)

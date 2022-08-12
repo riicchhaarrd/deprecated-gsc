@@ -77,6 +77,7 @@ namespace script
 
 		using Variant = std::variant<Undefined, Vector, String, Integer, Number, ObjectPtr, ArrayPtr, LocalizedString,
 									 FunctionPointer, Identifier, Animation>;
+		using VariantPtr = std::shared_ptr<vm::Variant>;
 		static const char* kVariantNames[] = {"Undefined", "Vector", "String", "Integer", "Float",
 											  "Object",	   "Array",	 "String Localized", "Function Pointer", "?",
 											  "Animation", NULL};
