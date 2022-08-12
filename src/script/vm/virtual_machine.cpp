@@ -135,6 +135,14 @@ namespace script
 				auto v = vm.top(index);
 				return vm.variant_to_string(*v);
 			}
+			virtual std::string variant_to_string(vm::Variant v)
+			{
+				return vm.variant_to_string(v);
+			}
+			virtual float variant_to_number(vm::Variant v)
+			{
+				return vm.variant_to_number(v);
+			}
 			virtual int get_int(size_t index)
 			{
 				auto v = vm.top(index);
