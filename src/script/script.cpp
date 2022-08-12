@@ -84,6 +84,18 @@ namespace script
 			m_vm.reset();
 		}
 	}
+
+	void ScriptEngine::register_function(const std::string name, StockFunction sf)
+	{
+		auto fnd = m_registeredfunctions.find(name);
+		if (fnd != m_registeredfunctions.end())
+		{
+			LOG_ERROR("function '%s' already defined", name.c_str());
+			return;
+		}
+		m_registeredfunctions[name] = sf;
+	}
+
 	void ScriptEngine::execute_thread(vm::VariantPtr object, const std::string file, const std::string function, size_t nargs)
 	{
 		if (!m_vm)
