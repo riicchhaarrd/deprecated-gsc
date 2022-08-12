@@ -17,7 +17,7 @@ namespace script
 			if (vfp->index() != (int)vm::Type::kFunctionPointer)
 				throw vm::Exception("{} is not a function pointer", vfp->index());
 			auto fp = std::get<vm::FunctionPointer>(*vfp);
-			VariantPtr obj = nullptr;
+			VariantPtr obj = vm.function_context().self_object;
 			if (is_method_call)
 			{
 				obj = vm.context()->get_variant(0);
@@ -35,7 +35,7 @@ namespace script
 		}
 		void CallFunctionFile::execute(VirtualMachine& vm)
 		{
-			VariantPtr obj = nullptr;
+			VariantPtr obj = vm.function_context().self_object;
 			if (is_method_call)
 			{
 				obj = vm.context()->get_variant(0);
@@ -53,7 +53,7 @@ namespace script
 		}
 		void CallFunction::execute(VirtualMachine& vm)
 		{
-			VariantPtr obj = nullptr;
+			VariantPtr obj = vm.function_context().self_object;
 			if (is_method_call)
 			{
 				obj = vm.context()->get_variant(0);
