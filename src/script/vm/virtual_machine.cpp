@@ -122,7 +122,7 @@ namespace script
 			{
 				auto v = vm.top(index);
 				if (!v)
-					throw vm::Exception("expected object got {}", v->index());
+					throw vm::Exception("expected object got null");
 				if (v->index() == (int)vm::Type::kUndefined)
 					*v = std::make_shared<Object>();
 				if (v->index() != (int)vm::Type::kObject)
