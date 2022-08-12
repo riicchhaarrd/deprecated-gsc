@@ -72,8 +72,8 @@ namespace script
 	{
 		if (!m_vm)
 			return;
-		if (m_vm->thread_count() == 0)
-			return;
+		//if (m_vm->thread_count() == 0)
+			//return;
 		try
 		{
 			m_vm->run();
