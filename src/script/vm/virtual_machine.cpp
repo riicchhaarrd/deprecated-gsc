@@ -191,6 +191,8 @@ namespace script
 
 		void VirtualMachine::exec_thread(VariantPtr obj, const std::string function, size_t numargs)
 		{
+			if (!obj)
+				throw vm::Exception("no object");
 			auto& fc = function_context();
 			exec_thread(obj, fc.file_name, function, numargs);
 		}
@@ -198,6 +200,8 @@ namespace script
 		void VirtualMachine::exec_thread(VariantPtr obj, const std::string file, const std::string function,
 										 size_t numargs)
 		{
+			if (!obj)
+				throw vm::Exception("no object");
 			m_newthreads.push_back(std::make_unique<ThreadContext>());
 			auto* thr = m_newthreads[m_newthreads.size() - 1].get();
 			//TODO: FIXME there's no guarantee in which order the thread runs, atm it runs after the thread that made a new thread
