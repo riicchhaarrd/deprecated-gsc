@@ -137,7 +137,23 @@ namespace script
 		}
 		void WaitTillFrameEnd::execute(VirtualMachine& vm)
 		{
-			throw vm::Exception("unhandled instruction {}", __LINE__);
+			struct ThreadLockWaitFrame : vm::ThreadLock
+			{
+				VirtualMachine& vm;
+				size_t frame;
+				ThreadLockWaitFrame(VirtualMachine& vm_, size_t frame_) : frame(frame_), vm(vm_)
+				{
+				}
+				virtual void notify(const std::string str)
+				{
+				}
+				virtual bool locked()
+				{
+					return vm.get_frame_number() == frame;
+				}
+			};
+			auto l = std::make_unique<ThreadLockWaitFrame>(vm, vm.get_frame_number());
+			vm.thread()->m_locks.push_back(std::move(l));
 		}
 		void Wait::execute(VirtualMachine& vm)
 		{
