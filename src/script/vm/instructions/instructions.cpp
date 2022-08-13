@@ -12,17 +12,17 @@ namespace script
 		}
 		void CallFunctionPointer::execute(VirtualMachine& vm)
 		{
+			vm::ObjectPtr obj = vm.function_context().self_object;
+			if (is_method_call)
+			{
+				obj = vm.context()->get_object(0);
+				vm.pop();
+			}
 			auto vfp = vm.context()->get_variant(0);
 			vm.pop();
 			if (vfp->index() != (int)vm::Type::kFunctionPointer)
 				throw vm::Exception("{} is not a function pointer", vfp->index());
 			auto fp = std::get<vm::FunctionPointer>(*vfp);
-			VariantPtr obj = vm.function_context().self_object;
-			if (is_method_call)
-			{
-				obj = vm.context()->get_variant(0);
-				vm.pop();
-			}
 			std::string ref = fp.file;
 			std::replace(ref.begin(), ref.end(), '\\', '/');
 			if (is_threaded)
