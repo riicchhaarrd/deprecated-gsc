@@ -88,8 +88,19 @@ namespace script
 		struct VMContextImpl : VMContext
 		{
 			class VirtualMachine& vm;
+			size_t nargs = 0;
+
 			VMContextImpl(VirtualMachine& vm_) : vm(vm_)
 			{
+			}
+			virtual size_t number_of_arguments()
+			{
+				return nargs;
+			}
+			
+			virtual void set_number_of_arguments(size_t n)
+			{
+				nargs = n;
 			}
 
 			virtual void add_object(std::shared_ptr<vm::Object>& o)
@@ -354,6 +365,7 @@ namespace script
 			if (obj && obj->index() != (int)vm::Type::kObject)
 				throw vm::Exception("expected object got {}", obj->index());
 			int num_pushed = fnd->second(*m_context.get(), obj ? std::get<vm::ObjectPtr>(*obj).get() : nullptr);
+			m_context->set_number_of_arguments(numargs);
 			if (num_pushed == 0)
 			{
 				pop(numargs);

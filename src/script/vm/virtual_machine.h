@@ -12,6 +12,8 @@ namespace script
 {
 	struct VMContext
 	{
+		virtual size_t number_of_arguments() = 0;
+		virtual void set_number_of_arguments(size_t) = 0;
 		virtual std::string get_string(size_t) = 0;
 		virtual int get_int(size_t) = 0;
 		virtual vm::ObjectPtr get_object(size_t) = 0;
