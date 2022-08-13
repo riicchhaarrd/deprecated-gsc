@@ -377,7 +377,6 @@ namespace script
 			{
 				labels.push_back(label());
 			}
-
 			size_t numcases = 0;
 			for (size_t i = 0; i < n.cases.size(); ++i)
 			{
@@ -394,9 +393,11 @@ namespace script
 				auto instr = instruction<BinOp>();
 				instr->op = parse::TokenType_kEq;
 				add(instr);
-				auto jnz = instruction<JumpNotZero>();
-				jnz->dest = (i+1) >= labels.size() ? end : labels[i + 1];
-				add(jnz);
+				auto test = instruction<Test>();
+				add(test);
+				auto jz = instruction<JumpZero>();
+				jz->dest = (i+1) >= labels.size() ? end : labels[i + 1];
+				add(jz);
 
 				for (auto& stmt : sc->consequent)
 				{
@@ -406,6 +407,7 @@ namespace script
 				}
 				auto jmp = instruction<Jump>();
 				jmp->dest = end;
+				add(jmp);
 			}
 			//add default case
 			if (default_switch_case)
