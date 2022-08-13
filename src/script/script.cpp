@@ -96,7 +96,22 @@ namespace script
 		m_registeredfunctions[name] = sf;
 	}
 
-	void ScriptEngine::execute_thread(vm::VariantPtr object, const std::string file, const std::string function, size_t nargs)
+	void ScriptEngine::notify(vm::ObjectPtr object, const std::string str)
+	{
+		if (!m_vm)
+			return;
+		try
+		{
+			m_vm->notify_event_string(object, str);
+		}
+		catch (vm::Exception& ex)
+		{
+			LOG_ERROR("Script Error: %s\n", ex.what());
+			m_vm.reset();
+		}
+	}
+
+	void ScriptEngine::execute_thread(vm::ObjectPtr object, const std::string file, const std::string function, size_t nargs)
 	{
 		if (!m_vm)
 			return;
