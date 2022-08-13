@@ -136,8 +136,8 @@ namespace script
 				auto v = vm.top(index);
 				if (!v)
 					throw vm::Exception("expected object got null");
-				if (v->index() == (int)vm::Type::kUndefined)
-					*v = std::make_shared<Object>();
+				//if (v->index() == (int)vm::Type::kUndefined)
+					//*v = std::make_shared<Object>();
 				if (v->index() != (int)vm::Type::kObject)
 					throw vm::Exception("expected object got {}", v->index());
 				return std::get<vm::ObjectPtr>(*v);
@@ -324,28 +324,45 @@ namespace script
 
 		void VirtualMachine::notify(vm::ObjectPtr obj, size_t numargs)
 		{
-			pop(numargs);
+			std::string evstr = context()->get_string(0);
+			pop();
+
+			std::vector<vm::Variant> args;
+			for (size_t i = 0; i < numargs - 1; ++i)
+			{
+				auto vp = pop();
+				args.push_back(*vp);
+			}
+			notify_event_string(obj, evstr, &args);
 			push(variant(vm::Undefined()));
 		}
-		void VirtualMachine::waittill(vm::ObjectPtr obj, size_t numargs)
+		void VirtualMachine::waittill(vm::ObjectPtr obj, const std::string event_str, std::vector<std::string>& vars)
 		{
-			std::string event_str = context()->get_string(0);
-			pop(numargs);
-			push(variant(vm::Undefined()));
-
 			struct ThreadLockWaitForEventString : vm::ThreadLock
 			{
+				VirtualMachine* vm;
+				std::vector<std::string> parameters;
 				std::string string;
 				vm::ObjectPtr object;
 				bool notified = false;
+				FunctionContext* fc; //should still exist right..
 
-				virtual void notify(vm::ObjectPtr obj, const std::string str)
+				virtual void notify(NotifyEvent& ne)
 				{
-					if (string == str && obj == object)
+					if (string == ne.event_string && ne.object == object)
+					{
+						for (size_t i = 0; i < parameters.size(); ++i)
+						{
+							//printf("setting parameter for notify i:%d, argsize:%d, parmsize:%d\n", i, ne.arguments.size(), parameters.size());
+							if (i >= ne.arguments.size())
+								continue;
+							auto var = fc->get_variable(parameters[i]);
+							*var = ne.arguments[i];
+						}
 						notified = true;
 					else
 					{
-						printf("notify: %s, %s, %02X, %02X\n", str.c_str(), string.c_str(), obj.get(), object.get());
+						//printf("notify: %s, %s, %02X, %02X\n", ne.event_string.c_str(), string.c_str(), ne.object.get(), object.get());
 					}
 				}
 
@@ -355,9 +372,16 @@ namespace script
 				}
 			};
 			auto l = std::make_unique<ThreadLockWaitForEventString>();
+			for (size_t i = 0; i < vars.size(); ++i)
+			{
+				l->parameters.push_back(vars[i]);
+			}
+			l->fc = &function_context();
+			l->vm = this;
 			l->object = obj;
 			l->string = event_str;
 			thread()->m_locks.push_back(std::move(l));
+			push(variant(vm::Undefined()));
 		}
 		void VirtualMachine::endon(vm::ObjectPtr obj, size_t numargs)
 		{
@@ -398,7 +422,7 @@ namespace script
 				return;
 			} else if (function == "waittill")
 			{
-				waittill(obj, numargs);
+				throw vm::Exception("should be a instruction, not a function call");
 				return;
 			}
 			auto fnd = m_stockfunctions.find(util::string::to_lower(function));
@@ -460,17 +484,17 @@ namespace script
 				//level endon("test");
 				//level notify("test")
 
-				for (auto& event_str : event_strings)
+				for (auto& ne : notification_events)
 				{
 					for(auto & thr : m_threads)
 					{
 						for (auto& l : thr->m_locks)
 						{
-							l->notify(event_str.first, event_str.second);
+							l->notify(ne);
 						}
 					}
 				}
-				event_strings.clear();
+				notification_events.clear();
 
 				if (m_threads.empty())
 					return;

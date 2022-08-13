@@ -67,6 +67,27 @@ namespace script
 			else
 				vm.call(obj, this->function, this->numargs);
 		}
+		void WaitTill::execute(VirtualMachine& vm)
+		{
+			vm::ObjectPtr obj;
+			if (is_method_call)
+			{
+				obj = vm.context()->get_object(0);
+				vm.pop();
+			}
+			if (!obj)
+				throw vm::Exception("no obj");
+			std::string evstr = vm.context()->get_string(0);
+			vm.pop();
+			std::vector<std::string> vars;
+			for (size_t i = 0; i < this->numargs; ++i)
+			{
+				vars.push_back(vm.context()->get_string(0));
+				vm.pop();
+			}
+			std::reverse(vars.begin(), vars.end());
+			vm.waittill(obj, evstr, vars);
+		}
 		void JumpNotZero::execute(VirtualMachine& vm)
 		{
 			if ((vm.get_flags() & vm::flags::kZF) != vm::flags::kZF)
@@ -144,7 +165,7 @@ namespace script
 				ThreadLockWaitFrame(VirtualMachine& vm_, size_t frame_) : frame(frame_), vm(vm_)
 				{
 				}
-				virtual void notify(vm::ObjectPtr, const std::string)
+				virtual void notify(NotifyEvent&)
 				{
 				}
 				virtual bool locked()
@@ -162,7 +183,7 @@ namespace script
 			struct ThreadLockWaitDuration : vm::ThreadLock
 			{
 				uint32_t end_time = 0;
-				virtual void notify(vm::ObjectPtr, const std::string)
+				virtual void notify(NotifyEvent&)
 				{
 				}
 				virtual bool locked()
@@ -201,14 +222,36 @@ namespace script
 		}
 		void LoadObjectFieldValue::execute(VirtualMachine& vm)
 		{
-			auto obj = vm.context()->get_object(0);
+			auto v = vm.top();
+			if (!v)
+				throw vm::Exception("expected object got null");
+			// if (op == '[' && v->index() == (int)vm::Type::kUndefined)
+			if (v->index() == (int)vm::Type::kUndefined)
+			{
+				auto o = std::make_shared<Object>();
+				*v = o;
+			}
+			if (v->index() != (int)vm::Type::kObject)
+				throw vm::Exception("expected object got {}", v->index());
+			auto obj = std::get<vm::ObjectPtr>(*v);
 			auto prop = vm.context()->get_string(1);
 			vm.pop(2);
 			vm.push(obj->get_field(prop));
 		}
 		void LoadObjectFieldRef::execute(VirtualMachine& vm)
 		{
-			auto obj = vm.context()->get_object(0);
+			auto v = vm.top();
+			if (!v)
+				throw vm::Exception("expected object got null");
+			//if (op == '[' && v->index() == (int)vm::Type::kUndefined)
+			if (v->index() == (int)vm::Type::kUndefined)
+			{
+				auto o = std::make_shared<Object>();
+				*v = o;
+			}
+			if (v->index() != (int)vm::Type::kObject)
+				throw vm::Exception("expected object got {}", v->index());
+			auto obj = std::get<vm::ObjectPtr>(*v);
 			auto prop = vm.context()->get_string(1);
 			vm.pop(2);
 			vm.push(obj->get_field(prop));

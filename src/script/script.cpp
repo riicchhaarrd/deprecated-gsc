@@ -96,13 +96,13 @@ namespace script
 		m_registeredfunctions[name] = sf;
 	}
 
-	void ScriptEngine::notify(vm::ObjectPtr object, const std::string str)
+	void ScriptEngine::notify(vm::ObjectPtr object, const std::string str, std::vector<vm::Variant>* args)
 	{
 		if (!m_vm)
 			return;
 		try
 		{
-			m_vm->notify_event_string(object, str);
+			m_vm->notify_event_string(object, str, args);
 		}
 		catch (vm::Exception& ex)
 		{

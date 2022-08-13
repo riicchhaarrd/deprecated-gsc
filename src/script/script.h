@@ -27,7 +27,7 @@ namespace script
 		{
 			m_registeredfunctions.clear();
 		}
-		void notify(vm::ObjectPtr, const std::string);
+		void notify(vm::ObjectPtr, const std::string, std::vector<vm::Variant>* args = nullptr);
 		void run();
 
 		template <typename T, typename... Ts> vm::ObjectPtr create_object(Ts... ts)

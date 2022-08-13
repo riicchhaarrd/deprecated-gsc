@@ -545,6 +545,7 @@ namespace script
 				}
 				n.object->accept(*this);
 				auto instr = compiler->instruction<LoadObjectFieldRef>();
+				instr->op = n.op;
 				compiler->add(instr);
 			}
 			virtual void visit(ast::Identifier& n)
@@ -587,13 +588,50 @@ namespace script
 			n.lhs->accept(vis);
 		}
 
+		void Compiler::handle_waittill(ast::CallExpression& n)
+		{
+			if (n.arguments.size() < 1)
+				throw CompileException("waittill requires a minimum of 1 argument");
+			auto instr = instruction<WaitTill>();
+			for (size_t i = 1; i < n.arguments.size(); ++i)
+			{
+				auto* id = dynamic_cast<ast::Identifier*>(n.arguments[i].get());
+				if (!id)
+					throw CompileException("expected identifier");
+				if (!id->file_reference.empty())
+				{
+					throw CompileException("unexpected file reference");
+				}
+
+				auto ps = instruction<PushString>();
+				ps->value = id->name;
+				ps->length = id->name.size();
+				add(ps);
+			}
+			instr->is_method_call = n.object != nullptr;
+			instr->numargs = n.arguments.size() - 1;
+			n.arguments[0]->accept(*this);
+			if (instr->is_method_call)
+			{
+				n.object->accept(*this);
+			}
+			add(instr);
+		}
+
 		void Compiler::visit(ast::CallExpression& n)
 		{
+			auto* id = dynamic_cast<ast::Identifier*>(n.callee.get());
+			if (id && id->name == "waittill")
+			{
+				if (!id->file_reference.empty())
+					throw CompileException("expected empty file reference");
+				handle_waittill(n);
+				return;
+			}
 			for (auto it = n.arguments.rbegin(); it != n.arguments.rend(); ++it)
 				(*it)->accept(*this);
 			std::shared_ptr<Call> instr;
 
-			auto* id = dynamic_cast<ast::Identifier*>(n.callee.get());
 			if (id)
 			{
 				if (!id->file_reference.empty())
@@ -657,6 +695,7 @@ namespace script
 			}
 			n.object->accept(*this);
 			auto instr = instruction<LoadObjectFieldValue>();
+			instr->op = n.op;
 			add(instr);
 		}
 

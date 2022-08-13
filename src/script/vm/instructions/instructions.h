@@ -137,11 +137,13 @@ namespace script
 		struct LoadObjectFieldRef : Instruction
 		{
 			DEFINE_INSTRUCTION(LoadObjectFieldRef)
+			int op;
 			virtual void execute(VirtualMachine& vm);
 		};
 		struct LoadObjectFieldValue : Instruction
 		{
 			DEFINE_INSTRUCTION(LoadObjectFieldValue)
+			int op;
 			virtual void execute(VirtualMachine& vm);
 		};
 		struct Not : Instruction
@@ -225,6 +227,13 @@ namespace script
 			bool is_threaded = false;
 			size_t numargs = 0;
 			virtual void execute(VirtualMachine& vm) = 0;
+		};
+		struct WaitTill : Instruction
+		{
+			DEFINE_INSTRUCTION(WaitTill)
+			bool is_method_call = false;
+			size_t numargs = 0;
+			virtual void execute(VirtualMachine& vm);
 		};
 
 		struct CallFunction : Call

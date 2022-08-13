@@ -113,6 +113,7 @@ namespace script
 			virtual void visit(ast::FunctionPointer&) override;
 			virtual void visit(ast::BinaryExpression&) override;
 			virtual void visit(ast::AssignmentExpression&) override;
+			void handle_waittill(ast::CallExpression& n);
 			virtual void visit(ast::CallExpression&) override;
 			virtual void visit(ast::ConditionalExpression&) override;
 			virtual void visit(ast::MemberExpression&) override;

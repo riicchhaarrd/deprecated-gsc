@@ -45,12 +45,19 @@ namespace script
 				kNone = 0,
 				kZF = 1
 			};
+		}; // namespace flags
+
+		struct NotifyEvent
+		{
+			std::string event_string;
+			vm::ObjectPtr object;
+			std::vector<vm::Variant> arguments;
 		};
 
 		struct ThreadLock
 		{
 			virtual bool locked() = 0;
-			virtual void notify(vm::ObjectPtr object, const std::string) = 0;
+			virtual void notify(NotifyEvent&) = 0;
 			virtual ~ThreadLock()
 			{
 			}
@@ -104,7 +111,7 @@ namespace script
 			std::vector<std::unique_ptr<ThreadContext>> m_threads;
 			std::vector<std::unique_ptr<ThreadContext>> m_newthreads;
 			ThreadContext* m_thread;
-			std::vector<std::pair<vm::ObjectPtr, std::string>> event_strings;
+			std::vector<NotifyEvent> notification_events;
 
 			vm::ObjectPtr level_object;
 			vm::ObjectPtr game_object;
@@ -171,11 +178,19 @@ namespace script
 			std::string variant_to_string_for_dump(VariantPtr v);
 			void dump_object(const std::string, VariantPtr ptr, int indent);
 			void dump(ThreadContext*);
-			void notify_event_string(vm::ObjectPtr object, const std::string str)
+			void notify_event_string(vm::ObjectPtr object, const std::string str, std::vector<vm::Variant>* arguments = nullptr)
 			{
 				if (!object)
 					object = get_level_object();
-				event_strings.push_back(std::make_pair(object,str));
+				NotifyEvent ev;
+				ev.object = object;
+				ev.event_string = str;
+				if (arguments)
+				{
+					for (auto it = arguments->begin(); it != arguments->end(); ++it)
+						ev.arguments.push_back(*it);
+				}
+				notification_events.push_back(ev);
 			}
 			std::unique_ptr<VMContext>& context()
 			{
@@ -222,7 +237,7 @@ namespace script
 			void call(vm::ObjectPtr obj, const std::string, size_t);
 			void call_builtin(vm::ObjectPtr obj, const std::string, size_t);
 			void notify(vm::ObjectPtr obj, size_t);
-			void waittill(vm::ObjectPtr obj, size_t);
+			void waittill(vm::ObjectPtr obj, const std::string, std::vector<std::string>&);
 			void endon(vm::ObjectPtr obj, size_t);
 			void ret();
 
