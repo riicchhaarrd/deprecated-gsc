@@ -132,6 +132,8 @@ namespace script
 
 			m_vm = std::make_unique<script::vm::VirtualMachine>(m_compiledfiles);
 			script::register_stockfunctions(*m_vm);
+			for (auto& it : m_registeredfunctions)
+				m_vm->register_function(it.first, it.second);
 		}
 		catch (script::ast::ASTException& e)
 		{
