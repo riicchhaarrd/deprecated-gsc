@@ -25,14 +25,18 @@ namespace script
 			//ctx.add_float((float)rand() / (float)0xffff);
 			return 1;
 		}
-		int unimplemented(script::VMContext& ctx, script::vm::Object* obj)
+		int getentitynumber(script::VMContext& ctx, script::vm::Object* obj)
 		{
+			ctx.add_int(0);
+			return 1;
+		}
+		int getchar_(script::VMContext& ctx, script::vm::Object* obj)
+		{
+			getchar();
 			return 0;
 		}
-		int exitlevel(script::VMContext& ctx, script::vm::Object* obj)
+		int unimplemented(script::VMContext& ctx, script::vm::Object* obj)
 		{
-			printf("============Shutting down level=============\n");
-			getchar();
 			return 0;
 		}
 		int tolower(script::VMContext& ctx, script::vm::Object* obj)
@@ -98,18 +102,6 @@ namespace script
 			ctx.add_int(GetTickCount());
 			return 1;
 		}
-		int getentarray(script::VMContext& ctx, script::vm::Object* obj)
-		{
-			auto o = std::make_shared<vm::Object>();
-
-			auto entry = std::make_shared<vm::Object>();
-			entry->fields["origin"] = std::make_shared<vm::Variant>(vm::Vector{.x = 0.f, .y = 0.f, .z = 0.f});
-			entry->fields["score"] = std::make_shared<vm::Variant>(0);
-			
-			o->fields["0"] = std::make_shared<vm::Variant>(entry);
-			ctx.add_object(o);
-			return 1;
-		}
 		int unimplemented_vector(script::VMContext& ctx, script::vm::Object* obj)
 		{
 			ctx.add_vector({.x = 0.f, .y = 0.f, .z = 0.f});
@@ -124,55 +116,6 @@ namespace script
 		{
 			printf("%s", ctx.get_string(0).c_str());
 			return 0;
-		}
-		static std::unordered_map<std::string, vm::Variant> cvars;
-		int setcvar(script::VMContext& ctx, script::vm::Object* obj)
-		{
-			auto var = ctx.get_string(0);
-			auto value = ctx.get_variant(1);
-			cvars[var] = *value;
-			return 0;
-		}
-		int get_cvar(script::VMContext& ctx, script::vm::Object* obj)
-		{
-			auto var = ctx.get_string(0);
-			auto fnd = cvars.find(var);
-			if (fnd == cvars.end())
-			{
-				ctx.add_string("");
-				return 1;
-			}
-			ctx.add_string(ctx.variant_to_string(fnd->second));
-			return 1;
-		}
-		int println(script::VMContext& ctx, script::vm::Object* obj)
-		{
-			printf("println: %s\n", ctx.get_string(0).c_str());
-			return 0;
-		}
-		int get_cvarint(script::VMContext& ctx, script::vm::Object* obj)
-		{
-			auto var = ctx.get_string(0);
-			auto fnd = cvars.find(var);
-			if (fnd == cvars.end())
-			{
-				ctx.add_int(0);
-				return 1;
-			}
-			ctx.add_int((int)ctx.variant_to_number(fnd->second));
-			return 1;
-		}
-		int get_cvarfloat(script::VMContext& ctx, script::vm::Object* obj)
-		{
-			auto var = ctx.get_string(0);
-			auto fnd = cvars.find(var);
-			if (fnd == cvars.end())
-			{
-				ctx.add_float(0.f);
-				return 1;
-			}
-			ctx.add_float(ctx.variant_to_number(fnd->second));
-			return 1;
 		}
 		int distance(script::VMContext& ctx, script::vm::Object* obj)
 		{
@@ -214,8 +157,6 @@ namespace script
 			{"spawnstruct", spawnstruct},
 			{"newhudelem", spawnstruct},
 			{"settimer", unimplemented},
-			{"closemenu", unimplemented},
-			{"closeingamemenu", unimplemented},
 			{"resettimeout", unimplemented},
 			{"stopshellshock", unimplemented},
 			{"stoprumble", unimplemented},
@@ -223,7 +164,7 @@ namespace script
 			{"randomfloat", randomfloat},
 			{"gettime", gettime},
 			{"getent", getent},
-			{"getentarray", getentarray},
+			{"getchar", getchar_},
 			{"getaiarray", getaiarray},
 			{"issplitscreen", issplitscreen},
 			{"getspawnerarray", getspawnerarray},
@@ -235,22 +176,18 @@ namespace script
 			{"precacheitem", unimplemented},
 			{"precacheshellshock", unimplemented},
 			{"prof_begin", unimplemented},
-			{"exitlevel", exitlevel},
 			{"prof_end", unimplemented},
 			{"placespawnpoint", unimplemented},
 			{"precacherumble", unimplemented},
 			{"updatescores", unimplemented},
-			{"setclientcvar", unimplemented},
+			{"getentitynumber", getentitynumber},
 			{"precachestatusicon", unimplemented},
 			{"setarchive", unimplemented},
 			{"precachestring", unimplemented},
 			{"setclientnamemode", unimplemented},
 			{"precacheheadicon", unimplemented},
-			{"setcvar", setcvar},
-			{"println", println},
 			{"makecvarserverinfo", unimplemented},
 			{"setsavedcvar", unimplemented},
-			{"precachemenu", unimplemented},
 			{"assert", unimplemented},
 			{"giveweapon", unimplemented},
 			{"setnormalhealth", unimplemented},
@@ -262,11 +199,8 @@ namespace script
 			{"assertex", unimplemented},
 			{"precacheturret", unimplemented},
 			{"precachevehicle", unimplemented},
-			{"print", print},
-			{"iprintln", print},
-			{"getcvar", get_cvar},
-			{"getcvarint", get_cvarint},
-			{"getcvarfloat", get_cvarfloat}
+			{"logprint", print},
+			{"print", print}
 		};
 	}; // namespace functions
 
