@@ -35,10 +35,10 @@ namespace script
 		}
 		void CallFunctionFile::execute(VirtualMachine& vm)
 		{
-			VariantPtr obj = vm.function_context().self_object;
+			vm::ObjectPtr obj = vm.function_context().self_object;
 			if (is_method_call)
 			{
-				obj = vm.context()->get_variant(0);
+				obj = vm.context()->get_object(0);
 				vm.pop();
 			}
 			std::string ref = file;
@@ -53,10 +53,10 @@ namespace script
 		}
 		void CallFunction::execute(VirtualMachine& vm)
 		{
-			VariantPtr obj = vm.function_context().self_object;
+			vm::ObjectPtr obj = vm.function_context().self_object;
 			if (is_method_call)
 			{
-				obj = vm.context()->get_variant(0);
+				obj = vm.context()->get_object(0);
 				vm.pop();
 			}
 			if (is_threaded)
@@ -144,7 +144,7 @@ namespace script
 				ThreadLockWaitFrame(VirtualMachine& vm_, size_t frame_) : frame(frame_), vm(vm_)
 				{
 				}
-				virtual void notify(const std::string str)
+				virtual void notify(vm::ObjectPtr, const std::string)
 				{
 				}
 				virtual bool locked()
@@ -162,7 +162,7 @@ namespace script
 			struct ThreadLockWaitDuration : vm::ThreadLock
 			{
 				uint32_t end_time = 0;
-				virtual void notify(const std::string str)
+				virtual void notify(vm::ObjectPtr, const std::string)
 				{
 				}
 				virtual bool locked()

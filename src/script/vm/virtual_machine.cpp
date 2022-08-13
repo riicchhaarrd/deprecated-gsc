@@ -191,8 +191,8 @@ namespace script
 		VirtualMachine::VirtualMachine(compiler::CompiledFiles& cf_) : m_compiledfiles(cf_)
 		{
 			m_context = std::make_unique<VMContextImpl>(*this);
-			level_object = std::make_shared<vm::Variant>(std::make_shared<vm::Object>());
-			game_object = std::make_shared<vm::Variant>(std::make_shared<vm::Object>());
+			level_object = std::make_shared<vm::Object>();
+			game_object = std::make_shared<vm::Object>();
 			for (auto& it : cf_)
 			{
 				for (auto& iter : it.second)
@@ -202,7 +202,7 @@ namespace script
 			}
 		}
 
-		void VirtualMachine::exec_thread(VariantPtr obj, const std::string function, size_t numargs)
+		void VirtualMachine::exec_thread(vm::ObjectPtr obj, const std::string function, size_t numargs)
 		{
 			if (!obj)
 				throw vm::Exception("no object");
@@ -210,7 +210,7 @@ namespace script
 			exec_thread(obj, fc.file_name, function, numargs);
 		}
 
-		void VirtualMachine::exec_thread(VariantPtr obj, const std::string file, const std::string function,
+		void VirtualMachine::exec_thread(vm::ObjectPtr obj, const std::string file, const std::string function,
 										 size_t numargs)
 		{
 			if (!obj)
@@ -254,6 +254,7 @@ namespace script
 
 		void VirtualMachine::dump(ThreadContext *tc)
 		{
+			#if 0
 			auto& fc = tc->function_context();
 			dump_object("level", level_object, 0);
 			dump_object("game", game_object, 0);
@@ -261,6 +262,7 @@ namespace script
 			{
 				printf("%s = %s;\n", it.first.c_str(), variant_to_string_for_dump(it.second).c_str());
 			}
+			#endif
 		}
 
 		void VirtualMachine::ret()
@@ -274,7 +276,7 @@ namespace script
 			}
 		}
 
-		void VirtualMachine::call(ThreadContext* thread, VariantPtr obj, const std::string file,
+		void VirtualMachine::call(ThreadContext* thread, vm::ObjectPtr obj, const std::string file,
 								  const std::string function, size_t numargs)
 		{
 			auto* fn = find_function_in_file(file, function);
@@ -320,12 +322,12 @@ namespace script
 			#endif
 		}
 
-		void VirtualMachine::notify(VariantPtr obj, size_t numargs)
+		void VirtualMachine::notify(vm::ObjectPtr obj, size_t numargs)
 		{
 			pop(numargs);
 			push(variant(vm::Undefined()));
 		}
-		void VirtualMachine::waittill(VariantPtr obj, size_t numargs)
+		void VirtualMachine::waittill(vm::ObjectPtr obj, size_t numargs)
 		{
 			std::string event_str = context()->get_string(0);
 			pop(numargs);
@@ -334,12 +336,17 @@ namespace script
 			struct ThreadLockWaitForEventString : vm::ThreadLock
 			{
 				std::string string;
+				vm::ObjectPtr object;
 				bool notified = false;
 
-				virtual void notify(const std::string str)
+				virtual void notify(vm::ObjectPtr obj, const std::string str)
 				{
-					if (string == str)
+					if (string == str && obj == object)
 						notified = true;
+					else
+					{
+						printf("notify: %s, %s, %02X, %02X\n", str.c_str(), string.c_str(), obj.get(), object.get());
+					}
 				}
 
 				virtual bool locked()
@@ -348,24 +355,23 @@ namespace script
 				}
 			};
 			auto l = std::make_unique<ThreadLockWaitForEventString>();
+			l->object = obj;
 			l->string = event_str;
 			thread()->m_locks.push_back(std::move(l));
 		}
-		void VirtualMachine::endon(VariantPtr obj, size_t numargs)
+		void VirtualMachine::endon(vm::ObjectPtr obj, size_t numargs)
 		{
 			pop(numargs);
 			push(variant(vm::Undefined()));
 		}
 
-		void VirtualMachine::call_builtin(VariantPtr obj, const std::string function, size_t numargs)
+		void VirtualMachine::call_builtin(vm::ObjectPtr obj, const std::string function, size_t numargs)
 		{
 			auto fnd = m_stockfunctions.find(util::string::to_lower(function));
 			if (fnd == m_stockfunctions.end())
 				throw vm::Exception("no function named {}", function);
-			if (obj && obj->index() != (int)vm::Type::kObject)
-				throw vm::Exception("expected object got {}", obj->index());
-			int num_pushed = fnd->second(*m_context.get(), obj ? std::get<vm::ObjectPtr>(*obj).get() : nullptr);
 			m_context->set_number_of_arguments(numargs);
+			int num_pushed = fnd->second(*m_context.get(), obj ? obj.get() : nullptr);
 			if (num_pushed == 0)
 			{
 				pop(numargs);
@@ -379,7 +385,7 @@ namespace script
 			}
 		}
 		
-		void VirtualMachine::call(VariantPtr obj, const std::string function, size_t numargs)
+		void VirtualMachine::call(vm::ObjectPtr obj, const std::string function, size_t numargs)
 		{
 			if (function == "endon")
 			{
@@ -419,14 +425,14 @@ namespace script
 		{
 			auto& fc = function_context();
 			if (var == "level")
-				return level_object;
+				return variant(level_object);
 			else if (var == "game")
 			{
-				return game_object;
+				return variant(game_object);
 			}
 			else if (var == "self")
 			{
-				return fc.self_object;
+				return variant(fc.self_object);
 			}
 			return fc.get_variable(var);
 		}
@@ -460,7 +466,7 @@ namespace script
 					{
 						for (auto& l : thr->m_locks)
 						{
-							l->notify(event_str);
+							l->notify(event_str.first, event_str.second);
 						}
 					}
 				}

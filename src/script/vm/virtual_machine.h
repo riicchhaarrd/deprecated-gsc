@@ -50,7 +50,7 @@ namespace script
 		struct ThreadLock
 		{
 			virtual bool locked() = 0;
-			virtual void notify(const std::string) = 0;
+			virtual void notify(vm::ObjectPtr object, const std::string) = 0;
 			virtual ~ThreadLock()
 			{
 			}
@@ -70,7 +70,7 @@ namespace script
 			{
 				std::string file_name;
 				std::string function_name;
-				VariantPtr self_object;
+				vm::ObjectPtr self_object;
 				std::unordered_map<std::string, std::shared_ptr<vm::Variant>> variables;
 				std::unordered_map<size_t, size_t> labels;
 				VariantPtr get_variable(const std::string var)
@@ -104,10 +104,10 @@ namespace script
 			std::vector<std::unique_ptr<ThreadContext>> m_threads;
 			std::vector<std::unique_ptr<ThreadContext>> m_newthreads;
 			ThreadContext* m_thread;
-			std::vector<std::string> event_strings;
+			std::vector<std::pair<vm::ObjectPtr, std::string>> event_strings;
 
-			VariantPtr level_object;
-			VariantPtr game_object;
+			vm::ObjectPtr level_object;
+			vm::ObjectPtr game_object;
 
 			//TODO: FIXME, why is this here?
 			//well because when we include something, the preprocessor has a include guard and then it won't get included in this particular file when
@@ -137,7 +137,7 @@ namespace script
 				m_flags = flags;
 			}
 
-			VariantPtr get_level_object()
+			vm::ObjectPtr get_level_object()
 			{
 				return level_object;
 			}
@@ -171,9 +171,11 @@ namespace script
 			std::string variant_to_string_for_dump(VariantPtr v);
 			void dump_object(const std::string, VariantPtr ptr, int indent);
 			void dump(ThreadContext*);
-			void notify_event_string(const std::string str)
+			void notify_event_string(vm::ObjectPtr object, const std::string str)
 			{
-				event_strings.push_back(str);
+				if (!object)
+					object = get_level_object();
+				event_strings.push_back(std::make_pair(object,str));
 			}
 			std::unique_ptr<VMContext>& context()
 			{
@@ -216,19 +218,19 @@ namespace script
 			}
 			VirtualMachine(compiler::CompiledFiles&);
 			void run();
-			void call(ThreadContext*, VariantPtr obj, const std::string, const std::string, size_t);
-			void call(VariantPtr obj, const std::string, size_t);
-			void call_builtin(VariantPtr obj, const std::string, size_t);
-			void notify(VariantPtr obj, size_t);
-			void waittill(VariantPtr obj, size_t);
-			void endon(VariantPtr obj, size_t);
+			void call(ThreadContext*, vm::ObjectPtr obj, const std::string, const std::string, size_t);
+			void call(vm::ObjectPtr obj, const std::string, size_t);
+			void call_builtin(vm::ObjectPtr obj, const std::string, size_t);
+			void notify(vm::ObjectPtr obj, size_t);
+			void waittill(vm::ObjectPtr obj, size_t);
+			void endon(vm::ObjectPtr obj, size_t);
 			void ret();
 
 			std::string variant_to_string(vm::Variant v);
 			float variant_to_number(vm::Variant v);
 			int variant_to_integer(vm::Variant v);
-			void exec_thread(VariantPtr obj, const std::string file, const std::string function, size_t numargs);
-			void exec_thread(VariantPtr obj, const std::string function, size_t numargs);
+			void exec_thread(vm::ObjectPtr obj, const std::string file, const std::string function, size_t numargs);
+			void exec_thread(vm::ObjectPtr obj, const std::string function, size_t numargs);
 
 			template <typename T> vm::Variant handle_binary_op(const T& a, const T& b, int op)
 			{

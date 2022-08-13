@@ -21,17 +21,18 @@ namespace script
 		ScriptEngine(filesystem_api&);
 		~ScriptEngine();
 		bool load(const std::string);
-		void execute_thread(vm::VariantPtr, const std::string, const std::string, size_t);
+		void execute_thread(vm::ObjectPtr, const std::string, const std::string, size_t);
 		void register_function(const std::string name, StockFunction sf);
 		void clear_functions()
 		{
 			m_registeredfunctions.clear();
 		}
+		void notify(vm::ObjectPtr, const std::string);
 		void run();
 
-		template <typename T> vm::VariantPtr create_object()
+		template <typename T, typename... Ts> vm::ObjectPtr create_object(Ts... ts)
 		{
-			return std::make_shared<vm::Variant>(std::make_shared<T>());
+			return std::make_shared<T>(ts...);
 		}
 	};
 };
