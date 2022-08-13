@@ -57,43 +57,43 @@ namespace script
 		}
 		int spawn(script::VMContext& ctx, script::vm::Object* obj)
 		{
-			auto o = std::make_shared<vm::Object>();
+			auto o = std::make_shared<vm::Object>("spawn");
 			ctx.add_object(o);
 			return 1;
 		}
 		int getent(script::VMContext& ctx, script::vm::Object* obj)
 		{
-			auto o = std::make_shared<vm::Object>();
+			auto o = std::make_shared<vm::Object>("getent");
 			ctx.add_object(o);
 			return 1;
 		}
 		int spawnstruct(script::VMContext& ctx, script::vm::Object* obj)
 		{
-			auto o = std::make_shared<vm::Object>();
+			auto o = std::make_shared<vm::Object>("spawnstruct");
 			ctx.add_object(o);
 			return 1;
 		}
 		int getaiarray(script::VMContext& ctx, script::vm::Object* obj)
 		{
-			auto o = std::make_shared<vm::Object>();
+			auto o = std::make_shared<vm::Object>("getaiarray");
 			ctx.add_object(o);
 			return 1;
 		}
 		int getspawnerarray(script::VMContext& ctx, script::vm::Object* obj)
 		{
-			auto o = std::make_shared<vm::Object>();
+			auto o = std::make_shared<vm::Object>("getspawnerarray");
 			ctx.add_object(o);
 			return 1;
 		}
 		int getvehiclenodearray(script::VMContext& ctx, script::vm::Object* obj)
 		{
-			auto o = std::make_shared<vm::Object>();
+			auto o = std::make_shared<vm::Object>("getvehiclenodearray");
 			ctx.add_object(o);
 			return 1;
 		}
 		int getallvehiclenodes(script::VMContext& ctx, script::vm::Object* obj)
 		{
-			auto o = std::make_shared<vm::Object>();
+			auto o = std::make_shared<vm::Object>("getallvehiclenodes");
 			ctx.add_object(o);
 			return 1;
 		}

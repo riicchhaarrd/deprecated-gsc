@@ -111,6 +111,10 @@ namespace script
 
 		struct Object
 		{
+			std::string m_tag;
+			Object(const std::string tag) : m_tag(tag)
+			{
+			}
 			virtual ~Object()
 			{
 			}
@@ -127,6 +131,10 @@ namespace script
 				{
 					int i = fields.size();
 					return std::make_shared<Variant>(i);
+				}
+				else if (n == "tag")
+				{
+					return std::make_shared<Variant>(m_tag);
 				}
 				if (fields.find(n) == fields.end())
 				{

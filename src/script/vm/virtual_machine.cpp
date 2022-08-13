@@ -191,8 +191,8 @@ namespace script
 		VirtualMachine::VirtualMachine(compiler::CompiledFiles& cf_) : m_compiledfiles(cf_)
 		{
 			m_context = std::make_unique<VMContextImpl>(*this);
-			level_object = std::make_shared<vm::Object>();
-			game_object = std::make_shared<vm::Object>();
+			level_object = std::make_shared<vm::Object>("level");
+			game_object = std::make_shared<vm::Object>("game");
 			for (auto& it : cf_)
 			{
 				for (auto& iter : it.second)

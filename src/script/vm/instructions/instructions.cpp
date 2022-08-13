@@ -228,7 +228,7 @@ namespace script
 			// if (op == '[' && v->index() == (int)vm::Type::kUndefined)
 			if (v->index() == (int)vm::Type::kUndefined)
 			{
-				auto o = std::make_shared<Object>();
+				auto o = std::make_shared<Object>("object created from undefined");
 				*v = o;
 			}
 			if (v->index() != (int)vm::Type::kObject)
@@ -246,7 +246,7 @@ namespace script
 			//if (op == '[' && v->index() == (int)vm::Type::kUndefined)
 			if (v->index() == (int)vm::Type::kUndefined)
 			{
-				auto o = std::make_shared<Object>();
+				auto o = std::make_shared<Object>("object created from undefined");
 				*v = o;
 			}
 			if (v->index() != (int)vm::Type::kObject)
@@ -306,7 +306,7 @@ namespace script
 		void PushArray::execute(VirtualMachine& vm)
 		{
 			//TODO: FIXME don't use object as array
-			vm::ObjectPtr o = std::make_shared<vm::Object>();
+			vm::ObjectPtr o = std::make_shared<vm::Object>("pusharray");
 			vm.push(vm.variant(o));
 		}
 		void PushVector::execute(VirtualMachine& vm)
