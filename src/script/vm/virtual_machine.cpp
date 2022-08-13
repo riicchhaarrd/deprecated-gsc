@@ -360,6 +360,7 @@ namespace script
 							*var = ne.arguments[i];
 						}
 						notified = true;
+					}
 					else
 					{
 						//printf("notify: %s, %s, %02X, %02X\n", ne.event_string.c_str(), string.c_str(), ne.object.get(), object.get());
