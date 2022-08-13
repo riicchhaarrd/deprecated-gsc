@@ -7,6 +7,8 @@
 
 namespace script
 {
+	struct VMContext;
+
 	namespace vm
 	{
 		struct Vector
@@ -102,13 +104,23 @@ namespace script
 			return Variant(T()).index();
 		}
 
+		struct ObjectMethod
+		{
+			virtual int execute(VMContext&, void*) = 0;
+		};
+
 		struct Object
 		{
 			virtual ~Object()
 			{
 			}
 			std::unordered_map<std::string, std::shared_ptr<Variant>> fields;
-
+			virtual bool get_method(const std::string n, ObjectMethod** ptr, void **obj)
+			{
+				*ptr = nullptr;
+				*obj = nullptr;
+				return false;
+			}
 			virtual std::shared_ptr<Variant> get_field(const std::string n)
 			{
 				if (n == "size")

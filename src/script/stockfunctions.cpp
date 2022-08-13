@@ -14,6 +14,11 @@ namespace script
 			ctx.add_int(0);
 			return 1;
 		}
+		int getteamscore(script::VMContext& ctx, script::vm::Object* obj)
+		{
+			ctx.add_int(0);
+			return 1;
+		}
 		int positionwouldtelefrag(script::VMContext& ctx, script::vm::Object* obj)
 		{
 			ctx.add_bool(0);
@@ -114,7 +119,7 @@ namespace script
 		}
 		int print(script::VMContext& ctx, script::vm::Object* obj)
 		{
-			printf("%s", ctx.get_string(0).c_str());
+			printf("%s\n", ctx.get_string(0).c_str());
 			return 0;
 		}
 		int distance(script::VMContext& ctx, script::vm::Object* obj)
@@ -162,7 +167,11 @@ namespace script
 			{"resettimeout", unimplemented},
 			{"stopshellshock", unimplemented},
 			{"stoprumble", unimplemented},
+			{"setteamscore", unimplemented},
+			{"setvalue", unimplemented},
+			{"allowspectateteam", unimplemented},
 			{"randomint", randomint},
+			{"getteamscore", getteamscore},
 			{"randomfloat", randomfloat},
 			{"gettime", gettime},
 			{"getent", getent},

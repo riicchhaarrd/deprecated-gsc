@@ -396,7 +396,24 @@ namespace script
 			if (fnd == m_stockfunctions.end())
 				throw vm::Exception("no function named {}", function);
 			m_context->set_number_of_arguments(numargs);
-			int num_pushed = fnd->second(*m_context.get(), obj ? obj.get() : nullptr);
+			int num_pushed = 0;
+			if (obj)
+			{
+				ObjectMethod* m = nullptr;
+				void* robj = nullptr;
+				if (obj->get_method(util::string::to_lower(function), &m, &robj))
+				{
+					if (!m)
+						throw vm::Exception("no method found for object");
+					num_pushed = m->execute(*m_context.get(), robj);
+				}
+				else
+				{
+					num_pushed = fnd->second(*m_context.get(), obj ? obj.get() : nullptr);
+				}
+			} else
+				num_pushed = fnd->second(*m_context.get(), obj ? obj.get() : nullptr);
+
 			if (num_pushed == 0)
 			{
 				pop(numargs);
