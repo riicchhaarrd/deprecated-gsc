@@ -46,6 +46,8 @@ namespace script
 				return std::get<vm::LocalizedString>(v).reference;
 			case vm::Type::kUndefined:
 				return "undefined";
+			case vm::Type::kObject:
+				return "object";
 			case vm::Type::kVector:
 			{
 				auto vec = std::get<vm::Vector>(v);
