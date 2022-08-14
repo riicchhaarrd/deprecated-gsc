@@ -275,6 +275,7 @@ namespace script
 			}
 			auto beg = label();
 			auto end = label();
+			auto end_of_for = label();
 			add(beg);
 			if (n.test)
 				n.test->accept(*this);
@@ -288,13 +289,16 @@ namespace script
 			auto jz = instruction<JumpZero>();
 			jz->dest = end;
 			add(jz);
-			continue_labels.push(beg);
+			continue_labels.push(end_of_for);
 			exit_labels.push(end);
 			n.body->accept(*this);
 			exit_labels.pop();
 			continue_labels.pop();
 			auto jmp = instruction<Jump>();
 			jmp->dest = beg;
+
+			add(end_of_for);
+
 			if (n.update)
 			{
 				n.update->accept(*this);
