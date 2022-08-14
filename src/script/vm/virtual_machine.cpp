@@ -408,7 +408,7 @@ namespace script
 			if (fnd == m_stockfunctions.end())
 				throw vm::Exception("no function named {}", function);
 			m_context->set_number_of_arguments(numargs);
-			int num_pushed = fnd->second(*m_context.get(), nullptr);
+			int num_pushed = fnd->second(*m_context.get());
 
 			if (num_pushed == 0)
 			{

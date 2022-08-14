@@ -8,121 +8,121 @@ namespace script
 {
 	namespace functions
 	{
-		int randomint(script::VMContext& ctx, script::vm::Object* obj)
+		int randomint(script::VMContext& ctx)
 		{
 			//ctx.add_int(rand());
 			ctx.add_int(0);
 			return 1;
 		}
-		int getteamscore(script::VMContext& ctx, script::vm::Object* obj)
+		int getteamscore(script::VMContext& ctx)
 		{
 			ctx.add_int(0);
 			return 1;
 		}
-		int positionwouldtelefrag(script::VMContext& ctx, script::vm::Object* obj)
+		int positionwouldtelefrag(script::VMContext& ctx)
 		{
 			ctx.add_bool(0);
 			return 1;
 		}
-		int randomfloat(script::VMContext& ctx, script::vm::Object* obj)
+		int randomfloat(script::VMContext& ctx)
 		{
 			ctx.add_float(0.f);
 			//ctx.add_float((float)rand() / (float)0xffff);
 			return 1;
 		}
-		int getentitynumber(script::VMContext& ctx, script::vm::Object* obj)
+		int getentitynumber(script::VMContext& ctx)
 		{
 			ctx.add_int(0);
 			return 1;
 		}
-		int getchar_(script::VMContext& ctx, script::vm::Object* obj)
+		int getchar_(script::VMContext& ctx)
 		{
 			getchar();
 			return 0;
 		}
-		int unimplemented(script::VMContext& ctx, script::vm::Object* obj)
+		int unimplemented(script::VMContext& ctx)
 		{
 			return 0;
 		}
-		int tolower(script::VMContext& ctx, script::vm::Object* obj)
+		int tolower(script::VMContext& ctx)
 		{
 			ctx.add_string(util::string::to_lower(ctx.get_string(0)));
 			return 1;
 		}
-		int is_defined(script::VMContext& ctx, script::vm::Object* obj)
+		int is_defined(script::VMContext& ctx)
 		{
 			auto v = ctx.get_variant(0);
 			ctx.add_bool(v->index() != 0);
 			return 1;
 		}
-		int spawn(script::VMContext& ctx, script::vm::Object* obj)
+		int spawn(script::VMContext& ctx)
 		{
 			auto o = std::make_shared<vm::Object>("spawn");
 			ctx.add_object(o);
 			return 1;
 		}
-		int getent(script::VMContext& ctx, script::vm::Object* obj)
+		int getent(script::VMContext& ctx)
 		{
 			auto o = std::make_shared<vm::Object>("getent");
 			ctx.add_object(o);
 			return 1;
 		}
-		int spawnstruct(script::VMContext& ctx, script::vm::Object* obj)
+		int spawnstruct(script::VMContext& ctx)
 		{
 			auto o = std::make_shared<vm::Object>("spawnstruct");
 			ctx.add_object(o);
 			return 1;
 		}
-		int getaiarray(script::VMContext& ctx, script::vm::Object* obj)
+		int getaiarray(script::VMContext& ctx)
 		{
 			auto o = std::make_shared<vm::Object>("getaiarray");
 			ctx.add_object(o);
 			return 1;
 		}
-		int getspawnerarray(script::VMContext& ctx, script::vm::Object* obj)
+		int getspawnerarray(script::VMContext& ctx)
 		{
 			auto o = std::make_shared<vm::Object>("getspawnerarray");
 			ctx.add_object(o);
 			return 1;
 		}
-		int getvehiclenodearray(script::VMContext& ctx, script::vm::Object* obj)
+		int getvehiclenodearray(script::VMContext& ctx)
 		{
 			auto o = std::make_shared<vm::Object>("getvehiclenodearray");
 			ctx.add_object(o);
 			return 1;
 		}
-		int getallvehiclenodes(script::VMContext& ctx, script::vm::Object* obj)
+		int getallvehiclenodes(script::VMContext& ctx)
 		{
 			auto o = std::make_shared<vm::Object>("getallvehiclenodes");
 			ctx.add_object(o);
 			return 1;
 		}
-		int issplitscreen(script::VMContext& ctx, script::vm::Object* obj)
+		int issplitscreen(script::VMContext& ctx)
 		{
 			ctx.add_bool(false);
 			return 1;
 		}
-		int gettime(script::VMContext& ctx, script::vm::Object* obj)
+		int gettime(script::VMContext& ctx)
 		{
 			ctx.add_int(GetTickCount());
 			return 1;
 		}
-		int unimplemented_vector(script::VMContext& ctx, script::vm::Object* obj)
+		int unimplemented_vector(script::VMContext& ctx)
 		{
 			ctx.add_vector({.x = 0.f, .y = 0.f, .z = 0.f});
 			return 1;
 		}
-		int loadfx(script::VMContext& ctx, script::vm::Object* obj)
+		int loadfx(script::VMContext& ctx)
 		{
 			ctx.add_int(-1);
 			return 1;
 		}
-		int print(script::VMContext& ctx, script::vm::Object* obj)
+		int print(script::VMContext& ctx)
 		{
 			printf("%s\n", ctx.get_string(0).c_str());
 			return 0;
 		}
-		int distance(script::VMContext& ctx, script::vm::Object* obj)
+		int distance(script::VMContext& ctx)
 		{
 			vm::Vector a, b;
 			ctx.get_vector(0, a);
@@ -131,17 +131,17 @@ namespace script
 			ctx.add_float(a.distance(b));
 			return 1;
 		}
-		int getguid(script::VMContext& ctx, script::vm::Object* obj)
+		int getguid(script::VMContext& ctx)
 		{
 			ctx.add_int(0);
 			return 1;
 		}
-		int getdifficulty(script::VMContext& ctx, script::vm::Object* obj)
+		int getdifficulty(script::VMContext& ctx)
 		{
 			ctx.add_string("medium");
 			return 1;
 		}
-		int set_exp_fog(script::VMContext& ctx, script::vm::Object* obj)
+		int set_exp_fog(script::VMContext& ctx)
 		{
 			printf("float: %f\n", ctx.get_float(0));
 			printf("float: %f\n", ctx.get_float(1));

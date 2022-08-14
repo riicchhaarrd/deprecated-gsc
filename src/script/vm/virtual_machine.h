@@ -34,7 +34,7 @@ namespace script
 		virtual void add_string(const std::string) = 0;
 	};
 
-	using StockFunction = std::function<int(VMContext&, vm::Object*)>;
+	using StockFunction = std::function<int(VMContext&)>;
 
 	namespace vm
 	{
