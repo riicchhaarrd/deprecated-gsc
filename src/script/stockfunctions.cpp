@@ -160,7 +160,6 @@ namespace script
 			{"tolower", tolower},
 			{"distance", distance},
 			{"spawnstruct", spawnstruct},
-			{"newclienthudelem", spawnstruct},
 			{"newhudelem", spawnstruct},
 			{"settimer", unimplemented},
 			{"setshader", unimplemented},
