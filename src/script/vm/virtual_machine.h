@@ -233,9 +233,9 @@ namespace script
 			}
 			VirtualMachine(compiler::CompiledFiles&);
 			void run();
-			void call(ThreadContext*, vm::ObjectPtr obj, const std::string, const std::string, size_t);
-			void call(vm::ObjectPtr obj, const std::string, size_t);
-			void call_builtin(vm::ObjectPtr obj, const std::string, size_t);
+			void call(ThreadContext*, vm::ObjectPtr obj, const std::string, const std::string, size_t, bool);
+			void call(vm::ObjectPtr obj, const std::string, size_t, bool);
+			void call_builtin(vm::ObjectPtr obj, const std::string, size_t, bool);
 			void notify(vm::ObjectPtr obj, size_t);
 			void waittill(vm::ObjectPtr obj, const std::string, std::vector<std::string>&);
 			void endon(vm::ObjectPtr obj, size_t);
@@ -244,8 +244,9 @@ namespace script
 			std::string variant_to_string(vm::Variant v);
 			float variant_to_number(vm::Variant v);
 			int variant_to_integer(vm::Variant v);
-			void exec_thread(vm::ObjectPtr obj, const std::string file, const std::string function, size_t numargs);
-			void exec_thread(vm::ObjectPtr obj, const std::string function, size_t numargs);
+			void exec_thread(vm::ObjectPtr obj, const std::string file, const std::string function, size_t numargs,
+							 bool);
+			void exec_thread(vm::ObjectPtr obj, const std::string function, size_t numargs, bool);
 
 			template <typename T> vm::Variant handle_binary_op(const T& a, const T& b, int op)
 			{

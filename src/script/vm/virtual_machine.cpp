@@ -202,16 +202,16 @@ namespace script
 			}
 		}
 
-		void VirtualMachine::exec_thread(vm::ObjectPtr obj, const std::string function, size_t numargs)
+		void VirtualMachine::exec_thread(vm::ObjectPtr obj, const std::string function, size_t numargs, bool is_method)
 		{
 			if (!obj)
 				throw vm::Exception("no object");
 			auto& fc = function_context();
-			exec_thread(obj, fc.file_name, function, numargs);
+			exec_thread(obj, fc.file_name, function, numargs, is_method);
 		}
 
 		void VirtualMachine::exec_thread(vm::ObjectPtr obj, const std::string file, const std::string function,
-										 size_t numargs)
+										 size_t numargs, bool is_method)
 		{
 			if (!obj)
 				throw vm::Exception("no object");
@@ -219,7 +219,7 @@ namespace script
 			auto* thr = m_newthreads[m_newthreads.size() - 1].get();
 			//TODO: FIXME there's no guarantee in which order the thread runs, atm it runs after the thread that made a new thread
 			//but we could run the thread first till we hit a wait then return control to the former thread
-			call(thr, obj, file, function, numargs);
+			call(thr, obj, file, function, numargs, is_method);
 		}
 
 		compiler::CompiledFunction* VirtualMachine::find_function_in_file(const std::string file,
@@ -277,7 +277,7 @@ namespace script
 		}
 
 		void VirtualMachine::call(ThreadContext* thread, vm::ObjectPtr obj, const std::string file,
-								  const std::string function, size_t numargs)
+								  const std::string function, size_t numargs, bool is_method)
 		{
 			auto* fn = find_function_in_file(file, function);
 			if (!fn)
@@ -390,7 +390,7 @@ namespace script
 			push(variant(vm::Undefined()));
 		}
 
-		void VirtualMachine::call_builtin(vm::ObjectPtr obj, const std::string function, size_t numargs)
+		void VirtualMachine::call_builtin(vm::ObjectPtr obj, const std::string function, size_t numargs, bool is_method)
 		{
 			auto fnd = m_stockfunctions.find(util::string::to_lower(function));
 			if (fnd == m_stockfunctions.end())
@@ -427,7 +427,7 @@ namespace script
 			}
 		}
 		
-		void VirtualMachine::call(vm::ObjectPtr obj, const std::string function, size_t numargs)
+		void VirtualMachine::call(vm::ObjectPtr obj, const std::string function, size_t numargs, bool is_method)
 		{
 			if (function == "endon")
 			{
@@ -448,11 +448,11 @@ namespace script
 			{
 
 				//dump(m_thread);
-				call_builtin(obj, function, numargs);
+				call_builtin(obj, function, numargs, is_method);
 				return;
 			}
 			auto& fc = function_context();
-			call(m_thread, obj, fc.file_name, function, numargs);
+			call(m_thread, obj, fc.file_name, function, numargs, is_method);
 		}
 
 		std::shared_ptr<vm::Instruction> VirtualMachine::fetch(ThreadContext* tc)

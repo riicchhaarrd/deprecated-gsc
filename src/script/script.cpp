@@ -115,11 +115,9 @@ namespace script
 	{
 		if (!m_vm)
 			return;
-		if (!object)
-			object = m_vm->get_level_object();
 		try
 		{
-			m_vm->exec_thread(object, file, function, nargs);
+			m_vm->exec_thread(object ? object : m_vm->get_level_object(), file, function, nargs, object ? true : false);
 		}
 		catch (vm::Exception& ex)
 		{

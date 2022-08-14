@@ -27,11 +27,11 @@ namespace script
 			std::replace(ref.begin(), ref.end(), '\\', '/');
 			if (is_threaded)
 			{
-				vm.exec_thread(obj, ref, fp.name, numargs);
+				vm.exec_thread(obj, ref, fp.name, numargs, is_method_call);
 				vm.push(vm.variant(vm::Undefined())); // thread doesn't return
 			}
 			else
-				vm.call(vm.thread(), obj, ref, fp.name, this->numargs);
+				vm.call(vm.thread(), obj, ref, fp.name, this->numargs, is_method_call);
 		}
 		void CallFunctionFile::execute(VirtualMachine& vm)
 		{
@@ -45,11 +45,11 @@ namespace script
 			std::replace(ref.begin(), ref.end(), '\\', '/');
 			if (is_threaded)
 			{
-				vm.exec_thread(obj, ref, this->function, numargs);
+				vm.exec_thread(obj, ref, this->function, numargs, is_method_call);
 				vm.push(vm.variant(vm::Undefined())); // thread doesn't return
 			}
 			else
-				vm.call(vm.thread(), obj, ref, this->function, this->numargs);
+				vm.call(vm.thread(), obj, ref, this->function, this->numargs, is_method_call);
 		}
 		void CallFunction::execute(VirtualMachine& vm)
 		{
@@ -61,11 +61,11 @@ namespace script
 			}
 			if (is_threaded)
 			{
-				vm.exec_thread(obj, this->function, numargs);
+				vm.exec_thread(obj, this->function, numargs, is_method_call);
 				vm.push(vm.variant(vm::Undefined())); //thread doesn't return
 			}
 			else
-				vm.call(obj, this->function, this->numargs);
+				vm.call(obj, this->function, this->numargs, is_method_call);
 		}
 		void WaitTill::execute(VirtualMachine& vm)
 		{
