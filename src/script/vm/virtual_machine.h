@@ -122,6 +122,7 @@ namespace script
 			//hackish solution, just make a large global list of all the functions and then if we can't find the function
 			//just try to find it here
 			std::unordered_map<std::string, compiler::CompiledFunction*> m_allcustomfunctions;
+			void call_impl(ThreadContext* thread, vm::ObjectPtr obj, script::compiler::CompiledFunction*, size_t);
 
 		  public:
 			std::shared_ptr<vm::Instruction> fetch(ThreadContext*);
@@ -154,7 +155,12 @@ namespace script
 				return m_flags;
 			}
 
-			ThreadContext* thread()
+			const std::string& current_file()
+			{
+				return m_thread->function_context().file_name;
+			}
+
+			ThreadContext* current_thread()
 			{
 				return m_thread;
 			}
@@ -233,9 +239,9 @@ namespace script
 			}
 			VirtualMachine(compiler::CompiledFiles&);
 			void run();
-			void call(ThreadContext*, vm::ObjectPtr obj, const std::string, const std::string, size_t, bool);
-			void call(vm::ObjectPtr obj, const std::string, size_t, bool);
-			void call_builtin(vm::ObjectPtr obj, const std::string, size_t, bool);
+			void call_function(vm::ObjectPtr obj, const std::string&, const std::string&, size_t, bool);
+			void call_builtin(const std::string, size_t);
+			void call_builtin_method(vm::ObjectPtr obj, const std::string, size_t);
 			void notify(vm::ObjectPtr obj, size_t);
 			void waittill(vm::ObjectPtr obj, const std::string, std::vector<std::string>&);
 			void endon(vm::ObjectPtr obj, size_t);
@@ -246,7 +252,6 @@ namespace script
 			int variant_to_integer(vm::Variant v);
 			void exec_thread(vm::ObjectPtr obj, const std::string file, const std::string function, size_t numargs,
 							 bool);
-			void exec_thread(vm::ObjectPtr obj, const std::string function, size_t numargs, bool);
 
 			template <typename T> vm::Variant handle_binary_op(const T& a, const T& b, int op)
 			{

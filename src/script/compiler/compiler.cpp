@@ -193,6 +193,7 @@ namespace script
 		{
 			m_function = &(*m_compiledfunctions)[util::string::to_lower(n.function_name)];
 			m_function->name = n.function_name;
+			m_function->file = m_currentfile;
 			m_function->parameters = n.parameters;
 			n.body->accept(*this);
 			auto instr = instruction<PushUndefined>();

@@ -31,7 +31,7 @@ namespace script
 				vm.push(vm.variant(vm::Undefined())); // thread doesn't return
 			}
 			else
-				vm.call(vm.thread(), obj, ref, fp.name, this->numargs, is_method_call);
+				vm.call_function(obj, ref, fp.name, this->numargs, is_method_call);
 		}
 		void CallFunctionFile::execute(VirtualMachine& vm)
 		{
@@ -49,7 +49,7 @@ namespace script
 				vm.push(vm.variant(vm::Undefined())); // thread doesn't return
 			}
 			else
-				vm.call(vm.thread(), obj, ref, this->function, this->numargs, is_method_call);
+				vm.call_function(obj, ref, this->function, this->numargs, is_method_call);
 		}
 		void CallFunction::execute(VirtualMachine& vm)
 		{
@@ -61,11 +61,11 @@ namespace script
 			}
 			if (is_threaded)
 			{
-				vm.exec_thread(obj, this->function, numargs, is_method_call);
+				vm.exec_thread(obj, vm.current_file(), this->function, numargs, is_method_call);
 				vm.push(vm.variant(vm::Undefined())); //thread doesn't return
 			}
 			else
-				vm.call(obj, this->function, this->numargs, is_method_call);
+				vm.call_function(obj, vm.current_file(), this->function, this->numargs, is_method_call);
 		}
 		void WaitTill::execute(VirtualMachine& vm)
 		{
@@ -174,7 +174,7 @@ namespace script
 				}
 			};
 			auto l = std::make_unique<ThreadLockWaitFrame>(vm, vm.get_frame_number());
-			vm.thread()->m_locks.push_back(std::move(l));
+			vm.current_thread()->m_locks.push_back(std::move(l));
 		}
 		void Wait::execute(VirtualMachine& vm)
 		{
@@ -193,7 +193,7 @@ namespace script
 			};
 			auto l = std::make_unique<ThreadLockWaitDuration>();
 			l->end_time = GetTickCount() + duration * 1000.f;
-			vm.thread()->m_locks.push_back(std::move(l));
+			vm.current_thread()->m_locks.push_back(std::move(l));
 		}
 		void Ret::execute(VirtualMachine& vm)
 		{

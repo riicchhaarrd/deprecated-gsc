@@ -202,24 +202,19 @@ namespace script
 			}
 		}
 
-		void VirtualMachine::exec_thread(vm::ObjectPtr obj, const std::string function, size_t numargs, bool is_method)
-		{
-			if (!obj)
-				throw vm::Exception("no object");
-			auto& fc = function_context();
-			exec_thread(obj, fc.file_name, function, numargs, is_method);
-		}
-
 		void VirtualMachine::exec_thread(vm::ObjectPtr obj, const std::string file, const std::string function,
 										 size_t numargs, bool is_method)
 		{
 			if (!obj)
 				throw vm::Exception("no object");
+			auto* fn = find_function_in_file(file, function);
+			if (!fn)
+				throw vm::Exception("can't find {}::{}", file, function);
 			m_newthreads.push_back(std::make_unique<ThreadContext>());
 			auto* thr = m_newthreads[m_newthreads.size() - 1].get();
 			//TODO: FIXME there's no guarantee in which order the thread runs, atm it runs after the thread that made a new thread
 			//but we could run the thread first till we hit a wait then return control to the former thread
-			call(thr, obj, file, function, numargs, is_method);
+			call_impl(thr, obj, fn, numargs);
 		}
 
 		compiler::CompiledFunction* VirtualMachine::find_function_in_file(const std::string file,
@@ -276,13 +271,8 @@ namespace script
 			}
 		}
 
-		void VirtualMachine::call(ThreadContext* thread, vm::ObjectPtr obj, const std::string file,
-								  const std::string function, size_t numargs, bool is_method)
+		void VirtualMachine::call_impl(ThreadContext* thread, vm::ObjectPtr obj, script::compiler::CompiledFunction* fn, size_t numargs)
 		{
-			auto* fn = find_function_in_file(file, function);
-			if (!fn)
-				throw vm::Exception("can't find {}::{}", file, function);
-
 			thread->m_callstack.push(FunctionContext());
 			auto& fc = thread->function_context();
 
@@ -297,8 +287,8 @@ namespace script
 			}
 
 			fc.instruction_index = 0;
-			fc.file_name = file;
-			fc.function_name = function;
+			fc.file_name = fn->file;
+			fc.function_name = fn->name;
 			fc.function = fn;
 			fc.self_object = obj;
 
@@ -381,7 +371,7 @@ namespace script
 			l->vm = this;
 			l->object = obj;
 			l->string = event_str;
-			thread()->m_locks.push_back(std::move(l));
+			current_thread()->m_locks.push_back(std::move(l));
 			push(variant(vm::Undefined()));
 		}
 		void VirtualMachine::endon(vm::ObjectPtr obj, size_t numargs)
@@ -390,29 +380,35 @@ namespace script
 			push(variant(vm::Undefined()));
 		}
 
-		void VirtualMachine::call_builtin(vm::ObjectPtr obj, const std::string function, size_t numargs, bool is_method)
+		void VirtualMachine::call_builtin_method(vm::ObjectPtr obj, const std::string function, size_t numargs)
+		{
+			ObjectMethod* m = nullptr;
+			void* robj = nullptr;
+			if (!obj->get_method(util::string::to_lower(function), &m, &robj) || !m)
+			{
+				throw vm::Exception("no method {} found for object {}", function, obj->m_tag);
+				return;
+			}
+			int num_pushed = m->execute(*m_context.get(), robj);
+			if (num_pushed == 0)
+			{
+				pop(numargs);
+				push(variant(vm::Undefined()));
+			}
+			else
+			{
+				auto tmp = pop();
+				pop(numargs);
+				push(tmp);
+			}
+		}
+		void VirtualMachine::call_builtin(const std::string function, size_t numargs)
 		{
 			auto fnd = m_stockfunctions.find(util::string::to_lower(function));
 			if (fnd == m_stockfunctions.end())
 				throw vm::Exception("no function named {}", function);
 			m_context->set_number_of_arguments(numargs);
-			int num_pushed = 0;
-			if (obj)
-			{
-				ObjectMethod* m = nullptr;
-				void* robj = nullptr;
-				if (obj->get_method(util::string::to_lower(function), &m, &robj))
-				{
-					if (!m)
-						throw vm::Exception("no method found for object");
-					num_pushed = m->execute(*m_context.get(), robj);
-				}
-				else
-				{
-					num_pushed = fnd->second(*m_context.get(), obj ? obj.get() : nullptr);
-				}
-			} else
-				num_pushed = fnd->second(*m_context.get(), obj ? obj.get() : nullptr);
+			int num_pushed = fnd->second(*m_context.get(), nullptr);
 
 			if (num_pushed == 0)
 			{
@@ -427,32 +423,39 @@ namespace script
 			}
 		}
 		
-		void VirtualMachine::call(vm::ObjectPtr obj, const std::string function, size_t numargs, bool is_method)
+		void VirtualMachine::call_function(vm::ObjectPtr obj, const std::string& file, const std::string& function, size_t numargs, bool is_method)
 		{
-			if (function == "endon")
-			{
-				endon(obj, numargs);
-				return;
-			}
-			else if (function == "notify")
-			{
-				notify(obj, numargs);
-				return;
-			} else if (function == "waittill")
-			{
-				throw vm::Exception("should be a instruction, not a function call");
-				return;
-			}
-			auto fnd = m_stockfunctions.find(util::string::to_lower(function));
-			if (fnd != m_stockfunctions.end())
-			{
-
-				//dump(m_thread);
-				call_builtin(obj, function, numargs, is_method);
-				return;
-			}
 			auto& fc = function_context();
-			call(m_thread, obj, fc.file_name, function, numargs, is_method);
+			auto* fn = find_function_in_file(fc.file_name, function);
+			bool function_exists = function_exists = fn != nullptr;
+
+			if (is_method)
+			{
+				if (function == "endon")
+				{
+					endon(obj, numargs);
+					return;
+				}
+				else if (function == "notify")
+				{
+					notify(obj, numargs);
+					return;
+				}
+				else if (function == "waittill")
+				{
+					throw vm::Exception("should be a instruction, not a function call");
+					return;
+				}
+			}
+			if (function_exists)
+			{
+				call_impl(current_thread(), obj, fn, numargs);
+				return;
+			}
+			if (!is_method)
+				call_builtin(function, numargs);
+			else
+				call_builtin_method(obj, function, numargs);
 		}
 
 		std::shared_ptr<vm::Instruction> VirtualMachine::fetch(ThreadContext* tc)

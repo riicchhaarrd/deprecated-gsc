@@ -27,6 +27,7 @@ namespace script
 		struct CompiledFunction
 		{
 			std::string name;
+			std::string file;
 			std::vector<std::string> parameters;
 			std::vector<std::shared_ptr<vm::Instruction>> instructions;
 		};
