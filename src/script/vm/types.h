@@ -104,11 +104,6 @@ namespace script
 			return Variant(T()).index();
 		}
 
-		struct ObjectMethod
-		{
-			virtual int execute(VMContext&, void*) = 0;
-		};
-
 		struct Object
 		{
 			std::string m_tag;
@@ -119,10 +114,8 @@ namespace script
 			{
 			}
 			std::unordered_map<std::string, std::shared_ptr<Variant>> fields;
-			virtual bool get_method(const std::string n, ObjectMethod** ptr, void **obj)
+			virtual bool call_method(const std::string n, VMContext&, int*)
 			{
-				*ptr = nullptr;
-				*obj = nullptr;
 				return false;
 			}
 			virtual std::shared_ptr<Variant> get_field(const std::string n)

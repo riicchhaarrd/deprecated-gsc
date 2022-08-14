@@ -382,14 +382,12 @@ namespace script
 
 		void VirtualMachine::call_builtin_method(vm::ObjectPtr obj, const std::string function, size_t numargs)
 		{
-			ObjectMethod* m = nullptr;
-			void* robj = nullptr;
-			if (!obj->get_method(util::string::to_lower(function), &m, &robj) || !m)
+			int num_pushed = 0;
+			if (!obj->call_method(util::string::to_lower(function), *m_context.get(), &num_pushed))
 			{
 				throw vm::Exception("no method {} found for object {}", function, obj->m_tag);
 				return;
 			}
-			int num_pushed = m->execute(*m_context.get(), robj);
 			if (num_pushed == 0)
 			{
 				pop(numargs);
