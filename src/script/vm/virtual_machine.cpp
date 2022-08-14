@@ -103,7 +103,7 @@ namespace script
 				nargs = n;
 			}
 
-			virtual void add_object(std::shared_ptr<vm::Object>& o)
+			virtual void add_object(std::shared_ptr<vm::Object> o)
 			{
 				vm.push(vm.variant(std::move(o)));
 			}

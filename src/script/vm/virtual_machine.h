@@ -27,7 +27,7 @@ namespace script
 			add_int(b ? 1 : 0);
 		}
 		virtual void add_vector(vm::Vector) = 0;
-		virtual void add_object(std::shared_ptr<vm::Object>&) = 0;
+		virtual void add_object(std::shared_ptr<vm::Object>) = 0;
 		virtual void add_int(const int) = 0;
 		virtual void add_undefined() = 0;
 		virtual void add_float(const float) = 0;
