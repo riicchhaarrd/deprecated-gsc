@@ -426,7 +426,7 @@ namespace script
 		void VirtualMachine::call_function(vm::ObjectPtr obj, const std::string& file, const std::string& function, size_t numargs, bool is_method)
 		{
 			auto& fc = function_context();
-			auto* fn = find_function_in_file(fc.file_name, function);
+			auto* fn = find_function_in_file(file, function);
 			bool function_exists = function_exists = fn != nullptr;
 
 			if (is_method)
