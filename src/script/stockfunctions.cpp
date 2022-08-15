@@ -30,11 +30,6 @@ namespace script
 			//ctx.add_float((float)rand() / (float)0xffff);
 			return 1;
 		}
-		int getentitynumber(script::VMContext& ctx)
-		{
-			ctx.add_int(0);
-			return 1;
-		}
 		int getchar_(script::VMContext& ctx)
 		{
 			getchar();
@@ -160,15 +155,9 @@ namespace script
 			{"tolower", tolower},
 			{"distance", distance},
 			{"spawnstruct", spawnstruct},
-			{"newhudelem", spawnstruct},
-			{"settimer", unimplemented},
-			{"setshader", unimplemented},
 			{"resettimeout", unimplemented},
-			{"stopshellshock", unimplemented},
-			{"stoprumble", unimplemented},
 			{"setteamscore", unimplemented},
 			{"setvalue", unimplemented},
-			{"allowspectateteam", unimplemented},
 			{"randomint", randomint},
 			{"getteamscore", getteamscore},
 			{"randomfloat", randomfloat},
@@ -187,10 +176,8 @@ namespace script
 			{"precacheshellshock", unimplemented},
 			{"prof_begin", unimplemented},
 			{"prof_end", unimplemented},
-			{"placespawnpoint", unimplemented},
 			{"precacherumble", unimplemented},
 			{"updatescores", unimplemented},
-			{"getentitynumber", getentitynumber},
 			{"precachestatusicon", unimplemented},
 			{"setarchive", unimplemented},
 			{"precachestring", unimplemented},
@@ -199,11 +186,8 @@ namespace script
 			{"makecvarserverinfo", unimplemented},
 			{"setsavedcvar", unimplemented},
 			{"assert", unimplemented},
-			{"giveweapon", unimplemented},
 			{"setnormalhealth", unimplemented},
-			{"takeallweapons", unimplemented},
 			{"getdifficulty", getdifficulty},
-			{"getguid", getguid},
 			{"precachemodel", unimplemented},
 			{"precacheshader", unimplemented},
 			{"assertex", unimplemented},
