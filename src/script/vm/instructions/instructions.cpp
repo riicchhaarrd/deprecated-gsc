@@ -236,7 +236,7 @@ namespace script
 			auto obj = std::get<vm::ObjectPtr>(*v);
 			auto prop = vm.context()->get_string(1);
 			vm.pop(2);
-			vm.push(obj->get_field(prop));
+			vm.push(obj->get_field(util::string::to_lower(prop)));
 		}
 		void LoadObjectFieldRef::execute(VirtualMachine& vm)
 		{
@@ -254,7 +254,7 @@ namespace script
 			auto obj = std::get<vm::ObjectPtr>(*v);
 			auto prop = vm.context()->get_string(1);
 			vm.pop(2);
-			vm.push(obj->get_field(prop));
+			vm.push(obj->get_field(util::string::to_lower(prop)));
 		}
 		void StoreRef::execute(VirtualMachine& vm)
 		{
