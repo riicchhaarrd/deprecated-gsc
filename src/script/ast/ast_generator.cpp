@@ -712,7 +712,10 @@ namespace script
 				while (1)
 				{
 					if (accept('}'))
+					{
+						n->cases.push_back(std::move(sc));
 						goto skip;
+					}
 					if (accept_identifier_string("case") || accept_identifier_string("default"))
 					{
 						m_token_parser->unread_token();
