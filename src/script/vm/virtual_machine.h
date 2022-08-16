@@ -19,7 +19,7 @@ namespace script
 		virtual vm::ObjectPtr get_object(size_t) = 0;
 		virtual float get_float(size_t) = 0;
 		virtual void get_vector(size_t, vm::Vector&) = 0;
-		virtual vm::VariantPtr get_variant(size_t) = 0;
+		virtual vm::Variant get_variant(size_t) = 0;
 		virtual std::string variant_to_string(vm::Variant) = 0;
 		virtual float variant_to_number(vm::Variant) = 0;
 		virtual void add_bool(const bool b)
@@ -78,14 +78,14 @@ namespace script
 				std::string file_name;
 				std::string function_name;
 				vm::ObjectPtr self_object;
-				std::unordered_map<std::string, std::shared_ptr<vm::Variant>> variables;
+				std::unordered_map<std::string, vm::Variant> variables;
 				std::unordered_map<size_t, size_t> labels;
-				VariantPtr get_variable(const std::string var)
+				Variant& get_variable(const std::string var)
 				{
 					auto fnd = variables.find(var);
 					if (fnd == variables.end())
 					{
-						variables[var] = std::make_shared<vm::Variant>(vm::Undefined());
+						variables[var] = vm::Undefined();
 					}
 					return variables[var];
 				}
@@ -94,7 +94,8 @@ namespace script
 			};
 			struct ThreadContext
 			{
-				std::vector<std::shared_ptr<vm::Variant>> m_stack;
+				std::vector<vm::Variant> m_stack;
+				std::vector<vm::Variant*> m_referencestack;
 				std::stack<FunctionContext> m_callstack;
 				std::vector<std::unique_ptr<ThreadLock>> m_locks;
 				FunctionContext& function_context()
@@ -113,8 +114,8 @@ namespace script
 			ThreadContext* m_thread;
 			std::vector<NotifyEvent> notification_events;
 
-			vm::ObjectPtr level_object;
-			vm::ObjectPtr game_object;
+			vm::Variant level_object;
+			vm::Variant game_object;
 
 			//TODO: FIXME, why is this here?
 			//well because when we include something, the preprocessor has a include guard and then it won't get included in this particular file when
@@ -147,7 +148,7 @@ namespace script
 
 			vm::ObjectPtr get_level_object()
 			{
-				return level_object;
+				return std::get<vm::ObjectPtr>(level_object);
 			}
 
 			int get_flags()
@@ -180,7 +181,8 @@ namespace script
 				fc.instruction_index = fnd->second;
 			}
 
-			VariantPtr get_variable(const std::string var);
+			vm::Variant get_variable(const std::string var);
+			vm::Variant* get_variable_reference(const std::string var);
 			std::string variant_to_string_for_dump(VariantPtr v);
 			void dump_object(const std::string, VariantPtr ptr, int indent);
 			void dump(ThreadContext*);
@@ -202,12 +204,33 @@ namespace script
 			{
 				return m_context;
 			}
-			void push(VariantPtr v)
+			void push(Variant v)
 			{
 				m_thread->m_stack.push_back(v);
 			}
+			void push_reference(Variant* v)
+			{
+				m_thread->m_referencestack.push_back(v);
+			}
+			Variant* pop_reference()
+			{
+				if (m_thread->m_referencestack.empty())
+					throw vm::Exception("empty refstack");
+				auto *v = m_thread->m_referencestack[m_thread->m_referencestack.size() - 1];
+				m_thread->m_referencestack.pop_back();
+				return v;
+			}
+			Variant* pop_reference_value()
+			{
+				auto v = pop();
+				if (v.index() != (int)vm::Type::kReference)
+				{
+					throw vm::Exception("not a reference");
+				}
+				return pop_reference();
+			}
 			compiler::CompiledFunction* find_function_in_file(const std::string file, const std::string function);
-			VariantPtr top(int offset = 0)
+			Variant& top(int offset = 0)
 			{
 				auto& stack = m_thread->m_stack;
 				if (stack.empty())
@@ -217,9 +240,9 @@ namespace script
 					throw vm::Exception("out of bounds");
 				return stack[offs];
 			}
-			VariantPtr pop(size_t n = 1)
+			Variant pop(size_t n = 1)
 			{
-				VariantPtr v;
+				Variant v;
 				for (size_t i = 0; i < n; ++i)
 				{
 					if (m_thread->m_stack.empty())
@@ -231,7 +254,7 @@ namespace script
 			}
 			template <typename T> VariantPtr variant(T t)
 			{
-				return std::make_shared<vm::Variant>(t);
+				return std::make_shared<Variant>(t);
 			}
 			void register_function(const std::string name, StockFunction sf)
 			{

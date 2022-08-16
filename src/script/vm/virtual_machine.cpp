@@ -48,6 +48,11 @@ namespace script
 				return "undefined";
 			case vm::Type::kObject:
 				return "object";
+			case vm::Type::kFunctionPointer:
+			{
+				auto fp = std::get<vm::FunctionPointer>(v);
+				return std::format("{}::{}", fp.file, fp.name);
+			} break;
 			case vm::Type::kVector:
 			{
 				auto vec = std::get<vm::Vector>(v);
@@ -105,54 +110,52 @@ namespace script
 
 			virtual void add_object(std::shared_ptr<vm::Object> o)
 			{
-				vm.push(vm.variant(std::move(o)));
+				vm.push(std::move(o));
 			}
 			virtual void add_vector(vm::Vector v)
 			{
-				vm.push(vm.variant(v));
+				vm.push(v);
 			}
 			virtual void add_int(const int i)
 			{
-				vm.push(vm.variant(i));
+				vm.push(i);
 			}
 			virtual void add_undefined()
 			{
-				vm.push(vm.variant(vm::Undefined()));
+				vm.push(vm::Undefined());
 			}
 			virtual void add_float(const float f)
 			{
-				vm.push(vm.variant(f));
+				vm.push(f);
 			}
 			virtual void add_string(const std::string s)
 			{
-				vm.push(vm.variant(s));
+				vm.push(s);
 			}
-			virtual VariantPtr get_variant(size_t index)
+			virtual Variant get_variant(size_t index)
 			{
 				return vm.top(index);
 			}
 			virtual vm::ObjectPtr get_object(size_t index)
 			{
-				auto v = vm.top(index);
-				if (!v)
-					throw vm::Exception("expected object got null");
+				auto &v = vm.top(index);
 				//if (v->index() == (int)vm::Type::kUndefined)
 					//*v = std::make_shared<Object>();
-				if (v->index() != (int)vm::Type::kObject)
-					throw vm::Exception("expected object got {}", v->index());
-				return std::get<vm::ObjectPtr>(*v);
+				if (v.index() != (int)vm::Type::kObject)
+					throw vm::Exception("expected object got {}", v.index());
+				return std::get<vm::ObjectPtr>(v);
 			}
 			virtual void get_vector(size_t index, vm::Vector& vec)
 			{
-				auto v = vm.top(index);
-				if (v->index() != (int)vm::Type::kVector)
-					throw vm::Exception("expected vector got {}", v->index());
-				vec = std::get<vm::Vector>(*v);
+				auto &v = vm.top(index);
+				if (v.index() != (int)vm::Type::kVector)
+					throw vm::Exception("expected vector got {}", v.index());
+				vec = std::get<vm::Vector>(v);
 			}
 			virtual std::string get_string(size_t index)
 			{
-				auto v = vm.top(index);
-				return vm.variant_to_string(*v);
+				auto &v = vm.top(index);
+				return vm.variant_to_string(v);
 			}
 			virtual std::string variant_to_string(vm::Variant v)
 			{
@@ -164,26 +167,26 @@ namespace script
 			}
 			virtual int get_int(size_t index)
 			{
-				auto v = vm.top(index);
+				auto &v = vm.top(index);
 				try
 				{
-					return std::get<vm::Integer>(*v);
+					return std::get<vm::Integer>(v);
 				}
 				catch (std::bad_variant_access& e)
 				{
 					throw vm::Exception("cannot convert index {} from {} to integer", index,
-										vm::kVariantNames[v->index()]);
+										vm::kVariantNames[v.index()]);
 				}
 				return 0;
 			}
 			virtual float get_float(size_t index)
 			{
-				auto v = vm.top(index);
-				if (v->index() == vm::type_index<vm::Number>())
-					return std::get<vm::Number>(*v);
-				else if (v->index() == vm::type_index<vm::Integer>())
-					return (float)std::get<vm::Integer>(*v);
-				throw vm::Exception("cannot convert index {} from {} to float", index, vm::kVariantNames[v->index()]);
+				auto &v = vm.top(index);
+				if (v.index() == vm::type_index<vm::Number>())
+					return std::get<vm::Number>(v);
+				else if (v.index() == vm::type_index<vm::Integer>())
+					return (float)std::get<vm::Integer>(v);
+				throw vm::Exception("cannot convert index {} from {} to float", index, vm::kVariantNames[v.index()]);
 				return 0.f;
 			}
 		};
@@ -236,6 +239,7 @@ namespace script
 
 		void VirtualMachine::dump_object(const std::string name, VariantPtr ptr, int indent)
 		{
+			#if 0
 			auto obj = std::get<vm::ObjectPtr>(*ptr);
 			for (auto& it : obj->fields)
 			{
@@ -245,6 +249,7 @@ namespace script
 				if (it.second->index() == (int)vm::Type::kObject)
 					dump_object(it.first, it.second, indent + 1);
 			}
+			#endif
 		}
 
 		void VirtualMachine::dump(ThreadContext *tc)
@@ -291,6 +296,7 @@ namespace script
 			fc.function_name = fn->name;
 			fc.function = fn;
 			fc.self_object = obj;
+			fc.variables["self"] = fc.self_object;
 
 			//TODO: FIXME
 			//scan forward for labels
@@ -321,10 +327,10 @@ namespace script
 			for (size_t i = 0; i < numargs - 1; ++i)
 			{
 				auto vp = pop();
-				args.push_back(*vp);
+				args.push_back(vp);
 			}
 			notify_event_string(obj, evstr, &args);
-			push(variant(vm::Undefined()));
+			push(vm::Undefined());
 		}
 		void VirtualMachine::waittill(vm::ObjectPtr obj, const std::string event_str, std::vector<std::string>& vars)
 		{
@@ -346,8 +352,8 @@ namespace script
 							//printf("setting parameter for notify i:%d, argsize:%d, parmsize:%d\n", i, ne.arguments.size(), parameters.size());
 							if (i >= ne.arguments.size())
 								continue;
-							auto var = fc->get_variable(parameters[i]);
-							*var = ne.arguments[i];
+							auto &var = fc->get_variable(parameters[i]);
+							var = ne.arguments[i];
 						}
 						notified = true;
 					}
@@ -372,12 +378,12 @@ namespace script
 			l->object = obj;
 			l->string = event_str;
 			current_thread()->m_locks.push_back(std::move(l));
-			push(variant(vm::Undefined()));
+			push(vm::Undefined());
 		}
 		void VirtualMachine::endon(vm::ObjectPtr obj, size_t numargs)
 		{
 			pop(numargs);
-			push(variant(vm::Undefined()));
+			push(vm::Undefined());
 		}
 
 		void VirtualMachine::call_builtin_method(vm::ObjectPtr obj, const std::string function, size_t numargs)
@@ -391,7 +397,7 @@ namespace script
 			if (num_pushed == 0)
 			{
 				pop(numargs);
-				push(variant(vm::Undefined()));
+				push(vm::Undefined());
 			}
 			else
 			{
@@ -411,7 +417,7 @@ namespace script
 			if (num_pushed == 0)
 			{
 				pop(numargs);
-				push(variant(vm::Undefined()));
+				push(vm::Undefined());
 			}
 			else
 			{
@@ -464,21 +470,37 @@ namespace script
 			return fc.function->instructions[fc.instruction_index++];
 		}
 
-		VariantPtr VirtualMachine::get_variable(const std::string var)
+		Variant VirtualMachine::get_variable(const std::string var)
 		{
 			auto& fc = function_context();
 			if (var == "level")
-				return variant(level_object);
+				return level_object;
 			else if (var == "game")
 			{
-				return variant(game_object);
+				return game_object;
 			}
+			/*
+			* //should add a new local variable with "self" so we can overwrite it
+			* //sometimes we wanna do that i guess
 			else if (var == "self")
 			{
-				return variant(fc.self_object);
+				return fc.self_object;
 			}
+			*/
 			return fc.get_variable(var);
 		}
+		Variant* VirtualMachine::get_variable_reference(const std::string var)
+		{
+			auto& fc = function_context();
+			if (var == "level")
+				return &level_object;
+			else if (var == "game")
+			{
+				return &game_object;
+			}
+			return &fc.get_variable(var);
+		}
+
 		void VirtualMachine::run()
 		{
 			//while (1)

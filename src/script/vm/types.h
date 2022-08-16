@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <variant>
 #include <vector>
+#include <common/stringutil.h>
 
 namespace script
 {
@@ -77,12 +78,19 @@ namespace script
 		{
 		};
 
+		struct Reference
+		{
+			size_t offset = 0;
+			std::string field;
+			vm::ObjectPtr object = nullptr;
+		};
+
 		using Variant = std::variant<Undefined, Vector, String, Integer, Number, ObjectPtr, ArrayPtr, LocalizedString,
-									 FunctionPointer, Identifier, Animation>;
+									 FunctionPointer, Identifier, Animation, Reference>;
 		using VariantPtr = std::shared_ptr<vm::Variant>;
 		static const char* kVariantNames[] = {"Undefined", "Vector", "String", "Integer", "Float",
 											  "Object",	   "Array",	 "String Localized", "Function Pointer", "?",
-											  "Animation", NULL};
+											  "Animation", "Reference", NULL};
 
 		enum class Type
 		{
@@ -96,7 +104,9 @@ namespace script
 			kLocalizedString,
 			kFunctionPointer,
 			kIdentifier,
-			kAnimation
+			kAnimation,
+			kReference,
+			kObjectFieldReference
 		};
 
 		template<typename T> inline size_t type_index()
@@ -113,25 +123,21 @@ namespace script
 			virtual ~Object()
 			{
 			}
-			std::unordered_map<std::string, std::shared_ptr<Variant>> fields;
+			std::unordered_map<std::string, vm::Variant> fields;
 			virtual bool call_method(const std::string n, VMContext&, int*)
 			{
 				return false;
 			}
-			virtual std::shared_ptr<Variant> get_field(const std::string n)
+			virtual bool set_field(const std::string n, vm::Variant& value)
 			{
-				if (n == "size")
-				{
-					int i = fields.size();
-					return std::make_shared<Variant>(i);
-				}
-				else if (n == "tag")
-				{
-					return std::make_shared<Variant>(m_tag);
-				}
+				fields[n] = value;
+				return true;
+			}
+			virtual vm::Variant& get_field(const std::string n)
+			{
 				if (fields.find(n) == fields.end())
 				{
-					fields[n] = std::make_shared<vm::Variant>(vm::Undefined());
+					fields[n] = vm::Undefined();
 				}
 				return fields[n];
 			}

@@ -20,15 +20,15 @@ namespace script
 			}
 			auto vfp = vm.context()->get_variant(0);
 			vm.pop();
-			if (vfp->index() != (int)vm::Type::kFunctionPointer)
-				throw vm::Exception("{} is not a function pointer", vfp->index());
-			auto fp = std::get<vm::FunctionPointer>(*vfp);
+			if (vfp.index() != (int)vm::Type::kFunctionPointer)
+				throw vm::Exception("{} is not a function pointer", vfp.index());
+			auto fp = std::get<vm::FunctionPointer>(vfp);
 			std::string ref = fp.file;
 			std::replace(ref.begin(), ref.end(), '\\', '/');
 			if (is_threaded)
 			{
 				vm.exec_thread(obj, ref, fp.name, numargs, is_method_call);
-				vm.push(vm.variant(vm::Undefined())); // thread doesn't return
+				vm.push(vm::Undefined()); // thread doesn't return
 			}
 			else
 				vm.call_function(obj, ref, fp.name, this->numargs, is_method_call);
@@ -46,7 +46,7 @@ namespace script
 			if (is_threaded)
 			{
 				vm.exec_thread(obj, ref, this->function, numargs, is_method_call);
-				vm.push(vm.variant(vm::Undefined())); // thread doesn't return
+				vm.push(vm::Undefined()); // thread doesn't return
 			}
 			else
 				vm.call_function(obj, ref, this->function, this->numargs, is_method_call);
@@ -62,7 +62,7 @@ namespace script
 			if (is_threaded)
 			{
 				vm.exec_thread(obj, vm.current_file(), this->function, numargs, is_method_call);
-				vm.push(vm.variant(vm::Undefined())); //thread doesn't return
+				vm.push(vm::Undefined()); //thread doesn't return
 			}
 			else
 				vm.call_function(obj, vm.current_file(), this->function, this->numargs, is_method_call);
@@ -101,11 +101,11 @@ namespace script
 		}
 		void Constant1::execute(VirtualMachine& vm)
 		{
-			vm.push(vm.variant(1));
+			vm.push(1);
 		}
 		void Constant0::execute(VirtualMachine& vm)
 		{
-			vm.push(vm.variant(0));
+			vm.push(0);
 		}
 		void JumpZero::execute(VirtualMachine& vm)
 		{
@@ -130,20 +130,20 @@ namespace script
 		{
 			auto v = vm.context()->get_variant(0);
 			vm.pop();
-			if (v->index() == (int)vm::Type::kInteger)
+			if (v.index() == (int)vm::Type::kInteger)
 			{
-				int intval = std::get<vm::Integer>(*v);
+				int intval = std::get<vm::Integer>(v);
 				if (intval == 0)
 					vm.set_flags(vm.get_flags() | vm::flags::kZF);
 				else
 					vm.set_flags(vm.get_flags() & ~vm::flags::kZF);
 			}
-			else if (v->index() == (int)vm::Type::kUndefined)
+			else if (v.index() == (int)vm::Type::kUndefined)
 			{
 				vm.set_flags(vm.get_flags() | vm::flags::kZF);
 			}
 			else
-				throw vm::Exception("unexpected {}", v->index());
+				throw vm::Exception("unexpected {}", v.index());
 		}
 		void Label::execute(VirtualMachine& vm)
 		{
@@ -154,7 +154,7 @@ namespace script
 			auto b = vm.context()->get_variant(1);
 			vm.pop();
 			vm.pop();
-			vm.push(vm.variant(vm.binop(*a, *b, op)));
+			vm.push(vm.binop(a, b, op));
 		}
 		void WaitTillFrameEnd::execute(VirtualMachine& vm)
 		{
@@ -203,73 +203,121 @@ namespace script
 		{
 			auto i = vm.context()->get_int(0);
 			vm.pop();
-			vm.push(vm.variant(~i));
+			vm.push(~i);
 		}
 		void LogicalNot::execute(VirtualMachine& vm)
 		{
-			auto v = vm.context()->get_variant(0);
+			Variant v = vm.context()->get_variant(0);
 			vm.pop();
-			if (v->index() == (int)vm::Type::kInteger)
+			if (v.index() == (int)vm::Type::kInteger)
 			{
-				vm.push(vm.variant(!std::get<vm::Integer>(*v)));
+				vm.push(!std::get<vm::Integer>(v));
 			}
-			else if (v->index() == (int)vm::Type::kUndefined)
+			else if (v.index() == (int)vm::Type::kUndefined)
 			{
-				vm.push(vm.variant(1));
+				vm.push(1);
 			}
 			else
-				throw vm::Exception("unexpected {}", v->index());
+				throw vm::Exception("unexpected {}", v.index());
 		}
 		void LoadObjectFieldValue::execute(VirtualMachine& vm)
 		{
-			auto v = vm.top();
-			if (!v)
-				throw vm::Exception("expected object got null");
-			// if (op == '[' && v->index() == (int)vm::Type::kUndefined)
-			if (v->index() == (int)vm::Type::kUndefined)
+			//TODO: FIXME we can't actually load anything if ref is undefined...
+			auto ref = vm.pop();
+			//TODO: FIXME something is still undefined and won't load properly...
+			//something with the spawnlogic, maybe it's just not getting any spawns from entities and just stays undefined idk
+			#if 1
+			if (ref.index() == (int)vm::Type::kUndefined)
 			{
-				auto o = std::make_shared<Object>("object created from undefined");
-				*v = o;
+				ref = std::make_shared<Object>("object created from undefined");
 			}
-			if (v->index() != (int)vm::Type::kObject)
-				throw vm::Exception("expected object got {}", v->index());
-			auto obj = std::get<vm::ObjectPtr>(*v);
-			auto prop = vm.context()->get_string(1);
-			vm.pop(2);
-			vm.push(obj->get_field(util::string::to_lower(prop)));
+			#endif
+			if (ref.index() != (int)vm::Type::kObject)
+			{
+				throw vm::Exception("expected object got {}", ref.index());
+			}
+			std::shared_ptr<vm::Object> obj = std::get<vm::ObjectPtr>(ref);
+			auto prop = vm.context()->get_string(0);
+			vm.pop(1);
+			if (prop == "size")
+			{
+				vm.push(vm::Integer(obj->fields.size()));
+			}
+			else
+			{
+				try
+				{
+					auto fv = obj->get_field(util::string::to_lower(prop));
+					vm.push(fv);
+				}
+				catch (...)
+				{
+					throw vm::Exception("failed getting field {}", prop);
+				}
+			}
 		}
 		void LoadObjectFieldRef::execute(VirtualMachine& vm)
 		{
-			auto v = vm.top();
-			if (!v)
-				throw vm::Exception("expected object got null");
-			//if (op == '[' && v->index() == (int)vm::Type::kUndefined)
-			if (v->index() == (int)vm::Type::kUndefined)
+			auto *ref = vm.pop_reference_value();
+			if (ref->index() == (int)vm::Type::kUndefined)
 			{
-				auto o = std::make_shared<Object>("object created from undefined");
-				*v = o;
+				*ref = std::make_shared<Object>("object created from undefined");
 			}
-			if (v->index() != (int)vm::Type::kObject)
-				throw vm::Exception("expected object got {}", v->index());
-			auto obj = std::get<vm::ObjectPtr>(*v);
-			auto prop = vm.context()->get_string(1);
-			vm.pop(2);
-			vm.push(obj->get_field(util::string::to_lower(prop)));
+			if (ref->index() != (int)vm::Type::kObject)
+			{
+				throw vm::Exception("expected object got {}", ref->index());
+			}
+			std::shared_ptr<vm::Object> obj = std::get<vm::ObjectPtr>(*ref);
+			auto prop = vm.context()->get_string(0);
+			vm.pop(1);
+			if (prop == "size")
+				throw vm::Exception("size is read-only");
+			vm.push(vm::Reference{.offset = 0, .field = util::string::to_lower(prop), .object = obj});
+			try
+			{
+				vm.push_reference(&obj->get_field(util::string::to_lower(prop)));
+			}
+			catch (...)
+			{
+				throw vm::Exception("failed getting field {}", prop);
+			}
 		}
 		void StoreRef::execute(VirtualMachine& vm)
 		{
-			auto v = vm.context()->get_variant(0);
-			auto val = vm.context()->get_variant(1);
-			*v = *val;
-			vm.pop(2);
+			auto v = vm.pop();
+			if (v.index() != (int)vm::Type::kReference)
+			{
+				throw vm::Exception("not a reference");
+			}
+			auto rd = std::get<vm::Reference>(v);
+			auto *r = vm.pop_reference();
+			if (!rd.object)
+			{
+				*r = vm.context()->get_variant(0);
+			}
+			else
+			{
+				vm::Variant value = vm.context()->get_variant(0);
+				try
+				{
+					rd.object->set_field(util::string::to_lower(rd.field), value);
+				}
+				catch (...)
+				{
+					throw vm::Exception("failed setting field {} to {}", rd.field, vm.variant_to_string(value));
+				}
+			}
+			vm.pop(1);
 		}
 		void LoadValue::execute(VirtualMachine& vm)
 		{
-			vm.push(vm.get_variable(this->variable_name));
+			vm.push(vm.get_variable(util::string::to_lower(variable_name)));
 		}
 		void LoadRef::execute(VirtualMachine& vm)
 		{
-			vm.push(vm.get_variable(this->variable_name));
+			auto* v = vm.get_variable_reference(util::string::to_lower(variable_name));
+			vm.push(vm::Reference());
+			vm.push_reference(v);
 		}
 		void Nop::execute(VirtualMachine& vm)
 		{
@@ -277,37 +325,37 @@ namespace script
 		}
 		void PushUndefined::execute(VirtualMachine& vm)
 		{
-			vm.push(vm.variant(vm::Undefined()));
+			vm.push(vm::Undefined());
 		}
 		void PushAnimationString::execute(VirtualMachine& vm)
 		{
 			vm::Animation a;
 			a.reference = value;
-			vm.push(vm.variant(a));
+			vm.push(a);
 		}
 		void PushFunctionPointer::execute(VirtualMachine& vm)
 		{
 			vm::FunctionPointer fp;
 			fp.file = this->file;
 			fp.name = this->function;
-			vm.push(vm.variant(fp));
+			vm.push(fp);
 		}
 		void PushLocalizedString::execute(VirtualMachine& vm)
 		{
 			vm::LocalizedString s;
 			s.reference = this->value;
-			vm.push(vm.variant(s));
+			vm.push(s);
 		}
 		void PushString::execute(VirtualMachine& vm)
 		{
 			vm::String s = value;
-			vm.push(vm.variant(s));
+			vm.push(s);
 		}
 		void PushArray::execute(VirtualMachine& vm)
 		{
 			//TODO: FIXME don't use object as array
 			vm::ObjectPtr o = std::make_shared<vm::Object>("pusharray");
-			vm.push(vm.variant(o));
+			vm.push(o);
 		}
 		void PushVector::execute(VirtualMachine& vm)
 		{
@@ -316,17 +364,17 @@ namespace script
 			v.y = vm.context()->get_float(1);
 			v.z = vm.context()->get_float(2);
 			vm.pop(3);
-			vm.push(vm.variant(v));
+			vm.push(v);
 		}
 		void PushNumber::execute(VirtualMachine& vm)
 		{
 			vm::Number v = value;
-			vm.push(vm.variant(v));
+			vm.push(v);
 		}
 		void PushInteger::execute(VirtualMachine& vm)
 		{
 			vm::Integer v = value;
-			vm.push(vm.variant(v));
+			vm.push(v);
 		}
 		void Pop::execute(VirtualMachine& vm)
 		{

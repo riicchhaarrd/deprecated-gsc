@@ -47,7 +47,7 @@ namespace script
 		int is_defined(script::VMContext& ctx)
 		{
 			auto v = ctx.get_variant(0);
-			ctx.add_bool(v->index() != 0);
+			ctx.add_bool(v.index() != 0);
 			return 1;
 		}
 		int spawn(script::VMContext& ctx)
