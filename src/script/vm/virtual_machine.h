@@ -67,45 +67,45 @@ namespace script
 		{
 		};
 		using Exception = common::TypedDataMessageException<ExceptionData>;
+		struct FunctionContext
+		{
+			std::string file_name;
+			std::string function_name;
+			vm::ObjectPtr self_object;
+			std::unordered_map<std::string, vm::Variant> variables;
+			std::unordered_map<size_t, size_t> labels;
+			Variant& get_variable(const std::string var)
+			{
+				auto fnd = variables.find(var);
+				if (fnd == variables.end())
+				{
+					variables[var] = vm::Undefined();
+				}
+				return variables[var];
+			}
+			size_t instruction_index = 0;
+			compiler::CompiledFunction* function = nullptr;
+		};
+		struct ThreadContext
+		{
+			std::vector<vm::Variant> m_stack;
+			std::vector<vm::Variant*> m_referencestack;
+			std::stack<FunctionContext> m_callstack;
+			std::vector<std::unique_ptr<ThreadLock>> m_locks;
+			FunctionContext& function_context()
+			{
+				if (m_callstack.empty())
+					throw vm::Exception("callstack empty");
+				return m_callstack.top();
+			}
+			bool marked_for_deletion = false;
+		};
 		class VirtualMachine
 		{
 			int m_flags = flags::kNone;
 			compiler::CompiledFiles& m_compiledfiles;
 			size_t frame_number = 0;
 
-			struct FunctionContext
-			{
-				std::string file_name;
-				std::string function_name;
-				vm::ObjectPtr self_object;
-				std::unordered_map<std::string, vm::Variant> variables;
-				std::unordered_map<size_t, size_t> labels;
-				Variant& get_variable(const std::string var)
-				{
-					auto fnd = variables.find(var);
-					if (fnd == variables.end())
-					{
-						variables[var] = vm::Undefined();
-					}
-					return variables[var];
-				}
-				size_t instruction_index = 0;
-				compiler::CompiledFunction* function = nullptr;
-			};
-			struct ThreadContext
-			{
-				std::vector<vm::Variant> m_stack;
-				std::vector<vm::Variant*> m_referencestack;
-				std::stack<FunctionContext> m_callstack;
-				std::vector<std::unique_ptr<ThreadLock>> m_locks;
-				FunctionContext& function_context()
-				{
-					if (m_callstack.empty())
-						throw vm::Exception("callstack empty");
-					return m_callstack.top();
-				}
-				bool marked_for_deletion = false;
-			};
 			std::unordered_map<std::string, StockFunction> m_stockfunctions;
 			std::unique_ptr<VMContext> m_context;
 
