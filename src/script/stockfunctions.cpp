@@ -63,12 +63,6 @@ namespace script
 			ctx.add_vector(v);
 			return 1;
 		}
-		int getent(script::VMContext& ctx)
-		{
-			auto o = std::make_shared<vm::Object>("getent");
-			ctx.add_object(o);
-			return 1;
-		}
 		int spawnstruct(script::VMContext& ctx)
 		{
 			auto o = std::make_shared<vm::Object>("spawnstruct");
@@ -168,7 +162,6 @@ namespace script
 			{"getteamscore", getteamscore},
 			{"randomfloat", randomfloat},
 			{"gettime", gettime},
-			{"getent", getent},
 			{"vectornormalize", vectornormalize},
 			{"getchar", getchar_},
 			{"getaiarray", getaiarray},
