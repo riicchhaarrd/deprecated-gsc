@@ -12,14 +12,14 @@ namespace script
 		}
 		void CallFunctionPointer::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			vm::ObjectPtr obj = vm.function_context().self_object;
+			vm::ObjectPtr obj = thread_context->function_context().self_object;
 			if (is_method_call)
 			{
-				obj = vm.context()->get_object(0);
-				vm.pop();
+				obj = thread_context->context()->get_object(0);
+				thread_context->pop();
 			}
-			auto vfp = vm.context()->get_variant(0);
-			vm.pop();
+			auto vfp = thread_context->context()->get_variant(0);
+			thread_context->pop();
 			if (vfp.index() != (int)vm::Type::kFunctionPointer)
 				throw vm::Exception("{} is not a function pointer", vfp.index());
 			auto fp = std::get<vm::FunctionPointer>(vfp);
@@ -27,63 +27,65 @@ namespace script
 			std::replace(ref.begin(), ref.end(), '\\', '/');
 			if (is_threaded)
 			{
-				vm.push(vm.exec_thread(obj, ref, fp.name, numargs, is_method_call));
+				thread_context->push(vm.exec_thread(thread_context, obj, ref, fp.name, numargs, is_method_call));
 			}
 			else
-				vm.call_function(obj, ref, fp.name, this->numargs, is_method_call);
+				vm.call_function(thread_context, obj, ref, fp.name, this->numargs, is_method_call);
 		}
 		void CallFunctionFile::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			vm::ObjectPtr obj = vm.function_context().self_object;
+			vm::ObjectPtr obj = thread_context->function_context().self_object;
 			if (is_method_call)
 			{
-				obj = vm.context()->get_object(0);
-				vm.pop();
+				obj = thread_context->context()->get_object(0);
+				thread_context->pop();
 			}
 			std::string ref = file;
 			std::replace(ref.begin(), ref.end(), '\\', '/');
 			if (is_threaded)
 			{
-				vm.push(vm.exec_thread(obj, ref, this->function, numargs, is_method_call));
+				thread_context->push(vm.exec_thread(thread_context, obj, ref, this->function, numargs, is_method_call));
 			}
 			else
-				vm.call_function(obj, ref, this->function, this->numargs, is_method_call);
+				vm.call_function(thread_context, obj, ref, this->function, this->numargs, is_method_call);
 		}
 		void CallFunction::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			vm::ObjectPtr obj = vm.function_context().self_object;
+			vm::ObjectPtr obj = thread_context->function_context().self_object;
 			if (is_method_call)
 			{
-				obj = vm.context()->get_object(0);
-				vm.pop();
+				obj = thread_context->context()->get_object(0);
+				thread_context->pop();
 			}
 			if (is_threaded)
 			{
-				vm.push(vm.exec_thread(obj, vm.current_file(), this->function, numargs, is_method_call));
+				thread_context->push(vm.exec_thread(thread_context, obj, thread_context->current_file(), this->function,
+													numargs, is_method_call));
 			}
 			else
-				vm.call_function(obj, vm.current_file(), this->function, this->numargs, is_method_call);
+				vm.call_function(thread_context, obj, thread_context->current_file(), this->function, this->numargs,
+								 is_method_call);
 		}
 		void WaitTill::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm::ObjectPtr obj;
 			if (is_method_call)
 			{
-				obj = vm.context()->get_object(0);
-				vm.pop();
+				obj = thread_context->context()->get_object(0);
+				thread_context->pop();
 			}
 			if (!obj)
 				throw vm::Exception("no obj");
-			std::string evstr = vm.context()->get_string(0);
-			vm.pop();
+			std::string evstr = thread_context->context()->get_string(0);
+			thread_context->pop();
 			std::vector<std::string> vars;
 			for (size_t i = 0; i < this->numargs; ++i)
 			{
-				vars.push_back(vm.context()->get_string(0));
-				vm.pop();
+				vars.push_back(thread_context->context()->get_string(0));
+				thread_context->pop();
 			}
 			std::reverse(vars.begin(), vars.end());
-			vm.waittill(obj, evstr, vars);
+			vm.waittill(thread_context, obj, evstr, vars);
 		}
 		void JumpNotZero::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
@@ -92,17 +94,17 @@ namespace script
 				if (!this->dest.expired())
 				{
 					size_t idx = this->dest.lock()->label_index;
-					vm.jump(idx);
+					thread_context->jump(idx);
 				}
 			}
 		}
 		void Constant1::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			vm.push(1);
+			thread_context->push(1);
 		}
 		void Constant0::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			vm.push(0);
+			thread_context->push(0);
 		}
 		void JumpZero::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
@@ -111,7 +113,7 @@ namespace script
 				if (!this->dest.expired())
 				{
 					size_t idx = this->dest.lock()->label_index;
-					vm.jump(idx);
+					thread_context->jump(idx);
 				}
 			}
 		}
@@ -120,13 +122,13 @@ namespace script
 			if (!this->dest.expired())
 			{
 				size_t idx = this->dest.lock()->label_index;
-				vm.jump(idx);
+				thread_context->jump(idx);
 			}
 		}
 		void Test::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			auto v = vm.context()->get_variant(0);
-			vm.pop();
+			auto v = thread_context->context()->get_variant(0);
+			thread_context->pop();
 			if (v.index() == (int)vm::Type::kInteger)
 			{
 				int intval = std::get<vm::Integer>(v);
@@ -147,11 +149,11 @@ namespace script
 		}
 		void BinOp::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			auto a = vm.context()->get_variant(0);
-			auto b = vm.context()->get_variant(1);
-			vm.pop();
-			vm.pop();
-			vm.push(vm.binop(a, b, op));
+			auto a = thread_context->context()->get_variant(0);
+			auto b = thread_context->context()->get_variant(1);
+			thread_context->pop();
+			thread_context->pop();
+			thread_context->push(vm.binop(a, b, op));
 		}
 		void WaitTillFrameEnd::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
@@ -171,12 +173,12 @@ namespace script
 				}
 			};
 			auto l = std::make_unique<ThreadLockWaitFrame>(vm, vm.get_frame_number());
-			vm.current_thread()->m_locks.push_back(std::move(l));
+			thread_context->m_locks.push_back(std::move(l));
 		}
 		void Wait::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			float duration = vm.context()->get_float(0);
-			vm.pop();
+			float duration = thread_context->context()->get_float(0);
+			thread_context->pop();
 			struct ThreadLockWaitDuration : vm::ThreadLock
 			{
 				uint32_t end_time = 0;
@@ -190,29 +192,29 @@ namespace script
 			};
 			auto l = std::make_unique<ThreadLockWaitDuration>();
 			l->end_time = GetTickCount() + duration * 1000.f;
-			vm.current_thread()->m_locks.push_back(std::move(l));
+			thread_context->m_locks.push_back(std::move(l));
 		}
 		void Ret::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			vm.ret();
+			thread_context->ret();
 		}
 		void Not::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			auto i = vm.context()->get_int(0);
-			vm.pop();
-			vm.push(~i);
+			auto i = thread_context->context()->get_int(0);
+			thread_context->pop();
+			thread_context->push(~i);
 		}
 		void LogicalNot::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			Variant v = vm.context()->get_variant(0);
-			vm.pop();
+			Variant v = thread_context->context()->get_variant(0);
+			thread_context->pop();
 			if (v.index() == (int)vm::Type::kInteger)
 			{
-				vm.push(!std::get<vm::Integer>(v));
+				thread_context->push(!std::get<vm::Integer>(v));
 			}
 			else if (v.index() == (int)vm::Type::kUndefined)
 			{
-				vm.push(1);
+				thread_context->push(1);
 			}
 			else
 				throw vm::Exception("unexpected {}", v.index());
@@ -220,7 +222,7 @@ namespace script
 		void LoadObjectFieldValue::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			//TODO: FIXME we can't actually load anything if ref is undefined...
-			auto ref = vm.pop();
+			auto ref = thread_context->pop();
 			//TODO: FIXME something is still undefined and won't load properly...
 			//something with the spawnlogic, maybe it's just not getting any spawns from entities and just stays undefined idk
 			#if 1
@@ -234,18 +236,18 @@ namespace script
 				throw vm::Exception("expected object got {}", ref.index());
 			}
 			std::shared_ptr<vm::Object> obj = std::get<vm::ObjectPtr>(ref);
-			auto prop = vm.context()->get_string(0);
-			vm.pop(1);
+			auto prop = thread_context->context()->get_string(0);
+			thread_context->pop(1);
 			if (prop == "size")
 			{
-				vm.push(vm::Integer(obj->fields.size()));
+				thread_context->push(vm::Integer(obj->fields.size()));
 			}
 			else
 			{
 				try
 				{
 					auto fv = obj->get_field(util::string::to_lower(prop));
-					vm.push(fv);
+					thread_context->push(fv);
 				}
 				catch (...)
 				{
@@ -255,7 +257,7 @@ namespace script
 		}
 		void LoadObjectFieldRef::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			auto *ref = vm.pop_reference_value();
+			auto* ref = thread_context->pop_reference_value();
 			if (ref->index() == (int)vm::Type::kUndefined)
 			{
 				*ref = std::make_shared<Object>("object created from undefined");
@@ -265,14 +267,14 @@ namespace script
 				throw vm::Exception("expected object got {}", ref->index());
 			}
 			std::shared_ptr<vm::Object> obj = std::get<vm::ObjectPtr>(*ref);
-			auto prop = vm.context()->get_string(0);
-			vm.pop(1);
+			auto prop = thread_context->context()->get_string(0);
+			thread_context->pop(1);
 			if (prop == "size")
 				throw vm::Exception("size is read-only");
-			vm.push(vm::Reference{.offset = 0, .field = util::string::to_lower(prop), .object = obj});
+			thread_context->push(vm::Reference{.offset = 0, .field = util::string::to_lower(prop), .object = obj});
 			try
 			{
-				vm.push_reference(&obj->get_field(util::string::to_lower(prop)));
+				thread_context->push_reference(&obj->get_field(util::string::to_lower(prop)));
 			}
 			catch (...)
 			{
@@ -281,20 +283,20 @@ namespace script
 		}
 		void StoreRef::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			auto v = vm.pop();
+			auto v = thread_context->pop();
 			if (v.index() != (int)vm::Type::kReference)
 			{
 				throw vm::Exception("not a reference");
 			}
 			auto rd = std::get<vm::Reference>(v);
-			auto *r = vm.pop_reference();
+			auto *r = thread_context->pop_reference();
 			if (!rd.object)
 			{
-				*r = vm.context()->get_variant(0);
+				*r = thread_context->context()->get_variant(0);
 			}
 			else
 			{
-				vm::Variant value = vm.context()->get_variant(0);
+				vm::Variant value = thread_context->context()->get_variant(0);
 				try
 				{
 					rd.object->set_field(util::string::to_lower(rd.field), value);
@@ -304,17 +306,17 @@ namespace script
 					throw vm::Exception("failed setting field {} to {}", rd.field, vm.variant_to_string(value));
 				}
 			}
-			vm.pop(1);
+			thread_context->pop(1);
 		}
 		void LoadValue::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			vm.push(vm.get_variable(util::string::to_lower(variable_name)));
+			thread_context->push(vm.get_variable(thread_context, util::string::to_lower(variable_name)));
 		}
 		void LoadRef::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			auto* v = vm.get_variable_reference(util::string::to_lower(variable_name));
-			vm.push(vm::Reference());
-			vm.push_reference(v);
+			auto* v = vm.get_variable_reference(thread_context, util::string::to_lower(variable_name));
+			thread_context->push(vm::Reference());
+			thread_context->push_reference(v);
 		}
 		void Nop::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
@@ -322,60 +324,60 @@ namespace script
 		}
 		void PushUndefined::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			vm.push(vm::Undefined());
+			thread_context->push(vm::Undefined());
 		}
 		void PushAnimationString::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm::Animation a;
 			a.reference = value;
-			vm.push(a);
+			thread_context->push(a);
 		}
 		void PushFunctionPointer::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm::FunctionPointer fp;
 			fp.file = this->file;
 			fp.name = this->function;
-			vm.push(fp);
+			thread_context->push(fp);
 		}
 		void PushLocalizedString::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm::LocalizedString s;
 			s.reference = this->value;
-			vm.push(s);
+			thread_context->push(s);
 		}
 		void PushString::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm::String s = value;
-			vm.push(s);
+			thread_context->push(s);
 		}
 		void PushArray::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			//TODO: FIXME don't use object as array
 			vm::ObjectPtr o = std::make_shared<vm::Object>("pusharray");
-			vm.push(o);
+			thread_context->push(o);
 		}
 		void PushVector::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm::Vector v;
-			v.x = vm.context()->get_float(0);
-			v.y = vm.context()->get_float(1);
-			v.z = vm.context()->get_float(2);
-			vm.pop(3);
-			vm.push(v);
+			v.x = thread_context->context()->get_float(0);
+			v.y = thread_context->context()->get_float(1);
+			v.z = thread_context->context()->get_float(2);
+			thread_context->pop(3);
+			thread_context->push(v);
 		}
 		void PushNumber::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm::Number v = value;
-			vm.push(v);
+			thread_context->push(v);
 		}
 		void PushInteger::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm::Integer v = value;
-			vm.push(v);
+			thread_context->push(v);
 		}
 		void Pop::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			vm.pop();
+			thread_context->pop();
 		}
 	}; // namespace vm
 };	   // namespace script

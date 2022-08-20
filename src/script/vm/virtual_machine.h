@@ -92,6 +92,11 @@ namespace script
 			std::vector<vm::Variant*> m_referencestack;
 			std::stack<FunctionContext> m_callstack;
 			std::vector<std::unique_ptr<ThreadLock>> m_locks;
+			std::unique_ptr<VMContext> m_context;
+			std::unique_ptr<VMContext>& context()
+			{
+				return m_context;
+			}
 			FunctionContext& function_context()
 			{
 				if (m_callstack.empty())
@@ -99,6 +104,74 @@ namespace script
 				return m_callstack.top();
 			}
 			bool marked_for_deletion = false;
+			void ret();
+
+			const std::string& current_file()
+			{
+				return function_context().file_name;
+			}
+
+			void jump(size_t i)
+			{
+				auto& fc = function_context();
+				auto fnd = fc.labels.find(i);
+				if (fnd == fc.labels.end())
+				{
+					for (auto& it : fc.labels)
+					{
+						printf("label: %d\n", it.first);
+					}
+					throw vm::Exception("cannot jump to non existing label {}", i);
+				}
+				fc.instruction_index = fnd->second;
+			}
+			void push(Variant v)
+			{
+				m_stack.push_back(v);
+			}
+			void push_reference(Variant* v)
+			{
+				m_referencestack.push_back(v);
+			}
+			Variant* pop_reference()
+			{
+				if (m_referencestack.empty())
+					throw vm::Exception("empty refstack");
+				auto* v = m_referencestack[m_referencestack.size() - 1];
+				m_referencestack.pop_back();
+				return v;
+			}
+			Variant& top(int offset = 0)
+			{
+				auto& stack = m_stack;
+				if (stack.empty())
+					throw vm::Exception("stack empty");
+				size_t offs = stack.size() - 1 - offset;
+				if (offs >= stack.size())
+					throw vm::Exception("out of bounds");
+				return stack[offs];
+			}
+			Variant pop(size_t n = 1)
+			{
+				Variant v;
+				for (size_t i = 0; i < n; ++i)
+				{
+					if (m_stack.empty())
+						throw vm::Exception("empty stack");
+					v = m_stack[m_stack.size() - 1];
+					m_stack.pop_back();
+				}
+				return v;
+			}
+			Variant* pop_reference_value()
+			{
+				auto v = pop();
+				if (v.index() != (int)vm::Type::kReference)
+				{
+					throw vm::Exception("not a reference");
+				}
+				return pop_reference();
+			}
 		};
 		class VirtualMachine
 		{
@@ -107,11 +180,9 @@ namespace script
 			size_t frame_number = 0;
 
 			std::unordered_map<std::string, StockFunction> m_stockfunctions;
-			std::unique_ptr<VMContext> m_context;
 
 			std::vector<std::unique_ptr<ThreadContext>> m_threads;
 			std::vector<std::unique_ptr<ThreadContext>> m_newthreads;
-			ThreadContext* m_thread;
 			std::vector<NotifyEvent> notification_events;
 
 			vm::Variant level_object;
@@ -123,14 +194,10 @@ namespace script
 			//hackish solution, just make a large global list of all the functions and then if we can't find the function
 			//just try to find it here
 			std::unordered_map<std::string, compiler::CompiledFunction*> m_allcustomfunctions;
-			void call_impl(ThreadContext* thread, vm::ObjectPtr obj, script::compiler::CompiledFunction*, size_t);
+			void call_impl(ThreadContext *, ThreadContext*, vm::ObjectPtr obj, script::compiler::CompiledFunction*, size_t);
 
 		  public:
 			std::shared_ptr<vm::Instruction> fetch(ThreadContext*);
-			FunctionContext& function_context()
-			{
-				return m_thread->function_context();
-			}
 			size_t thread_count()
 			{
 				return m_threads.size();
@@ -156,33 +223,8 @@ namespace script
 				return m_flags;
 			}
 
-			const std::string& current_file()
-			{
-				return m_thread->function_context().file_name;
-			}
-
-			ThreadContext* current_thread()
-			{
-				return m_thread;
-			}
-
-			void jump(size_t i)
-			{
-				auto& fc = function_context();
-				auto fnd = fc.labels.find(i);
-				if (fnd == fc.labels.end())
-				{
-					for (auto& it : fc.labels)
-					{
-						printf("label: %d\n", it.first);
-					}
-					throw vm::Exception("cannot jump to non existing label {}", i);
-				}
-				fc.instruction_index = fnd->second;
-			}
-
-			vm::Variant get_variable(const std::string var);
-			vm::Variant* get_variable_reference(const std::string var);
+			vm::Variant get_variable(ThreadContext*, const std::string var);
+			vm::Variant* get_variable_reference(ThreadContext*, const std::string var);
 			std::string variant_to_string_for_dump(VariantPtr v);
 			void dump_object(const std::string, VariantPtr ptr, int indent);
 			void dump(ThreadContext*);
@@ -200,58 +242,8 @@ namespace script
 				}
 				notification_events.push_back(ev);
 			}
-			std::unique_ptr<VMContext>& context()
-			{
-				return m_context;
-			}
-			void push(Variant v)
-			{
-				m_thread->m_stack.push_back(v);
-			}
-			void push_reference(Variant* v)
-			{
-				m_thread->m_referencestack.push_back(v);
-			}
-			Variant* pop_reference()
-			{
-				if (m_thread->m_referencestack.empty())
-					throw vm::Exception("empty refstack");
-				auto *v = m_thread->m_referencestack[m_thread->m_referencestack.size() - 1];
-				m_thread->m_referencestack.pop_back();
-				return v;
-			}
-			Variant* pop_reference_value()
-			{
-				auto v = pop();
-				if (v.index() != (int)vm::Type::kReference)
-				{
-					throw vm::Exception("not a reference");
-				}
-				return pop_reference();
-			}
 			compiler::CompiledFunction* find_function_in_file(const std::string file, const std::string function);
-			Variant& top(int offset = 0)
-			{
-				auto& stack = m_thread->m_stack;
-				if (stack.empty())
-					throw vm::Exception("stack empty");
-				size_t offs = stack.size() - 1 - offset;
-				if (offs >= stack.size())
-					throw vm::Exception("out of bounds");
-				return stack[offs];
-			}
-			Variant pop(size_t n = 1)
-			{
-				Variant v;
-				for (size_t i = 0; i < n; ++i)
-				{
-					if (m_thread->m_stack.empty())
-						throw vm::Exception("empty stack");
-					v = m_thread->m_stack[m_thread->m_stack.size() - 1];
-					m_thread->m_stack.pop_back();
-				}
-				return v;
-			}
+			
 			template <typename T> VariantPtr variant(T t)
 			{
 				return std::make_shared<Variant>(t);
@@ -262,18 +254,19 @@ namespace script
 			}
 			VirtualMachine(compiler::CompiledFiles&);
 			void run();
-			void call_function(vm::ObjectPtr obj, const std::string&, const std::string&, size_t, bool);
-			void call_builtin(const std::string, size_t);
-			void call_builtin_method(vm::ObjectPtr obj, const std::string, size_t);
-			void notify(vm::ObjectPtr obj, size_t);
-			void waittill(vm::ObjectPtr obj, const std::string, std::vector<std::string>&);
-			void endon(vm::ObjectPtr obj, size_t);
-			void ret();
+			void call_function(ThreadContext*, vm::ObjectPtr obj, const std::string&, const std::string&, size_t,
+							   bool);
+			void call_builtin(ThreadContext*, const std::string, size_t);
+			void call_builtin_method(ThreadContext*, vm::ObjectPtr obj, const std::string, size_t);
+			void notify(ThreadContext*, vm::ObjectPtr obj, size_t);
+			void waittill(ThreadContext*, vm::ObjectPtr obj, const std::string, std::vector<std::string>&);
+			void endon(ThreadContext*, vm::ObjectPtr obj, size_t);
 
 			std::string variant_to_string(vm::Variant v);
 			float variant_to_number(vm::Variant v);
 			int variant_to_integer(vm::Variant v);
-			vm::Variant exec_thread(vm::ObjectPtr obj, const std::string file, const std::string function, size_t numargs,
+			vm::Variant exec_thread(ThreadContext*, vm::ObjectPtr obj, const std::string file,
+									const std::string function, size_t numargs,
 							 bool);
 
 			bool run_thread(ThreadContext*);

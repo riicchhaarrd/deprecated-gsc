@@ -117,7 +117,7 @@ namespace script
 			return;
 		try
 		{
-			m_vm->exec_thread(object ? object : m_vm->get_level_object(), file, function, nargs, object ? true : false);
+			m_vm->exec_thread(nullptr, object ? object : m_vm->get_level_object(), file, function, nargs, object ? true : false);
 		}
 		catch (vm::Exception& ex)
 		{
