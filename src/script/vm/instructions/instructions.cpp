@@ -303,7 +303,7 @@ namespace script
 				}
 				catch (...)
 				{
-					throw vm::Exception("failed setting field {} to {}", rd.field, vm.variant_to_string(value));
+					throw vm::Exception("failed setting field {} to {} on object {}", rd.field, vm.variant_to_string(value), rd.object->m_tag);
 				}
 			}
 			thread_context->pop(1);
