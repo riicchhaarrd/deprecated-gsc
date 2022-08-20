@@ -105,7 +105,7 @@ namespace script
 		}
 		int unimplemented_vector(script::VMContext& ctx)
 		{
-			ctx.add_vector({.x = 0.f, .y = 0.f, .z = 0.f});
+			ctx.add_vector(vm::Vector());
 			return 1;
 		}
 		int loadfx(script::VMContext& ctx)

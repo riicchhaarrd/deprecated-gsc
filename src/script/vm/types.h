@@ -14,9 +14,27 @@ namespace script
 	{
 		struct Vector
 		{
-			float x = 0.f;
-			float y = 0.f;
-			float z = 0.f;
+			union
+			{
+				struct
+				{
+					float x;
+					float y;
+					float z;
+				};
+				float data[3];
+			};
+
+			Vector()
+			{
+				x = y = z = 0.f;
+			}
+			Vector(float a, float b, float c)
+			{
+				x = a;
+				y = b;
+				z = c;
+			}
 
 			float dot(const Vector& o)
 			{
@@ -32,6 +50,11 @@ namespace script
 			{
 				Vector v = (*this) - o;
 				return v.length();
+			}
+
+			float& operator[](const int index)
+			{
+				return data[index];
 			}
 
 			Vector operator-(const Vector& o)
