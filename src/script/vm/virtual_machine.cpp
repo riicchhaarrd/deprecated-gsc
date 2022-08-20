@@ -297,8 +297,8 @@ namespace script
 				if (i >= fn->parameters.size())
 					continue;
 				auto &parm = fn->parameters[i];
-				fc.variables[parm] = arg;
 				//printf("setting parameter %s to %s\n", parm.c_str(), variant_to_string_for_dump(arg).c_str());
+				fc.variables[util::string::to_lower(parm)] = arg;
 			}
 
 			fc.instruction_index = 0;
@@ -533,8 +533,7 @@ namespace script
 				if (!instr)
 					throw vm::Exception("shouldn't be nullptr");
 				auto& fc = tc->function_context();
-				// printf("\t\t-->%s (%d)\t%s::%s\n", instr->to_string().c_str(), m_thread->m_stack.size(),
-				// fc.file_name.c_str(), fc.function_name.c_str());
+				printf("\t\t-->%s (%d)\t%s::%s\n", instr->to_string().c_str(), tc->m_stack.size(), fc.file_name.c_str(), fc.function_name.c_str());
 				instr->execute(*this, tc);
 			}
 			return true;
