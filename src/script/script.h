@@ -20,7 +20,8 @@ namespace script
 	  public:
 		ScriptEngine(filesystem_api&);
 		~ScriptEngine();
-		bool load(const std::string);
+		bool load_file(const std::string);
+		void create_virtual_machine();
 		void execute_thread(vm::ObjectPtr, const std::string, const std::string, size_t);
 		void register_function(const std::string name, StockFunction sf);
 		void clear_functions()

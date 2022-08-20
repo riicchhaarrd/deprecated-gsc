@@ -125,28 +125,18 @@ namespace script
 			m_vm.reset();
 		}
 	}
-	bool ScriptEngine::load(const std::string path)
+	bool ScriptEngine::load_file(const std::string path)
 	{
 		try
 		{
-			//maps/mp/gametypes/dm
 			script::ReferenceMap refmap;
 			ReferenceSolver rs(m_fs, "", path, refmap);
-			printf("loaded files:\n");
-			for (auto& it : refmap)
-			{
-				printf("\t%s\n", it.first.c_str());
-			}
 			script::compiler::Compiler compiler(refmap);
-			m_compiledfiles = compiler.compile();
-			// register_stockfunctions(interpreter);
-			// script::FunctionArguments args;
-			// interpreter.call_function("maps/mp/gametypes/dm", "main", args);
-
-			m_vm = std::make_unique<script::vm::VirtualMachine>(m_compiledfiles);
-			script::register_stockfunctions(*m_vm);
-			for (auto& it : m_registeredfunctions)
-				m_vm->register_function(it.first, it.second);
+			auto cf = compiler.compile();
+			for (auto& it : cf)
+			{
+				m_compiledfiles[it.first] = it.second;
+			}
 		}
 		catch (script::ast::ASTException& e)
 		{
@@ -159,5 +149,12 @@ namespace script
 			return false;
 		}
 		return true;
+	}
+	void ScriptEngine::create_virtual_machine()
+	{
+		m_vm = std::make_unique<script::vm::VirtualMachine>(m_compiledfiles);
+		script::register_stockfunctions(*m_vm);
+		for (auto& it : m_registeredfunctions)
+			m_vm->register_function(it.first, it.second);
 	}
 }; // namespace script
