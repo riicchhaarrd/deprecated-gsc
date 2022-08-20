@@ -273,7 +273,7 @@ namespace script
 			std::string variant_to_string(vm::Variant v);
 			float variant_to_number(vm::Variant v);
 			int variant_to_integer(vm::Variant v);
-			void exec_thread(vm::ObjectPtr obj, const std::string file, const std::string function, size_t numargs,
+			vm::Variant exec_thread(vm::ObjectPtr obj, const std::string file, const std::string function, size_t numargs,
 							 bool);
 
 			bool run_thread(ThreadContext*);

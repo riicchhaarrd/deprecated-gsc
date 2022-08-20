@@ -27,8 +27,7 @@ namespace script
 			std::replace(ref.begin(), ref.end(), '\\', '/');
 			if (is_threaded)
 			{
-				vm.exec_thread(obj, ref, fp.name, numargs, is_method_call);
-				vm.push(vm::Undefined()); // thread doesn't return
+				vm.push(vm.exec_thread(obj, ref, fp.name, numargs, is_method_call));
 			}
 			else
 				vm.call_function(obj, ref, fp.name, this->numargs, is_method_call);
@@ -45,8 +44,7 @@ namespace script
 			std::replace(ref.begin(), ref.end(), '\\', '/');
 			if (is_threaded)
 			{
-				vm.exec_thread(obj, ref, this->function, numargs, is_method_call);
-				vm.push(vm::Undefined()); // thread doesn't return
+				vm.push(vm.exec_thread(obj, ref, this->function, numargs, is_method_call));
 			}
 			else
 				vm.call_function(obj, ref, this->function, this->numargs, is_method_call);
@@ -61,8 +59,7 @@ namespace script
 			}
 			if (is_threaded)
 			{
-				vm.exec_thread(obj, vm.current_file(), this->function, numargs, is_method_call);
-				vm.push(vm::Undefined()); //thread doesn't return
+				vm.push(vm.exec_thread(obj, vm.current_file(), this->function, numargs, is_method_call));
 			}
 			else
 				vm.call_function(obj, vm.current_file(), this->function, this->numargs, is_method_call);

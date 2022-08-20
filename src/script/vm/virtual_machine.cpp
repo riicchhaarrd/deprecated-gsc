@@ -205,7 +205,7 @@ namespace script
 			}
 		}
 
-		void VirtualMachine::exec_thread(vm::ObjectPtr obj, const std::string file, const std::string function,
+		vm::Variant VirtualMachine::exec_thread(vm::ObjectPtr obj, const std::string file, const std::string function,
 										 size_t numargs, bool is_method)
 		{
 			if (!obj)
@@ -218,6 +218,8 @@ namespace script
 			//TODO: FIXME there's no guarantee in which order the thread runs, atm it runs after the thread that made a new thread
 			//but we could run the thread first till we hit a wait then return control to the former thread
 			call_impl(thr, obj, fn, numargs);
+			//run_thread(thr);
+			return vm::Undefined();
 		}
 
 		compiler::CompiledFunction* VirtualMachine::find_function_in_file(const std::string file,
