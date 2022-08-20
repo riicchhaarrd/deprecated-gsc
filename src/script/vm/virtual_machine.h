@@ -276,6 +276,8 @@ namespace script
 			void exec_thread(vm::ObjectPtr obj, const std::string file, const std::string function, size_t numargs,
 							 bool);
 
+			bool run_thread(ThreadContext*);
+
 			template <typename T> vm::Variant handle_binary_op(const T& a, const T& b, int op)
 			{
 				switch (op)

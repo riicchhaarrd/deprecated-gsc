@@ -501,6 +501,31 @@ namespace script
 			return &fc.get_variable(var);
 		}
 
+		bool VirtualMachine::run_thread(ThreadContext *tc)
+		{
+			while (1)
+			{
+				for (auto lock_iterator = tc->m_locks.begin(); lock_iterator != tc->m_locks.end();)
+				{
+					if ((*lock_iterator)->locked())
+					{
+						return false;
+					}
+					lock_iterator = tc->m_locks.erase(lock_iterator);
+				}
+				if (tc->marked_for_deletion)
+					break;
+				auto instr = fetch(tc);
+				if (!instr)
+					throw vm::Exception("shouldn't be nullptr");
+				auto& fc = tc->function_context();
+				// printf("\t\t-->%s (%d)\t%s::%s\n", instr->to_string().c_str(), m_thread->m_stack.size(),
+				// fc.file_name.c_str(), fc.function_name.c_str());
+				instr->execute(*this, tc);
+			}
+			return true;
+		}
+
 		void VirtualMachine::run()
 		{
 			//while (1)
@@ -544,29 +569,7 @@ namespace script
 				for (auto& thread : m_threads)
 				{
 					m_thread = thread.get();
-					while (1)
-					{
-						bool is_waiting = false;
-						for (auto lock_iterator = thread->m_locks.begin(); lock_iterator != thread->m_locks.end();)
-						{
-							if ((*lock_iterator)->locked())
-							{
-								is_waiting = true;
-								break;
-							}
-							lock_iterator = thread->m_locks.erase(lock_iterator);
-						}
-						if (is_waiting)
-							break;
-						if (thread->marked_for_deletion)
-							break;
-						auto instr = fetch(m_thread);
-						if (!instr)
-							throw vm::Exception("shouldn't be nullptr");
-						auto& fc = m_thread->function_context();
-						//printf("\t\t-->%s (%d)\t%s::%s\n", instr->to_string().c_str(), m_thread->m_stack.size(), fc.file_name.c_str(), fc.function_name.c_str());
-						instr->execute(*this);
-					}
+					run_thread(m_thread);
 				}
 				//Sleep(1000 / 20);
 			}
