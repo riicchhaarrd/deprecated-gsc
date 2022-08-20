@@ -10,7 +10,7 @@ namespace script
 		{
 			return std::format("PushInteger {}", value);
 		}
-		void CallFunctionPointer::execute(VirtualMachine& vm)
+		void CallFunctionPointer::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm::ObjectPtr obj = vm.function_context().self_object;
 			if (is_method_call)
@@ -32,7 +32,7 @@ namespace script
 			else
 				vm.call_function(obj, ref, fp.name, this->numargs, is_method_call);
 		}
-		void CallFunctionFile::execute(VirtualMachine& vm)
+		void CallFunctionFile::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm::ObjectPtr obj = vm.function_context().self_object;
 			if (is_method_call)
@@ -49,7 +49,7 @@ namespace script
 			else
 				vm.call_function(obj, ref, this->function, this->numargs, is_method_call);
 		}
-		void CallFunction::execute(VirtualMachine& vm)
+		void CallFunction::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm::ObjectPtr obj = vm.function_context().self_object;
 			if (is_method_call)
@@ -64,7 +64,7 @@ namespace script
 			else
 				vm.call_function(obj, vm.current_file(), this->function, this->numargs, is_method_call);
 		}
-		void WaitTill::execute(VirtualMachine& vm)
+		void WaitTill::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm::ObjectPtr obj;
 			if (is_method_call)
@@ -85,7 +85,7 @@ namespace script
 			std::reverse(vars.begin(), vars.end());
 			vm.waittill(obj, evstr, vars);
 		}
-		void JumpNotZero::execute(VirtualMachine& vm)
+		void JumpNotZero::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			if ((vm.get_flags() & vm::flags::kZF) != vm::flags::kZF)
 			{
@@ -96,15 +96,15 @@ namespace script
 				}
 			}
 		}
-		void Constant1::execute(VirtualMachine& vm)
+		void Constant1::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm.push(1);
 		}
-		void Constant0::execute(VirtualMachine& vm)
+		void Constant0::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm.push(0);
 		}
-		void JumpZero::execute(VirtualMachine& vm)
+		void JumpZero::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			if (vm.get_flags() & vm::flags::kZF)
 			{
@@ -115,7 +115,7 @@ namespace script
 				}
 			}
 		}
-		void Jump::execute(VirtualMachine& vm)
+		void Jump::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			if (!this->dest.expired())
 			{
@@ -123,7 +123,7 @@ namespace script
 				vm.jump(idx);
 			}
 		}
-		void Test::execute(VirtualMachine& vm)
+		void Test::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			auto v = vm.context()->get_variant(0);
 			vm.pop();
@@ -142,10 +142,10 @@ namespace script
 			else
 				throw vm::Exception("unexpected {}", v.index());
 		}
-		void Label::execute(VirtualMachine& vm)
+		void Label::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 		}
-		void BinOp::execute(VirtualMachine& vm)
+		void BinOp::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			auto a = vm.context()->get_variant(0);
 			auto b = vm.context()->get_variant(1);
@@ -153,7 +153,7 @@ namespace script
 			vm.pop();
 			vm.push(vm.binop(a, b, op));
 		}
-		void WaitTillFrameEnd::execute(VirtualMachine& vm)
+		void WaitTillFrameEnd::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			struct ThreadLockWaitFrame : vm::ThreadLock
 			{
@@ -173,7 +173,7 @@ namespace script
 			auto l = std::make_unique<ThreadLockWaitFrame>(vm, vm.get_frame_number());
 			vm.current_thread()->m_locks.push_back(std::move(l));
 		}
-		void Wait::execute(VirtualMachine& vm)
+		void Wait::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			float duration = vm.context()->get_float(0);
 			vm.pop();
@@ -192,17 +192,17 @@ namespace script
 			l->end_time = GetTickCount() + duration * 1000.f;
 			vm.current_thread()->m_locks.push_back(std::move(l));
 		}
-		void Ret::execute(VirtualMachine& vm)
+		void Ret::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm.ret();
 		}
-		void Not::execute(VirtualMachine& vm)
+		void Not::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			auto i = vm.context()->get_int(0);
 			vm.pop();
 			vm.push(~i);
 		}
-		void LogicalNot::execute(VirtualMachine& vm)
+		void LogicalNot::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			Variant v = vm.context()->get_variant(0);
 			vm.pop();
@@ -217,7 +217,7 @@ namespace script
 			else
 				throw vm::Exception("unexpected {}", v.index());
 		}
-		void LoadObjectFieldValue::execute(VirtualMachine& vm)
+		void LoadObjectFieldValue::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			//TODO: FIXME we can't actually load anything if ref is undefined...
 			auto ref = vm.pop();
@@ -253,7 +253,7 @@ namespace script
 				}
 			}
 		}
-		void LoadObjectFieldRef::execute(VirtualMachine& vm)
+		void LoadObjectFieldRef::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			auto *ref = vm.pop_reference_value();
 			if (ref->index() == (int)vm::Type::kUndefined)
@@ -279,7 +279,7 @@ namespace script
 				throw vm::Exception("failed getting field {}", prop);
 			}
 		}
-		void StoreRef::execute(VirtualMachine& vm)
+		void StoreRef::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			auto v = vm.pop();
 			if (v.index() != (int)vm::Type::kReference)
@@ -306,55 +306,55 @@ namespace script
 			}
 			vm.pop(1);
 		}
-		void LoadValue::execute(VirtualMachine& vm)
+		void LoadValue::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm.push(vm.get_variable(util::string::to_lower(variable_name)));
 		}
-		void LoadRef::execute(VirtualMachine& vm)
+		void LoadRef::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			auto* v = vm.get_variable_reference(util::string::to_lower(variable_name));
 			vm.push(vm::Reference());
 			vm.push_reference(v);
 		}
-		void Nop::execute(VirtualMachine& vm)
+		void Nop::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			throw vm::Exception("unhandled instruction {}", __LINE__);
 		}
-		void PushUndefined::execute(VirtualMachine& vm)
+		void PushUndefined::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm.push(vm::Undefined());
 		}
-		void PushAnimationString::execute(VirtualMachine& vm)
+		void PushAnimationString::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm::Animation a;
 			a.reference = value;
 			vm.push(a);
 		}
-		void PushFunctionPointer::execute(VirtualMachine& vm)
+		void PushFunctionPointer::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm::FunctionPointer fp;
 			fp.file = this->file;
 			fp.name = this->function;
 			vm.push(fp);
 		}
-		void PushLocalizedString::execute(VirtualMachine& vm)
+		void PushLocalizedString::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm::LocalizedString s;
 			s.reference = this->value;
 			vm.push(s);
 		}
-		void PushString::execute(VirtualMachine& vm)
+		void PushString::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm::String s = value;
 			vm.push(s);
 		}
-		void PushArray::execute(VirtualMachine& vm)
+		void PushArray::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			//TODO: FIXME don't use object as array
 			vm::ObjectPtr o = std::make_shared<vm::Object>("pusharray");
 			vm.push(o);
 		}
-		void PushVector::execute(VirtualMachine& vm)
+		void PushVector::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm::Vector v;
 			v.x = vm.context()->get_float(0);
@@ -363,17 +363,17 @@ namespace script
 			vm.pop(3);
 			vm.push(v);
 		}
-		void PushNumber::execute(VirtualMachine& vm)
+		void PushNumber::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm::Number v = value;
 			vm.push(v);
 		}
-		void PushInteger::execute(VirtualMachine& vm)
+		void PushInteger::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm::Integer v = value;
 			vm.push(v);
 		}
-		void Pop::execute(VirtualMachine& vm)
+		void Pop::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			vm.pop();
 		}

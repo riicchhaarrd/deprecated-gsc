@@ -7,6 +7,7 @@ namespace script
 	namespace vm
 	{
 		class VirtualMachine;
+		struct ThreadContext;
 
 #define DEFINE_INSTRUCTION(x)                                                                                          \
 	virtual std::string to_string() override                                                                           \
@@ -30,7 +31,7 @@ namespace script
 
 			virtual std::string to_string() = 0;
 
-			virtual void execute(VirtualMachine&) = 0;
+			virtual void execute(VirtualMachine&, ThreadContext*) = 0;
 		};
 		using InstructionPtr = std::unique_ptr<Instruction>;
 	}; // namespace vm
