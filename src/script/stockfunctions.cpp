@@ -50,6 +50,19 @@ namespace script
 			ctx.add_bool(v.index() != 0);
 			return 1;
 		}
+		int vectornormalize(script::VMContext& ctx)
+		{
+			vm::Vector v;
+			ctx.get_vector(0, v);
+			float len = v.length();
+			if (len <= FLT_EPSILON)
+				throw vm::Exception("divide by zero");
+			v.x /= len;
+			v.y /= len;
+			v.z /= len;
+			ctx.add_vector(v);
+			return 1;
+		}
 		int getent(script::VMContext& ctx)
 		{
 			auto o = std::make_shared<vm::Object>("getent");
@@ -156,6 +169,7 @@ namespace script
 			{"randomfloat", randomfloat},
 			{"gettime", gettime},
 			{"getent", getent},
+			{"vectornormalize", vectornormalize},
 			{"getchar", getchar_},
 			{"getaiarray", getaiarray},
 			{"issplitscreen", issplitscreen},
