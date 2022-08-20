@@ -220,7 +220,12 @@ namespace script
 			//TODO: FIXME there's no guarantee in which order the thread runs, atm it runs after the thread that made a new thread
 			//but we could run the thread first till we hit a wait then return control to the former thread
 			call_impl(current_thread, thr, obj, fn, numargs);
-			//run_thread(thr);
+			if (run_thread(thr))
+			{
+				//the thread didn't yield/stall so we can just get the return value and the thread will end
+				return thr->pop();
+			}
+
 			return vm::Undefined();
 		}
 
