@@ -584,7 +584,36 @@ namespace script
 				n.lhs->accept(*this);
 
 				auto instr = instruction<BinOp>();
-				instr->op = n.op;
+				switch (n.op)
+				{
+				case parse::TokenType_kMinusAssign:
+					instr->op = '-';
+					break;
+				case parse::TokenType_kPlusAssign:
+					instr->op = '+';
+					break;
+				case parse::TokenType_kMultiplyAssign:
+					instr->op = '*';
+					break;
+				case parse::TokenType_kDivideAssign:
+					instr->op = '/';
+					break;
+				case parse::TokenType_kModAssign:
+					instr->op = '%';
+					break;
+				case parse::TokenType_kOrAssign:
+					instr->op = '|';
+					break;
+				case parse::TokenType_kXorAssign:
+					instr->op = '^';
+					break;
+				case parse::TokenType_kAndAssign:
+					instr->op = '&';
+					break;
+				default:
+					throw CompileException("unhandled operator {}", n.op);
+					break;
+				}
 				add(instr);
 				LValueVisitor vis(this);
 				n.lhs->accept(vis);
