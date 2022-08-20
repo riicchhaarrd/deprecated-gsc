@@ -50,12 +50,6 @@ namespace script
 			ctx.add_bool(v.index() != 0);
 			return 1;
 		}
-		int spawn(script::VMContext& ctx)
-		{
-			auto o = std::make_shared<vm::Object>("spawn");
-			ctx.add_object(o);
-			return 1;
-		}
 		int getent(script::VMContext& ctx)
 		{
 			auto o = std::make_shared<vm::Object>("getent");
@@ -150,7 +144,6 @@ namespace script
 			{"setexpfog", set_exp_fog},
 			{"isdefined", is_defined},
 			{"loadfx", loadfx},
-			{"spawn", spawn},
 			{"positionwouldtelefrag", positionwouldtelefrag},
 			{"tolower", tolower},
 			{"distance", distance},
