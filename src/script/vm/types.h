@@ -104,6 +104,7 @@ namespace script
 		struct Reference
 		{
 			size_t offset = 0;
+			int index = -1;
 			std::string field;
 			vm::ObjectPtr object = nullptr;
 		};

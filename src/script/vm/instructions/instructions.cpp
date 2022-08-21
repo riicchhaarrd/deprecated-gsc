@@ -223,6 +223,20 @@ namespace script
 		{
 			//TODO: FIXME we can't actually load anything if ref is undefined...
 			auto ref = thread_context->pop();
+			auto prop = thread_context->context()->get_string(0);
+			thread_context->pop(1);
+
+			if (ref.index() == (int)vm::Type::kVector)
+			{
+				auto vec = std::get<vm::Vector>(ref);
+				int propidx = prop[0];
+				if (propidx >= '0' && propidx <= '2')
+					thread_context->push(vec['0' - propidx]);
+				else
+					throw vm::Exception("vector out of bounds");
+				return;
+			}
+
 			//TODO: FIXME something is still undefined and won't load properly...
 			//something with the spawnlogic, maybe it's just not getting any spawns from entities and just stays undefined idk
 			#if 1
@@ -236,8 +250,6 @@ namespace script
 				throw vm::Exception("expected object got {}", ref.index());
 			}
 			std::shared_ptr<vm::Object> obj = std::get<vm::ObjectPtr>(ref);
-			auto prop = thread_context->context()->get_string(0);
-			thread_context->pop(1);
 			if (prop == "size")
 			{
 				thread_context->push(vm::Integer(obj->fields.size()));
@@ -258,6 +270,20 @@ namespace script
 		void LoadObjectFieldRef::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			auto* ref = thread_context->pop_reference_value();
+			auto prop = thread_context->context()->get_string(0);
+			thread_context->pop(1);
+			if (ref->index() == (int)vm::Type::kVector)
+			{
+				vm::Reference tmp;
+				int propidx = prop[0];
+				if (propidx >= '0' && propidx <= '2')
+					tmp.index = '0' - propidx;
+				else
+					throw vm::Exception("vector out of bounds");
+				thread_context->push(tmp);
+				thread_context->push_reference(ref);
+				return;
+			}
 			if (ref->index() == (int)vm::Type::kUndefined)
 			{
 				*ref = std::make_shared<Object>("object created from undefined");
@@ -267,8 +293,6 @@ namespace script
 				throw vm::Exception("expected object got {}", ref->index());
 			}
 			std::shared_ptr<vm::Object> obj = std::get<vm::ObjectPtr>(*ref);
-			auto prop = thread_context->context()->get_string(0);
-			thread_context->pop(1);
 			if (prop == "size")
 				throw vm::Exception("size is read-only");
 			thread_context->push(vm::Reference{.offset = 0, .field = util::string::to_lower(prop), .object = obj});
@@ -290,13 +314,20 @@ namespace script
 			}
 			auto rd = std::get<vm::Reference>(v);
 			auto *r = thread_context->pop_reference();
+			vm::Variant value = thread_context->pop(1);
+			if (r->index() == (int)vm::Type::kVector && rd.index != -1)
+			{
+				float fv = vm.variant_to_number(value);
+				auto *rp = std::get_if<vm::Vector>(r);
+				(*rp)[rd.index] = fv;
+				return;
+			}
 			if (!rd.object)
 			{
-				*r = thread_context->context()->get_variant(0);
+				*r = value;
 			}
 			else
 			{
-				vm::Variant value = thread_context->context()->get_variant(0);
 				try
 				{
 					rd.object->set_field(util::string::to_lower(rd.field), value);
@@ -306,7 +337,6 @@ namespace script
 					throw vm::Exception("failed setting field {} to {} on object {}", rd.field, vm.variant_to_string(value), rd.object->m_tag);
 				}
 			}
-			thread_context->pop(1);
 		}
 		void LoadValue::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
