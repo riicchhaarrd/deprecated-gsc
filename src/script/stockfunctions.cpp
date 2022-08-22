@@ -14,6 +14,14 @@ namespace script
 			ctx.add_int(0);
 			return 1;
 		}
+		int randomintrange(script::VMContext& ctx)
+		{
+			int min = ctx.get_int(0);
+			int max = ctx.get_int(1);
+			int r = rand() % (max - min) + min;
+			ctx.add_int(r);
+			return 1;
+		}
 		int getteamscore(script::VMContext& ctx)
 		{
 			ctx.add_int(0);
@@ -172,6 +180,7 @@ namespace script
 			{"objective_additionalposition", unimplemented},
 			{"setvalue", unimplemented},
 			{"randomint", randomint},
+			{"randomintrange", randomintrange},
 			{"getteamscore", getteamscore},
 			{"randomfloat", randomfloat},
 			{"gettime", gettime},
