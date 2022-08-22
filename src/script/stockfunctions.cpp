@@ -56,7 +56,7 @@ namespace script
 			ctx.get_vector(0, v);
 			float len = v.length();
 			if (len <= FLT_EPSILON)
-				throw vm::Exception("divide by zero");
+				len = 0.00001f; // throw vm::Exception("divide by zero");
 			v.x /= len;
 			v.y /= len;
 			v.z /= len;
