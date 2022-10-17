@@ -1,6 +1,6 @@
 #include "instructions.h"
 #include <script/vm/virtual_machine.h>
-#include <Windows.h>
+#include <core/time.h>
 
 namespace script
 {
@@ -187,11 +187,11 @@ namespace script
 				}
 				virtual bool locked()
 				{
-					return GetTickCount() < end_time;
+					return core::time_milliseconds() < end_time;
 				}
 			};
 			auto l = std::make_unique<ThreadLockWaitDuration>();
-			l->end_time = GetTickCount() + duration * 1000.f;
+			l->end_time = core::time_milliseconds() + duration * 1000.f;
 			thread_context->m_locks.push_back(std::move(l));
 		}
 		void Ret::execute(VirtualMachine& vm, ThreadContext *thread_context)

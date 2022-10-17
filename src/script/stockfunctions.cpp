@@ -2,7 +2,9 @@
 #include <script/vm/virtual_machine.h>
 #include <unordered_map>
 #include <string>
-#include <Windows.h>
+#include <core/time.h>
+#include <math.h>
+#include <float.h>
 
 namespace script
 {
@@ -108,7 +110,7 @@ namespace script
 		}
 		int gettime(script::VMContext& ctx)
 		{
-			ctx.add_int(GetTickCount());
+			ctx.add_int(core::time_milliseconds());
 			return 1;
 		}
 		int unimplemented_vector(script::VMContext& ctx)
