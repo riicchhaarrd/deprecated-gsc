@@ -101,7 +101,7 @@ namespace parse
 			}
 			catch (parse::lexer_error& err)
 			{
-				throw preprocessor_error(std::format("failed to tokenize file {}", err.what()), path, err.line1);
+				throw preprocessor_error(common::format("failed to tokenize file {}", err.what()), path, err.line1);
 			}
 			parse_opts popts;
 			popts.newlines = true;
@@ -151,7 +151,7 @@ namespace parse
 									if (!preprocess_with_typed_lexer<T>(fs, path_base, path_base + fixed_path, tmp,
 																		sources, definitions, opts, depth + 1))
 										throw preprocessor_error(
-											std::format("failed to preprocess file {} @ {}", path_base, fixed_path),
+											common::format("failed to preprocess file {} @ {}", path_base, fixed_path),
 											fixed_path, t.line_number());
 									preprocessed_tokens.insert(preprocessed_tokens.end(), tmp.begin(), tmp.end());
 								}
@@ -196,7 +196,7 @@ namespace parse
 							preprocessed_tokens.push_back(parser.read_token());
 							preprocessed_tokens.push_back(parser.read_token());
 						} else
-							throw preprocessor_error(std::format("invalid directive {}", directive), t.to_string(),
+							throw preprocessor_error(common::format("invalid directive {}", directive), t.to_string(),
 												 t.line_number());
 					}
 				}

@@ -1,6 +1,6 @@
 #pragma once
 #include <script/vm/instruction.h>
-#include <format>
+#include <common/format.h>
 
 namespace script
 {
@@ -22,7 +22,7 @@ namespace script
 		{
 			virtual std::string to_string()
 			{
-				return std::format("PushNumber {}", value);
+				return common::format("PushNumber {}", value);
 			}
 			float value;
 			virtual void execute(VirtualMachine& vm, ThreadContext *);
@@ -43,7 +43,7 @@ namespace script
 		{
 			virtual std::string to_string()
 			{
-				return std::format("PushString {}", value);
+				return common::format("PushString {}", value);
 			}
 			std::string value;
 			size_t length;
@@ -53,7 +53,7 @@ namespace script
 		{
 			virtual std::string to_string()
 			{
-				return std::format("PushLocalizedString {}", value);
+				return common::format("PushLocalizedString {}", value);
 			}
 			std::string value;
 			size_t length;
@@ -63,7 +63,7 @@ namespace script
 		{
 			virtual std::string to_string()
 			{
-				return std::format("PushFunctionPointer {}::{}", file, function);
+				return common::format("PushFunctionPointer {}::{}", file, function);
 			}
 			std::string file;
 			std::string function;
@@ -93,7 +93,7 @@ namespace script
 		{
 			virtual std::string to_string()
 			{
-				return std::format("PushAnimationString %{}", value);
+				return common::format("PushAnimationString %{}", value);
 			}
 			std::string value;
 			virtual void execute(VirtualMachine& vm, ThreadContext *);
@@ -112,7 +112,7 @@ namespace script
 		{
 			virtual std::string to_string()
 			{
-				return std::format("LoadRef {}", variable_name);
+				return common::format("LoadRef {}", variable_name);
 			}
 			std::string variable_name;
 			virtual void execute(VirtualMachine& vm, ThreadContext *);
@@ -121,7 +121,7 @@ namespace script
 		{
 			virtual std::string to_string()
 			{
-				return std::format("LoadValue {}", variable_name);
+				return common::format("LoadValue {}", variable_name);
 			}
 			std::string variable_name;
 			virtual void execute(VirtualMachine& vm, ThreadContext *);
@@ -130,7 +130,7 @@ namespace script
 		{
 			virtual std::string to_string()
 			{
-				return std::format("StoreRef");
+				return common::format("StoreRef");
 			}
 			virtual void execute(VirtualMachine& vm, ThreadContext *);
 		};
@@ -240,7 +240,7 @@ namespace script
 		{
 			virtual std::string to_string()
 			{
-				return std::format("CallFunction {}", function);
+				return common::format("CallFunction {}", function);
 			}
 			std::string function;
 			virtual void execute(VirtualMachine& vm, ThreadContext *);
@@ -252,7 +252,7 @@ namespace script
 			virtual void execute(VirtualMachine& vm, ThreadContext *);
 			virtual std::string to_string()
 			{
-				return std::format("CallFunctionFile {}::{}", file, function);
+				return common::format("CallFunctionFile {}::{}", file, function);
 			}
 		};
 		struct CallFunctionPointer : Call

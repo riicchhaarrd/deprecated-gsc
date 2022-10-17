@@ -8,7 +8,7 @@ namespace script
 	{
 		std::string PushInteger::to_string()
 		{
-			return std::format("PushInteger {}", value);
+			return common::format("PushInteger {}", value);
 		}
 		void CallFunctionPointer::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{

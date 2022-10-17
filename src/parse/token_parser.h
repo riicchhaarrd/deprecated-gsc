@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 #include "token.h"
-#include <format>
+#include <common/format.h>
 #include <stack>
 #include <sstream>
 #include <common/logger.h>
@@ -22,7 +22,7 @@ namespace parse
 		explicit parse_error(const std::string& message, token* t = nullptr)
 		{
 			if (t)
-				message_ = std::format("[{}:{}] {}", t->source_file(), t->line_number(), message);
+				message_ = common::format("[{}:{}] {}", t->source_file(), t->line_number(), message);
 			else
 				message_ = message;
 		}
@@ -174,7 +174,7 @@ namespace parse
 			{
 				token tok(token_type);
 				throw parse_error(
-					std::format("expected token type {}, got {} instead", tok.type_as_string(), t.type_as_string()),
+					common::format("expected token type {}, got {} instead", tok.type_as_string(), t.type_as_string()),
 					&t);
 			}
 		}
@@ -185,7 +185,7 @@ namespace parse
 			{
 				token tok(token_type);
 				throw parse_error(
-					std::format("expected token type {}, got {} instead", tok.type_as_string(), t.type_as_string()),
+					common::format("expected token type {}, got {} instead", tok.type_as_string(), t.type_as_string()),
 					&t);
 			}
 		}

@@ -24,11 +24,11 @@ namespace script
 			case vm::Type::kVector:
 			{
 				auto vec = std::get<vm::Vector>(*v);
-				return std::format("({}, {}, {})", vec.x, vec.y, vec.z);
+				return common::format("({}, {}, {})", vec.x, vec.y, vec.z);
 			}
 			break;
 			}
-			return std::format("unhandled variant {}", v->index());
+			return common::format("unhandled variant {}", v->index());
 		}
 
 		std::string VirtualMachine::variant_to_string(vm::Variant v)
@@ -51,12 +51,12 @@ namespace script
 			case vm::Type::kFunctionPointer:
 			{
 				auto fp = std::get<vm::FunctionPointer>(v);
-				return std::format("{}::{}", fp.file, fp.name);
+				return common::format("{}::{}", fp.file, fp.name);
 			} break;
 			case vm::Type::kVector:
 			{
 				auto vec = std::get<vm::Vector>(v);
-				return std::format("({}, {}, {})", vec.x, vec.y, vec.z);
+				return common::format("({}, {}, {})", vec.x, vec.y, vec.z);
 			}
 			break;
 			}

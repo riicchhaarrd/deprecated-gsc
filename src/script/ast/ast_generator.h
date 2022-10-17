@@ -3,7 +3,7 @@
 #include <string>
 #include <map>
 #include <unordered_map>
-#include <format>
+#include <common/format.h>
 #include <core/filesystem/api.h>
 #include <parse/token_parser.h>
 #include "nodes.h"
@@ -17,7 +17,8 @@ namespace script
 			std::string message_;
 			template <typename... Ts> ASTException(std::string_view fmt, Ts&&... ts)
 			{
-				message_ = std::vformat(fmt, std::make_format_args(std::forward<Ts>(ts)...));
+				message_ = common::format(fmt, ts...);
+				//message_ = std::vformat(fmt, std::make_format_args(std::forward<Ts>(ts)...));
 			}
 			const char* what() const noexcept override
 			{
