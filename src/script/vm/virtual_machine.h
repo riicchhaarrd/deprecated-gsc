@@ -314,7 +314,7 @@ namespace script
 				throw vm::Exception("invalid operator {}", op);
 				return T();
 			}
-			template <> vm::Variant handle_binary_op(const float& a, const float& b, int op)
+			vm::Variant handle_binary_op(const float& a, const float& b, int op)
 			{
 				switch (op)
 				{
@@ -345,7 +345,7 @@ namespace script
 				return 0.f;
 			}
 
-			template <> vm::Variant handle_binary_op(const vm::Vector& a, const vm::Vector& b, int op)
+			vm::Variant handle_binary_op(const vm::Vector& a, const vm::Vector& b, int op)
 			{
 				vm::Vector ret;
 				ret.x = ret.y = ret.z = 0.f;
@@ -378,7 +378,7 @@ namespace script
 				return ret;
 			}
 
-			template <> vm::Variant handle_binary_op(const std::string& a, const std::string& b, int op)
+			vm::Variant handle_binary_op(const std::string& a, const std::string& b, int op)
 			{
 				switch (op)
 				{
