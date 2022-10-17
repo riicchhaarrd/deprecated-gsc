@@ -3,6 +3,7 @@
 #include "ostream_indent.h"
 #include <script/ast/visitor.h>
 #include <script/ast/nodes.h>
+#include <exception>
 
 namespace script
 {
@@ -231,7 +232,8 @@ namespace script
 				if (n.op >= 32 && n.op < 127)
 					os << (char)n.op;
 				else
-					throw std::exception("unhandled operator {}", n.op);
+					throw std::runtime_error("unhandled operator");
+					// throw std::exception("unhandled operator {}", n.op);
 				break;
 			}
 			os << " ";
@@ -271,7 +273,8 @@ namespace script
 				os << "%=";
 				break;
 			default:
-				throw std::exception("unhandled assignment operator {}", n.op);
+				// throw std::exception("unhandled assignment operator {}", n.op);
+				throw std::runtime_error("unhandled assignment operator");
 				break;
 			}
 			os << " ";
