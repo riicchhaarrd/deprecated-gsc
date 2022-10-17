@@ -1,5 +1,4 @@
 #include "virtual_machine.h"
-#include <Windows.h>
 
 namespace script
 {
