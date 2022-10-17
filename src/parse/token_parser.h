@@ -6,6 +6,7 @@
 #include <stack>
 #include <sstream>
 #include <common/logger.h>
+#include <platform/debug.h>
 
 namespace parse
 {
@@ -73,7 +74,9 @@ namespace parse
 		void pop()
 		{
 			if (m_tokenindex_stack.empty())
-				__debugbreak();
+			{
+				platform::breakpoint();
+			}
 			m_tokenindex_stack.pop();
 		}
 
@@ -84,7 +87,7 @@ namespace parse
 			{
 				printf("tokenindex will be overwritten...");
 				getchar();
-				__debugbreak();
+				platform::breakpoint();
 				return; // LOG_ERROR("can't save parser");
 			}
 			m_tokenindex_saved = m_tokenindex;
@@ -99,7 +102,9 @@ namespace parse
 			m_tokenindex_saved = -1;
 			#endif
 			if (m_tokenindex_stack.empty())
-				__debugbreak();
+			{
+				platform::breakpoint();
+			}
 			m_tokenindex = m_tokenindex_stack.top();
 			m_tokenindex_stack.pop();
 		}

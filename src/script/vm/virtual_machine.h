@@ -43,7 +43,7 @@ namespace script
 			enum
 			{
 				kNone = 0,
-				kZF = 1
+				kZF = 1,
 				kVerbose = 2
 			};
 		}; // namespace flags
