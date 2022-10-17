@@ -12,7 +12,7 @@ class Printer
 	}
 };
 
-
+#if 0
 class BasicPrinter : public Printer
 {
 	size_t m_indent = 0;
@@ -46,3 +46,4 @@ class BasicPrinter : public Printer
 			--m_indent;
 	}
 };
+#endif

@@ -5,6 +5,7 @@
 #include <variant>
 #include <vector>
 #include <common/stringutil.h>
+#include <math.h>
 
 namespace script
 {
