@@ -378,6 +378,39 @@ namespace script
 				return ret;
 			}
 
+			vm::Variant handle_binary_op(const vm::Vector& a, float b, int op)
+			{
+				vm::Vector ret;
+				ret.x = ret.y = ret.z = 0.f;
+				switch (op)
+				{
+				case '-':
+					ret.x = a.x - b;
+					ret.y = a.y - b;
+					ret.z = a.z - b;
+					break;
+				case '+':
+					ret.x = a.x + b;
+					ret.y = a.y + b;
+					ret.z = a.z + b;
+					break;
+				case '*':
+					ret.x = a.x * b;
+					ret.y = a.y * b;
+					ret.z = a.z * b;
+					break;
+				case '/':
+					ret.x = a.x / b;
+					ret.y = a.y / b;
+					ret.z = a.z / b;
+					break;
+				default:
+					throw vm::Exception("invalid operator {}", op);
+					break;
+				}
+				return ret;
+			}
+
 			vm::Variant handle_binary_op(const std::string& a, const std::string& b, int op)
 			{
 				switch (op)
@@ -441,6 +474,10 @@ namespace script
 					else if (a_index == vm::Type::kVector && b_index == vm::Type::kVector)
 					{
 						result = handle_binary_op(std::get<vm::Vector>(a), std::get<vm::Vector>(b), op);
+					}
+					else if (a_index == vm::Type::kVector && b_index == vm::Type::kFloat)
+					{
+						result = handle_binary_op(std::get<vm::Vector>(a), std::get<vm::Number>(b), op);
 					}
 					else if (a_index == vm::Type::kFloat && b_index == vm::Type::kFloat)
 					{
