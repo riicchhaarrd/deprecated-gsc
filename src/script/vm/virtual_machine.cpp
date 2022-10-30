@@ -116,6 +116,10 @@ namespace script
 			{
 				thread->push(v);
 			}
+			virtual void add_variant(vm::Variant v)
+			{
+				thread->push(v);
+			}
 			virtual void add_int(const int i)
 			{
 				thread->push(i);
