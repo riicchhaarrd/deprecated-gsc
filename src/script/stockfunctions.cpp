@@ -125,7 +125,9 @@ namespace script
 		}
 		int print(script::VMContext& ctx)
 		{
-			printf("%s\n", ctx.get_string(0).c_str());
+			for (size_t i = 0; i < ctx.number_of_arguments(); ++i)
+				printf("%s ", ctx.get_string(i).c_str());
+			printf("\n");
 			return 0;
 		}
 		int distance(script::VMContext& ctx)
