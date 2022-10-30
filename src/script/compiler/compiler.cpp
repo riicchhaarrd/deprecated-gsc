@@ -741,9 +741,9 @@ namespace script
 			{
 			case '-':
 			{
+				n.argument->accept(*this);
 				auto constant0 = instruction<Constant0>();
 				add(constant0);
-				n.argument->accept(*this);
 				auto instr = instruction<BinOp>();
 				instr->op = '-';
 				add(instr);
