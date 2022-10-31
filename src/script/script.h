@@ -17,7 +17,12 @@ namespace script
 		std::unique_ptr<script::vm::VirtualMachine> m_vm;
 		script::compiler::CompiledFiles m_compiledfiles;
 		std::unordered_map<std::string, StockFunction> m_registeredfunctions;
+		std::string m_library_path;
 	  public:
+		void set_library_path(const std::string& path)
+		{
+			m_library_path = path;
+		}
 		ScriptEngine(filesystem_api&);
 		~ScriptEngine();
 		bool load_file(const std::string);

@@ -19,17 +19,28 @@ namespace script
 	{
 		std::string path_base;
 		std::string m_filename;
+		const std::string& m_library_path;
 		script::ReferenceMap& m_global_reference_map;
 
 	  public:
 		ReferenceSolver(filesystem_api &fs, const std::string path_base_, const std::string file_name_,
-						script::ReferenceMap& global_reference_map)
-			: m_global_reference_map(global_reference_map), path_base(path_base_), m_filename(file_name_)
+						script::ReferenceMap& global_reference_map, const std::string& library_path)
+			: m_global_reference_map(global_reference_map),
+			  path_base(path_base_),
+			  m_filename(file_name_),
+			  m_library_path(library_path)
 		{
 			// first get all the functions that we reference
 			script::ast::ASTGenerator m_generator;
-			m_generator.generate(fs, path_base, path_base + m_filename + ".gsc");
-
+			bool ret = false;
+			if (m_filename.find('/') == std::string::npos)
+				ret = m_generator.generate(fs, m_library_path, m_library_path + m_filename + ".gsc");
+			else
+				ret = m_generator.generate(fs, path_base, path_base + m_filename + ".gsc");
+			if (!ret)
+			{
+				LOG_ERROR("Failed to read file '%s'\n", m_filename.c_str());
+			}
 			script::LoadedProgramReference& lpr = m_global_reference_map[file_name_];
 			lpr.program = std::move(m_generator.root());
 			lpr.name = m_filename;
@@ -55,7 +66,7 @@ namespace script
 				// if (pair_.first != m_filename)
 				if (m_global_reference_map.find(pair_.first) == m_global_reference_map.end())
 				{
-					ReferenceSolver solver(fs, path_base_, pair_.first, global_reference_map);
+					ReferenceSolver solver(fs, path_base_, pair_.first, global_reference_map, m_library_path);
 				}
 			}
 		}
@@ -130,7 +141,7 @@ namespace script
 		try
 		{
 			script::ReferenceMap refmap;
-			ReferenceSolver rs(m_fs, "", path, refmap);
+			ReferenceSolver rs(m_fs, "", path, refmap, m_library_path);
 			script::compiler::Compiler compiler(refmap);
 			auto cf = compiler.compile();
 			for (auto& it : cf)
@@ -153,6 +164,7 @@ namespace script
 	void ScriptEngine::create_virtual_machine()
 	{
 		m_vm = std::make_unique<script::vm::VirtualMachine>(m_compiledfiles);
+		//m_vm->set_flags(vm::flags::kVerbose);
 		script::register_stockfunctions(*m_vm);
 		for (auto& it : m_registeredfunctions)
 			m_vm->register_function(it.first, it.second);

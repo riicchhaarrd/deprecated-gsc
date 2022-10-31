@@ -914,12 +914,15 @@ namespace script
 				tree.print(out);
 				fclose(fp);
 #endif
+					return true;
 				}
+				return false;
 			}
 			catch (std::exception& e)
 			{
 				// throw ASTException("something went wrong generating syntax tree {}", e.what());
 				throw ASTException("{}", e.what());
+				return false;
 			}
 		}
 	}; // namespace ast
