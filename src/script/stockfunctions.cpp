@@ -60,7 +60,7 @@ namespace script
 			ctx.add_bool(v.index() != 0);
 			return 1;
 		}
-		int typeof(script::VMContext& ctx)
+		int typeof_(script::VMContext& ctx)
 		{
 			auto v = ctx.get_variant(0);
 			ctx.add_string(script::vm::kVariantNames[v.index()]);
@@ -168,7 +168,7 @@ namespace script
 		std::unordered_map<std::string, StockFunction> stockfunctions = {
 			{"setexpfog", set_exp_fog},
 			{"isdefined", is_defined},
-			{"typeof", typeof},
+			{"typeof", typeof_},
 			{"loadfx", loadfx},
 			{"positionwouldtelefrag", positionwouldtelefrag},
 			{"tolower", tolower},
