@@ -145,6 +145,36 @@ namespace script
 			ctx.add_float(a.distance(b));
 			return 1;
 		}
+		int sqrt(script::VMContext& ctx)
+		{
+			ctx.add_float(sqrtf(ctx.get_float(0)));
+			return 1;
+		}
+		int abs(script::VMContext& ctx)
+		{
+			ctx.add_float(fabs(ctx.get_float(0)));
+			return 1;
+		}
+		int cos(script::VMContext& ctx)
+		{
+			ctx.add_float(cosf(ctx.get_float(0)));
+			return 1;
+		}
+		int sin(script::VMContext& ctx)
+		{
+			ctx.add_float(sinf(ctx.get_float(0)));
+			return 1;
+		}
+		int pow(script::VMContext& ctx)
+		{
+			ctx.add_float(powf(ctx.get_float(0), ctx.get_float(1)));
+			return 1;
+		}
+		int pi(script::VMContext& ctx)
+		{
+			ctx.add_float(3.1415927f);
+			return 1;
+		}
 		int getguid(script::VMContext& ctx)
 		{
 			ctx.add_int(0);
@@ -173,6 +203,12 @@ namespace script
 			{"positionwouldtelefrag", positionwouldtelefrag},
 			{"tolower", tolower},
 			{"distance", distance},
+			{"pi", pi},
+			{"cos", cos},
+			{"sin", sin},
+			{"pow", pow},
+			{"abs", abs},
+			{"sqrt", sqrt},
 			{"spawnstruct", spawnstruct},
 			{"resettimeout", unimplemented},
 			{"setteamscore", unimplemented},

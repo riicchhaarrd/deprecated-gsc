@@ -6,6 +6,24 @@ namespace script
 {
 	namespace vm
 	{
+
+		static int get_vector_index(const std::string &s)
+		{
+			if (s[0] == 'x')
+				return 0;
+			if (s[0] == 'y')
+				return 1;
+			if (s[0] == 'z')
+				return 2;
+			if (s[0] == '0')
+				return 0;
+			if (s[0] == '1')
+				return 1;
+			if (s[0] == '2')
+				return 2;
+			throw vm::Exception("vector out of bounds");
+		}
+
 		std::string PushInteger::to_string()
 		{
 			return common::format("PushInteger {}", value);
@@ -229,11 +247,8 @@ namespace script
 			if (ref.index() == (int)vm::Type::kVector)
 			{
 				auto vec = std::get<vm::Vector>(ref);
-				int propidx = prop[0];
-				if (propidx >= '0' && propidx <= '2')
-					thread_context->push(vec['0' - propidx]);
-				else
-					throw vm::Exception("vector out of bounds");
+				int propidx = get_vector_index(prop);
+				thread_context->push(vec[propidx]);
 				return;
 			}
 
@@ -275,11 +290,7 @@ namespace script
 			if (ref->index() == (int)vm::Type::kVector)
 			{
 				vm::Reference tmp;
-				int propidx = prop[0];
-				if (propidx >= '0' && propidx <= '2')
-					tmp.index = '0' - propidx;
-				else
-					throw vm::Exception("vector out of bounds");
+				tmp.index = get_vector_index(prop);
 				thread_context->push(tmp);
 				thread_context->push_reference(ref);
 				return;

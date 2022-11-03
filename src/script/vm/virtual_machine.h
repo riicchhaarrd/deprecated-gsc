@@ -197,12 +197,23 @@ namespace script
 			//just try to find it here
 			std::unordered_map<std::string, compiler::CompiledFunction*> m_allcustomfunctions;
 			void call_impl(ThreadContext *, ThreadContext*, vm::ObjectPtr obj, script::compiler::CompiledFunction*, size_t);
-
+			std::shared_ptr<vm::Instruction> last_instruction;
+			std::unordered_map<std::string, vm::Variant> m_globals;
 		  public:
 			std::shared_ptr<vm::Instruction> fetch(ThreadContext*);
 			size_t thread_count()
 			{
 				return m_threads.size();
+			}
+
+			void set_global(const std::string name, vm::Variant value)
+			{
+				m_globals[name] = value;
+			}
+
+			std::shared_ptr<vm::Instruction> get_last_instruction()
+			{
+				return last_instruction;
 			}
 
 			size_t get_frame_number()

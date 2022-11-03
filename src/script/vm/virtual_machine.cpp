@@ -85,6 +85,8 @@ namespace script
 				return -1; //TODO: FIXME proper bool types, otherwise undefined (0) would be true to false
 			else if (index == vm::Type::kInteger)
 				return std::get<vm::Integer>(v);
+			//else if (index == vm::Type::kFloat)
+			//	return (int)std::get<vm::Number>(v);
 			throw vm::Exception("cannot convert {} to integer", vm::kVariantNames[v.index()]);
 			return 0;
 		}
@@ -490,6 +492,11 @@ namespace script
 		Variant VirtualMachine::get_variable(ThreadContext* thread, const std::string var)
 		{
 			auto& fc = thread->function_context();
+			auto fg = m_globals.find(var);
+			if (fg != m_globals.end())
+			{
+				return fg->second;
+			}
 			if (var == "level")
 				return level_object;
 			else if (var == "game")
@@ -509,6 +516,11 @@ namespace script
 		Variant* VirtualMachine::get_variable_reference(ThreadContext* thread, const std::string var)
 		{
 			auto& fc = thread->function_context();
+			auto fg = m_globals.find(var);
+			if (fg != m_globals.end())
+			{
+				return &fg->second;
+			}
 			if (var == "level")
 				return &level_object;
 			else if (var == "game")
@@ -535,6 +547,7 @@ namespace script
 				auto instr = fetch(tc);
 				if (!instr)
 					throw vm::Exception("shouldn't be nullptr");
+				last_instruction = instr;
 				auto& fc = tc->function_context();
 				if (m_flags & flags::kVerbose)
 				{

@@ -33,6 +33,10 @@ namespace script
 		{
 			m_registeredfunctions.clear();
 		}
+		std::unique_ptr<vm::VirtualMachine>& get_virtual_machine()
+		{
+			return m_vm;
+		}
 		void notify(vm::ObjectPtr, const std::string, std::vector<vm::Variant>* args = nullptr);
 		void run();
 
