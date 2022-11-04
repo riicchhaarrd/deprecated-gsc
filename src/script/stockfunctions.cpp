@@ -36,8 +36,7 @@ namespace script
 		}
 		int randomfloat(script::VMContext& ctx)
 		{
-			ctx.add_float(0.f);
-			//ctx.add_float((float)rand() / (float)0xffff);
+			ctx.add_float((float)rand() / (float)0xffff);
 			return 1;
 		}
 		int getchar_(script::VMContext& ctx)
@@ -48,6 +47,18 @@ namespace script
 		int unimplemented(script::VMContext& ctx)
 		{
 			return 0;
+		}
+		int dir(script::VMContext& ctx)
+		{
+			auto o = ctx.get_object(0);
+			auto list = std::make_shared<vm::Object>("dir");
+			size_t i = 0;
+			for (auto& it : o->fields)
+			{
+				list->fields[std::to_string(i++)] = it.first;
+			}
+			ctx.add_object(list);
+			return 1;
 		}
 		int tolower(script::VMContext& ctx)
 		{
@@ -180,6 +191,11 @@ namespace script
 			ctx.add_int(0);
 			return 1;
 		}
+		int float_conv(script::VMContext& ctx)
+		{
+			ctx.add_float(ctx.get_float(0));
+			return 1;
+		}
 		int getdifficulty(script::VMContext& ctx)
 		{
 			ctx.add_string("medium");
@@ -209,6 +225,7 @@ namespace script
 			{"pow", pow},
 			{"abs", abs},
 			{"sqrt", sqrt},
+			{"float", float_conv},
 			{"spawnstruct", spawnstruct},
 			{"resettimeout", unimplemented},
 			{"setteamscore", unimplemented},
@@ -263,6 +280,7 @@ namespace script
 			{"precacheturret", unimplemented},
 			{"precachevehicle", unimplemented},
 			{"logprint", print},
+			{"dir", dir},
 			{"print", print}
 		};
 	}; // namespace functions
