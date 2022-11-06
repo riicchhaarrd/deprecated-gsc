@@ -39,7 +39,8 @@ namespace script
 				ret = m_generator.generate(fs, path_base, path_base + m_filename + ".gsc");
 			if (!ret)
 			{
-				LOG_ERROR("Failed to read file '%s'\n", m_filename.c_str());
+				throw script::compiler::CompileException("Failed to read file {}", m_filename);
+				//LOG_ERROR("Failed to read file '%s'\n", m_filename.c_str());
 			}
 			script::LoadedProgramReference& lpr = m_global_reference_map[file_name_];
 			lpr.program = std::move(m_generator.root());
@@ -151,12 +152,12 @@ namespace script
 		}
 		catch (script::ast::ASTException& e)
 		{
-			LOG_ERROR("Compile Error: %s\n", e.what());
+			LOG_WARNING("Compile Error: %s\n", e.what());
 			return false;
 		}
 		catch (script::compiler::CompileException& e)
 		{
-			LOG_ERROR("Compile Error: %s\n", e.what());
+			LOG_WARNING("Compile Error: %s\n", e.what());
 			return false;
 		}
 		return true;
