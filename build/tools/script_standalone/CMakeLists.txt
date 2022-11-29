@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
-project(script_standalone)
+project(gsc)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
@@ -11,7 +11,7 @@ include_directories(${PARENT_DIR}/deps/include)
 include_directories(${PARENT_DIR}/deps)
 
 add_executable(
-script_standalone
+gsc
 ../../../deps/include/miniz/miniz.c
 ../../../src/core/filesystem/api.cpp
 ../../../src/script/ast/ast_generator.cpp
