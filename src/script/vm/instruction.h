@@ -20,6 +20,12 @@ namespace script
 		return type_id<x>::id();                                                                                       \
 	}
 
+#define DEFINE_INSTRUCTION_ONLY_KIND(x)                                                                                \
+	virtual size_t kind()                                                                                              \
+	{                                                                                                                  \
+		return type_id<x>::id();                                                                                       \
+	}
+
 		//TODO: serialize/deserialize put instructions into a map with assigning them a ID
 		//e.g instructions[some_number++] = new InstructionType();
 		struct Instruction

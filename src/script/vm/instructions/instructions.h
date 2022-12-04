@@ -8,6 +8,7 @@ namespace script
 	{
 		struct PushInteger : Instruction
 		{
+			DEFINE_INSTRUCTION_ONLY_KIND(PushInteger)
 			virtual std::string to_string();
 			int value;
 			virtual void execute(VirtualMachine& vm, ThreadContext *);
@@ -20,6 +21,7 @@ namespace script
 		};
 		struct PushNumber : Instruction
 		{
+			DEFINE_INSTRUCTION_ONLY_KIND(PushNumber)
 			virtual std::string to_string()
 			{
 				return common::format("PushNumber {}", value);
@@ -41,6 +43,7 @@ namespace script
 		};
 		struct PushString : Instruction
 		{
+			DEFINE_INSTRUCTION_ONLY_KIND(PushString)
 			virtual std::string to_string()
 			{
 				return common::format("PushString {}", value);
@@ -51,6 +54,7 @@ namespace script
 		};
 		struct PushLocalizedString : Instruction
 		{
+			DEFINE_INSTRUCTION_ONLY_KIND(PushLocalizedString)
 			virtual std::string to_string()
 			{
 				return common::format("PushLocalizedString {}", value);
@@ -61,6 +65,7 @@ namespace script
 		};
 		struct PushFunctionPointer : Instruction
 		{
+			DEFINE_INSTRUCTION_ONLY_KIND(PushFunctionPointer)
 			virtual std::string to_string()
 			{
 				return common::format("PushFunctionPointer {}::{}", file, function);
@@ -91,6 +96,7 @@ namespace script
 		#endif
 		struct PushAnimationString : Instruction
 		{
+			DEFINE_INSTRUCTION_ONLY_KIND(PushAnimationString)
 			virtual std::string to_string()
 			{
 				return common::format("PushAnimationString %{}", value);
@@ -110,6 +116,7 @@ namespace script
 		};
 		struct LoadRef : Instruction
 		{
+			DEFINE_INSTRUCTION_ONLY_KIND(LoadRef)
 			virtual std::string to_string()
 			{
 				return common::format("LoadRef {}", variable_name);
@@ -119,6 +126,7 @@ namespace script
 		};
 		struct LoadValue : Instruction
 		{
+			DEFINE_INSTRUCTION_ONLY_KIND(LoadValue)
 			virtual std::string to_string()
 			{
 				return common::format("LoadValue {}", variable_name);
@@ -128,6 +136,7 @@ namespace script
 		};
 		struct StoreRef : Instruction
 		{
+			DEFINE_INSTRUCTION_ONLY_KIND(StoreRef)
 			virtual std::string to_string()
 			{
 				return common::format("StoreRef");
@@ -238,6 +247,7 @@ namespace script
 
 		struct CallFunction : Call
 		{
+			DEFINE_INSTRUCTION_ONLY_KIND(CallFunction)
 			virtual std::string to_string()
 			{
 				return common::format("CallFunction {}", function);
@@ -247,6 +257,7 @@ namespace script
 		};
 		struct CallFunctionFile : Call
 		{
+			DEFINE_INSTRUCTION_ONLY_KIND(CallFunctionFile)
 			std::string file;
 			std::string function;
 			virtual void execute(VirtualMachine& vm, ThreadContext *);
