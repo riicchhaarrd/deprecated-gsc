@@ -22,7 +22,7 @@ namespace script
 			FindNodeVisitor find(*n.body.get(),
 								 [](ast::Node& n) -> bool
 								 {
-									 auto* ptr = dynamic_cast<ast::AssignmentExpression*>(&n);
+									 //auto* ptr = dynamic_cast<ast::AssignmentExpression*>(&n);
 									 if (!ptr)
 										 return false;
 									 return true;
@@ -31,8 +31,8 @@ namespace script
 			auto assignments = find.results();
 			for (auto& assignment : assignments)
 			{
-				auto* ptr = dynamic_cast<ast::AssignmentExpression*>(assignment);
-				auto* identifier = dynamic_cast<ast::Identifier*>(ptr->lhs.get());
+				//auto* ptr = dynamic_cast<ast::AssignmentExpression*>(assignment);
+				//auto* identifier = dynamic_cast<ast::Identifier*>(ptr->lhs.get());
 				if (!identifier)
 					continue;
 				identifier->accept(*this);
@@ -73,7 +73,8 @@ namespace script
 
 		void visit_statement(ast::StatementPtr& ptr)
 		{
-			if (dynamic_cast<ast::BlockStatement*>(ptr.get()))
+			//if (dynamic_cast<ast::BlockStatement*>(ptr.get()))
+			if (ptr->cast<ast::BlockStatement>())
 			{
 				ptr->accept(*this);
 				return;

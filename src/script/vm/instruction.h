@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <memory>
+#include <common/type_id.h>
 
 namespace script
 {
@@ -13,6 +14,10 @@ namespace script
 	virtual std::string to_string() override                                                                           \
 	{                                                                                                                  \
 		return #x;                                                                                                     \
+	}                                                                                                                  \
+	virtual size_t kind()                                                                                              \
+	{                                                                                                                  \
+		return type_id<x>::id();                                                                                       \
 	}
 
 		//TODO: serialize/deserialize put instructions into a map with assigning them a ID
@@ -28,7 +33,14 @@ namespace script
 			virtual ~Instruction()
 			{
 			}
-
+			virtual size_t kind() = 0;
+			template <typename T> T* cast()
+			{
+				constexpr auto k = type_id<T>::id();
+				if (k != this->kind())
+					return NULL;
+				return (T*)this;
+			}
 			virtual std::string to_string() = 0;
 
 			virtual void execute(VirtualMachine&, ThreadContext*) = 0;

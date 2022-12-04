@@ -512,13 +512,15 @@ namespace script
 
 		bool get_property(ast::Expression& n, std::string& prop, int op)
 		{
-			auto* id = dynamic_cast<ast::Identifier*>(&n);
+			//auto* id = dynamic_cast<ast::Identifier*>(&n);
+			auto* id = n.cast<ast::Identifier>();
 			if (id && op == '.')
 			{
 				prop = id->name;
 				return true;
 			}
-			auto* lit = dynamic_cast<ast::Literal*>(&n);
+			//auto* lit = dynamic_cast<ast::Literal*>(&n);
+			auto* lit = n.cast<ast::Literal>();
 			if (lit)
 			{
 				if (lit->type == ast::Literal::Type::kInteger || lit->type == ast::Literal::Type::kString)
@@ -631,7 +633,8 @@ namespace script
 			auto instr = instruction<WaitTill>();
 			for (size_t i = 1; i < n.arguments.size(); ++i)
 			{
-				auto* id = dynamic_cast<ast::Identifier*>(n.arguments[i].get());
+				//auto* id = dynamic_cast<ast::Identifier*>(n.arguments[i].get());
+				auto* id = n.arguments[i]->cast<ast::Identifier>();
 				if (!id)
 					throw CompileException("expected identifier");
 				if (!id->file_reference.empty())
@@ -656,7 +659,8 @@ namespace script
 
 		void Compiler::visit(ast::CallExpression& n)
 		{
-			auto* id = dynamic_cast<ast::Identifier*>(n.callee.get());
+			//auto* id = dynamic_cast<ast::Identifier*>(n.callee.get());
+			auto* id = n.callee->cast<ast::Identifier>();
 			if (id && id->name == "waittill")
 			{
 				if (!id->file_reference.empty())

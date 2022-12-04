@@ -31,7 +31,8 @@ namespace script
 					auto* parent = get_parent(current);
 					if (!parent)
 						break;
-					auto* dc = dynamic_cast<T*>(parent);
+					//auto* dc = dynamic_cast<T*>(parent);
+					auto* dc = parent->cast<T>();
 					if (dc)
 						return dc;
 					current = parent;

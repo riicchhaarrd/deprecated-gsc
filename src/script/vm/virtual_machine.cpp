@@ -318,7 +318,8 @@ namespace script
 			for (size_t i = 0; i < fc.function->instructions.size(); ++i)
 			{
 				auto& instr = fc.function->instructions[i];
-				auto *l = dynamic_cast<Label*>(instr.get());
+				//auto *l = dynamic_cast<Label*>(instr.get());
+				auto* l = instr->cast<Label>();
 				if (!l)
 					continue;
 				fc.labels[l->label_index] = i;

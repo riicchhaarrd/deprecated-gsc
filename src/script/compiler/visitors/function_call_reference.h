@@ -31,7 +31,8 @@ namespace script
 			}
 			virtual bool pre_visit(ast::CallExpression& n) override
 			{
-				auto* id = dynamic_cast<ast::Identifier*>(n.callee.get());
+				//auto* id = dynamic_cast<ast::Identifier*>(n.callee.get());
+				auto* id = n.callee->cast<ast::Identifier>();
 				if (!id)
 					return true;
 				std::string ref = m_file_name;

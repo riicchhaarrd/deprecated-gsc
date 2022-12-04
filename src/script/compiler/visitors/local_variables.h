@@ -24,8 +24,10 @@ namespace script
 
 			bool get_variable_name(ast::Node* n, std::string& s)
 			{
-				auto* ptr = dynamic_cast<ast::Identifier*>(n);
-				auto* ptr2 = dynamic_cast<ast::MemberExpression*>(n);
+				//auto* ptr = dynamic_cast<ast::Identifier*>(n);
+				//auto* ptr2 = dynamic_cast<ast::MemberExpression*>(n);
+				auto* ptr = n->cast<ast::Identifier>();
+				auto* ptr2 = n->cast<ast::MemberExpression>();
 				if (ptr)
 				{
 					if (!ptr->file_reference.empty())

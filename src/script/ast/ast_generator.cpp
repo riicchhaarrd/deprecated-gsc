@@ -547,11 +547,13 @@ namespace script
 				ternary_expression(rhs);
 				if (!accept_assignment_operator())
 				{
-					dynamic_cast<AssignmentExpression*>(n->get())->rhs = std::move(rhs);
+					n->get()->cast<AssignmentExpression>()->rhs = std::move(rhs);
+					//dynamic_cast<AssignmentExpression*>(n->get())->rhs = std::move(rhs);
 					break;
 				}
 				op = token.type_as_int();
-				auto* ptr = dynamic_cast<AssignmentExpression*>(n->get());
+				auto* ptr = n->get()->cast<AssignmentExpression>();
+				//auto* ptr = dynamic_cast<AssignmentExpression*>(n->get());
 				ptr->rhs = assignment_node(op, rhs);
 				n = &ptr->rhs;
 			}
@@ -722,7 +724,9 @@ namespace script
 						goto rep;
 					}
 					std::shared_ptr<Statement> stmt = statement();
-					if (dynamic_cast<BreakStatement*>(stmt.get()))
+					//if (dynamic_cast<BreakStatement*>(stmt.get()))
+					auto* bs = stmt.get()->cast<BreakStatement>();
+					if (bs)
 					{
 						active_cases.clear();
 						break;

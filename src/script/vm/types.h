@@ -5,6 +5,7 @@
 #include <variant>
 #include <vector>
 #include <common/stringutil.h>
+#include <common/type_id.h>
 #include <math.h>
 
 namespace script
@@ -145,6 +146,20 @@ namespace script
 			Object(const std::string tag) : m_tag(tag)
 			{
 			}
+
+			template<typename T> T* cast()
+			{
+				auto k = type_id<T>::id();
+				if (k != this->kind())
+					return NULL;
+				return (T*)this;
+			}
+
+			virtual size_t kind()
+			{
+				return type_id<Object>::id();
+			}
+
 			virtual ~Object()
 			{
 			}
