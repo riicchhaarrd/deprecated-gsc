@@ -218,7 +218,7 @@ namespace script
 				throw vm::Exception("no object");
 			auto* fn = find_function_in_file(file, function);
 			if (!fn)
-				throw vm::Exception("can't find {}::{}", file, function);
+				throw vm::Exception("can't find {}::{} is_method = {}, numargs = {}", file, function, is_method, numargs);
 			m_newthreads.push_back(std::make_unique<ThreadContext>());
 			auto* thr = m_newthreads[m_newthreads.size() - 1].get();
 			thr->m_context = std::make_unique<VMContextImpl>(*this, thr);
