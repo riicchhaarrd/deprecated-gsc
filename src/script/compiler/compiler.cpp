@@ -683,9 +683,18 @@ namespace script
 				}
 				else
 				{
-					auto call = instruction<CallFunction>();
-					call->function = id->name;
-					instr = std::move(call);
+					if (!n.pointer)
+					{
+						auto call = instruction<CallFunction>();
+						call->function = id->name;
+						instr = std::move(call);
+					}
+					else
+					{
+						n.callee->accept(*this);
+						auto call = instruction<CallFunctionPointer>();
+						instr = std::move(call);
+					}
 				}
 			}
 			else
