@@ -173,13 +173,19 @@ namespace script
 				fields[n] = value;
 				return true;
 			}
-			virtual vm::Variant& get_field(const std::string n)
+			virtual bool get_field(const std::string n, vm::Variant **value, bool create)
 			{
 				if (fields.find(n) == fields.end())
 				{
+					if (!create)
+					{
+						*value = NULL;
+						return false;
+					}
 					fields[n] = vm::Undefined();
 				}
-				return fields[n];
+				*value = &fields[n];
+				return true;
 			}
 		};
 

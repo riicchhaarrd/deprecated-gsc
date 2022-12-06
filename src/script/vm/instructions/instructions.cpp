@@ -273,8 +273,12 @@ namespace script
 			{
 				try
 				{
-					auto fv = obj->get_field(util::string::to_lower(prop));
-					thread_context->push(fv);
+					vm::Variant* fv = NULL;
+					obj->get_field(util::string::to_lower(prop), &fv, false);
+					if (!fv)
+						thread_context->push(vm::Undefined());
+					else
+						thread_context->push(*fv);
 				}
 				catch (...)
 				{
@@ -309,7 +313,9 @@ namespace script
 			thread_context->push(vm::Reference{.offset = 0, .field = util::string::to_lower(prop), .object = obj});
 			try
 			{
-				thread_context->push_reference(&obj->get_field(util::string::to_lower(prop)));
+				vm::Variant* fv = NULL;
+				obj->get_field(util::string::to_lower(prop), &fv, true);
+				thread_context->push_reference(fv);
 			}
 			catch (...)
 			{
