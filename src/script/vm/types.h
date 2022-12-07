@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <string>
+#include <stdexcept>
 #include <unordered_map>
 #include <variant>
 #include <vector>

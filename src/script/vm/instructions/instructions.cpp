@@ -338,7 +338,11 @@ namespace script
 				{
 					vm::Reference r;
 					auto *fv = v->get_field(util::string::to_lower(prop));
-					if (std::holds_alternative<Vector>(*fv))
+					if (!fv)
+					{
+						r.object = std::make_shared<Object>("object created from undefined");
+						r.field = prop;
+					} else if (std::holds_alternative<Vector>(*fv))
 					{
 						r.object = std::get_if<Vector>(fv);
 						r.index = get_vector_index(prop);
