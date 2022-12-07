@@ -273,12 +273,11 @@ namespace script
 			{
 				try
 				{
-					vm::Variant* fv = NULL;
-					obj->get_field(util::string::to_lower(prop), &fv, false);
-					if (!fv)
-						thread_context->push(vm::Undefined());
-					else
+					auto fv = obj->get_field(util::string::to_lower(prop));
+					if (fv)
 						thread_context->push(*fv);
+					else
+						thread_context->push(vm::Undefined());
 				}
 				catch (...)
 				{
@@ -288,72 +287,117 @@ namespace script
 		}
 		void LoadObjectFieldRef::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			auto* ref = thread_context->pop_reference_value();
+			auto ref = thread_context->pop_ref();
 			auto prop = thread_context->context()->get_string(0);
 			thread_context->pop(1);
-			if (ref->index() == (int)vm::Type::kVector)
-			{
-				vm::Reference tmp;
-				tmp.index = get_vector_index(prop);
-				thread_context->push(tmp);
-				thread_context->push_reference(ref);
-				return;
-			}
-			if (ref->index() == (int)vm::Type::kUndefined)
-			{
-				*ref = std::make_shared<Object>("object created from undefined");
-			}
-			if (ref->index() != (int)vm::Type::kObject)
-			{
-				throw vm::Exception("expected object got {}", ref->index());
-			}
-			std::shared_ptr<vm::Object> obj = std::get<vm::ObjectPtr>(*ref);
 			if (prop == "size")
 				throw vm::Exception("size is read-only");
-			thread_context->push(vm::Reference{.offset = 0, .field = util::string::to_lower(prop), .object = obj});
-			try
+
+			struct Visit
 			{
-				vm::Variant* fv = NULL;
-				obj->get_field(util::string::to_lower(prop), &fv, true);
-				thread_context->push_reference(fv);
-			}
-			catch (...)
-			{
-				throw vm::Exception("failed getting field {}", prop);
-			}
+				ThreadContext* thread_context;
+				VirtualMachine& vm;
+				std::string prop;
+
+				Visit(VirtualMachine& vm_, ThreadContext* tc, const std::string& prop_)
+					: vm(vm_), thread_context(tc), prop(prop_)
+				{
+				}
+				void operator()(Identifier& v)
+				{
+					auto* vr = vm.get_variable_reference(thread_context, util::string::to_lower(v.name));
+
+					vm::Reference r;
+					if (std::holds_alternative<Vector>(*vr))
+					{
+						r.object = std::get_if<Vector>(vr);
+						r.index = get_vector_index(prop);
+					}
+					else if (std::holds_alternative<ObjectPtr>(*vr))
+					{
+						r.object = std::get<ObjectPtr>(*vr);
+						r.field = prop;
+					}
+					else if (std::holds_alternative<Undefined>(*vr))
+					{
+						auto obj = std::make_shared<Object>("object created from undefined");
+						r.object = obj;
+						r.field = prop;
+					}
+					else
+					{
+						throw vm::Exception("not a lvalue");
+					}
+					thread_context->push(r);
+				}
+				void operator()(Vector*& v)
+				{
+					throw vm::Exception("nested vector [][] not supported, because vector[index][index2] doesn't return a lvalue");
+				}
+				void operator()(ObjectPtr& v)
+				{
+					vm::Reference r;
+					auto *fv = v->get_field(util::string::to_lower(prop));
+					if (std::holds_alternative<Vector>(*fv))
+					{
+						r.object = std::get_if<Vector>(fv);
+						r.index = get_vector_index(prop);
+					}
+					else if (std::holds_alternative<ObjectPtr>(*fv))
+					{
+						r.object = std::get<ObjectPtr>(*fv);
+						r.field = prop;
+					}
+					else
+					{
+						throw vm::Exception("not a lvalue");
+					}
+					thread_context->push(r);
+				}
+			};
+
+			std::visit(Visit(vm, thread_context, util::string::to_lower(prop)), ref.object);
 		}
 		void StoreRef::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			auto v = thread_context->pop();
-			if (v.index() != (int)vm::Type::kReference)
-			{
-				throw vm::Exception("not a reference");
-			}
-			auto rd = std::get<vm::Reference>(v);
-			auto *r = thread_context->pop_reference();
+			auto ref = thread_context->pop_ref();
 			vm::Variant value = thread_context->pop(1);
-			if (r->index() == (int)vm::Type::kVector && rd.index != -1)
+
+			struct Visit
 			{
-				float fv = vm.variant_to_number(value);
-				auto *rp = std::get_if<vm::Vector>(r);
-				(*rp)[rd.index] = fv;
-				return;
-			}
-			if (!rd.object)
-			{
-				*r = value;
-			}
-			else
-			{
-				try
+				ThreadContext* thread_context;
+				VirtualMachine& vm;
+				vm::Variant& value;
+				vm::Reference& ref;
+
+				Visit(VirtualMachine& vm_, ThreadContext* tc, vm::Variant& value_, vm::Reference& ref_)
+					: vm(vm_), thread_context(tc), value(value_), ref(ref_)
 				{
-					rd.object->set_field(util::string::to_lower(rd.field), value);
 				}
-				catch (...)
+				void operator()(Identifier& v)
 				{
-					throw vm::Exception("failed setting field {} to {} on object {}", rd.field, vm.variant_to_string(value), rd.object->m_tag);
+					auto* vr = vm.get_variable_reference(thread_context, util::string::to_lower(v.name));
+					*vr = value;
 				}
-			}
+				void operator()(Vector*& v)
+				{
+					(*v)[ref.index] = vm.variant_to_number(value);
+				}
+				void operator()(ObjectPtr& v)
+				{
+					try
+					{
+						v->set_field(util::string::to_lower(ref.field), value);
+					}
+					catch (...)
+					{
+						throw vm::Exception("failed setting field {} to {} on object", ref.field,
+											vm.variant_to_string(value));
+					}
+				}
+			};
+
+			std::visit(Visit(vm, thread_context, value, ref), ref.object);
 		}
 		void LoadValue::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
@@ -361,9 +405,8 @@ namespace script
 		}
 		void LoadRef::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			auto* v = vm.get_variable_reference(thread_context, util::string::to_lower(variable_name));
-			thread_context->push(vm::Reference());
-			thread_context->push_reference(v);
+			thread_context->push(
+				vm::Reference{.object = vm::Identifier{.name = util::string::to_lower(variable_name)}});
 		}
 		void Nop::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{

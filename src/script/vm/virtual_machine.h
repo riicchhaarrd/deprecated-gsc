@@ -131,18 +131,6 @@ namespace script
 			{
 				m_stack.push_back(v);
 			}
-			void push_reference(Variant* v)
-			{
-				m_referencestack.push_back(v);
-			}
-			Variant* pop_reference()
-			{
-				if (m_referencestack.empty())
-					throw vm::Exception("empty refstack");
-				auto* v = m_referencestack[m_referencestack.size() - 1];
-				m_referencestack.pop_back();
-				return v;
-			}
 			Variant& top(int offset = 0)
 			{
 				auto& stack = m_stack;
@@ -165,14 +153,14 @@ namespace script
 				}
 				return v;
 			}
-			Variant* pop_reference_value()
+			vm::Reference pop_ref()
 			{
 				auto v = pop();
 				if (v.index() != (int)vm::Type::kReference)
 				{
 					throw vm::Exception("not a reference");
 				}
-				return pop_reference();
+				return std::get<vm::Reference>(v);
 			}
 		};
 		class VirtualMachine

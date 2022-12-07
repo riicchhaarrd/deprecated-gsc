@@ -56,6 +56,8 @@ namespace script
 
 			float& operator[](const int index)
 			{
+				if (index < 0 || index >= 3)
+					throw std::out_of_range("index < 0 || index >= 3");
 				return data[index];
 			}
 
@@ -95,20 +97,26 @@ namespace script
 
 		struct Identifier
 		{
-			size_t name;
-			size_t reference;
+			std::string name;
 		};
 
 		struct Undefined
 		{
 		};
-
+		
+		using ReferenceType = std::variant<Identifier, ObjectPtr, Vector*>;
+		enum class ReferenceTypeId
+		{
+			kIdentifier,
+			kObjectPtr,
+			kVector
+		};
 		struct Reference
 		{
 			size_t offset = 0;
 			int index = -1;
 			std::string field;
-			vm::ObjectPtr object = nullptr;
+			ReferenceType object;
 		};
 
 		using Variant = std::variant<Undefined, Vector, String, Integer, Number, ObjectPtr, ArrayPtr, LocalizedString,
@@ -143,13 +151,14 @@ namespace script
 		struct Object
 		{
 			std::string m_tag;
-			Object(const std::string tag) : m_tag(tag)
+			vm::Variant size;
+			Object(const std::string tag) : m_tag(tag), size(vm::Integer())
 			{
 			}
 
 			template<typename T> T* cast()
 			{
-				auto k = type_id<T>::id();
+				constexpr auto k = type_id<T>::id();
 				if (k != this->kind())
 					return NULL;
 				return (T*)this;
@@ -163,6 +172,7 @@ namespace script
 			virtual ~Object()
 			{
 			}
+
 			std::unordered_map<std::string, vm::Variant> fields;
 			virtual bool call_method(const std::string n, VMContext&, int*)
 			{
@@ -170,22 +180,21 @@ namespace script
 			}
 			virtual bool set_field(const std::string n, vm::Variant& value)
 			{
+				if (n == "size")
+				{
+					throw std::runtime_error("cannot set size for object");
+				}
 				fields[n] = value;
 				return true;
 			}
-			virtual bool get_field(const std::string n, vm::Variant **value, bool create)
+			virtual vm::Variant* get_field(const std::string n)
 			{
 				if (fields.find(n) == fields.end())
 				{
-					if (!create)
-					{
-						*value = NULL;
-						return false;
-					}
-					fields[n] = vm::Undefined();
+					//return vm::Undefined();
+					return NULL;
 				}
-				*value = &fields[n];
-				return true;
+				return &fields[n];
 			}
 		};
 
