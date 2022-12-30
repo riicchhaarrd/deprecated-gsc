@@ -23,10 +23,17 @@ namespace script
 {
 	namespace ast
 	{
+		struct DebugInfo
+		{
+			std::string file;
+			size_t line;
+		};
+
 		struct Node
 		{
 			size_t start, end;
 			std::string raw;
+			DebugInfo debug;
 
 			virtual const char* to_string() = 0;
 			virtual void accept(ASTVisitor& visitor) = 0;
