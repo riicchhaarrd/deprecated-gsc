@@ -33,13 +33,14 @@ namespace script
 			// first get all the functions that we reference
 			script::ast::ASTGenerator m_generator;
 			bool ret = false;
-			if (m_filename.find('/') == std::string::npos)
-				ret = m_generator.generate(fs, m_library_path, m_library_path + m_filename + ".gsc");
-			else
+			//if (m_filename.find('/') == std::string::npos)
+				//ret = m_generator.generate(fs, m_library_path, m_library_path + m_filename + ".gsc");
+			//else
 				ret = m_generator.generate(fs, path_base, path_base + m_filename + ".gsc");
 			if (!ret)
 			{
-				throw script::compiler::CompileException("Failed to read file {}", m_filename);
+				throw script::compiler::CompileException("Failed to read file {}, {}", m_filename,
+														 path_base + m_filename + ".gsc");
 				//LOG_ERROR("Failed to read file '%s'\n", m_filename.c_str());
 			}
 			script::LoadedProgramReference& lpr = m_global_reference_map[file_name_];
