@@ -181,9 +181,10 @@ namespace parse
 			{
 				rep:
 				ch = read_character();
-				if (ch == -1)
-					throw lexer_error("unexpected eof, this shouldn't happen halfway through a string.", start,
-									  m_cursor, m_source->line_number(start), m_source->line_number(m_cursor));
+					if (ch == -1)
+						break;
+					//throw lexer_error("unexpected eof, this shouldn't happen halfway through a string.", start,
+					//				  m_cursor, m_source->line_number(start), m_source->line_number(m_cursor));
 				if(ch == '\\')
 				{
 					escaped = true;
