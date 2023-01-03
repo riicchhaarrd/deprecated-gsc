@@ -194,6 +194,14 @@ namespace script
 			DebugInfo* debug = nullptr;
 
 		  public:
+			ThreadContext* get_last_thread()
+			{
+				return last_thread;
+			}
+			DebugInfo& get_debug_info()
+			{
+				return *debug;
+			}
 			std::shared_ptr<vm::Instruction> fetch(ThreadContext*);
 			size_t thread_count()
 			{
@@ -232,7 +240,7 @@ namespace script
 
 			vm::Variant get_variable(ThreadContext*, const std::string var);
 			vm::Variant* get_variable_reference(ThreadContext*, const std::string var);
-			std::string variant_to_string_for_dump(VariantPtr v);
+			std::string variant_to_string_for_dump(Variant v);
 			void dump_object(const std::string, VariantPtr ptr, int indent);
 			void dump(ThreadContext*);
 			void notify_event_string(vm::ObjectPtr object, const std::string str, std::vector<vm::Variant>* arguments = nullptr)
@@ -450,7 +458,7 @@ namespace script
 					{
 						if (op != parse::TokenType_kEq && op != parse::TokenType_kNeq)
 						{
-							throw vm::Exception("expected == or !=");
+							throw vm::Exception("expected == or != got {}", op);
 						}
 						if (a_index == vm::Type::kUndefined|| b_index == vm::Type::kUndefined)
 						{
