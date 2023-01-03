@@ -10,10 +10,26 @@ namespace script
 {
 	namespace functions
 	{
+		template<typename... Ts>
+		void ctx_printf(script::VMContext& ctx, const char *fmt, Ts... ts)
+		{
+			auto& dbg = ctx.get_debug_info();
+			printf("[%s:%s:%d] ", dbg.file.c_str(), dbg.function.c_str(), dbg.line);
+			printf(fmt, ts...);
+		}
 		int randomint(script::VMContext& ctx)
 		{
-			//ctx.add_int(rand());
-			ctx.add_int(0);
+			int i = ctx.get_int(0);
+			if (i == 0)
+			{
+				ctx_printf(ctx, "RandomInt parm: 0");
+				ctx.add_int(0);
+			}
+			else
+			{
+				ctx.add_int(rand() % i);
+			}
+			//ctx.add_int(0);
 			return 1;
 		}
 		int randomintrange(script::VMContext& ctx)
@@ -142,6 +158,8 @@ namespace script
 		}
 		int print(script::VMContext& ctx)
 		{
+			auto& dbg = ctx.get_debug_info();
+			printf("[%s:%d] ", dbg.file.c_str(), dbg.line);
 			for (size_t i = 0; i < ctx.number_of_arguments(); ++i)
 				printf("%s ", ctx.get_string(i).c_str());
 			printf("\n");
@@ -201,13 +219,34 @@ namespace script
 			ctx.add_string("medium");
 			return 1;
 		}
+		int scr_assertex(script::VMContext& ctx)
+		{
+			int i = ctx.get_int(0);
+			auto msg = ctx.get_string(1);
+			if (i == 0)
+			{
+				ctx_printf(ctx, "Assertion failed! %s", msg.c_str());
+				getchar();
+			}
+			return 0;
+		}
+		int scr_assert(script::VMContext& ctx)
+		{
+			int i = ctx.get_int(0);
+			if (i == 0)
+			{
+				ctx_printf(ctx, "Assertion failed!");
+				getchar();
+			}
+			return 0;
+		}
 		int set_exp_fog(script::VMContext& ctx)
 		{
-			printf("float: %f\n", ctx.get_float(0));
-			printf("float: %f\n", ctx.get_float(1));
-			printf("float: %f\n", ctx.get_float(2));
-			printf("float: %f\n", ctx.get_float(3));
-			printf("float: %f\n", ctx.get_float(4));
+			ctx_printf(ctx, "float: %f\n", ctx.get_float(0));
+			ctx_printf(ctx, "float: %f\n", ctx.get_float(1));
+			ctx_printf(ctx, "float: %f\n", ctx.get_float(2));
+			ctx_printf(ctx, "float: %f\n", ctx.get_float(3));
+			ctx_printf(ctx, "float: %f\n", ctx.get_float(4));
 			return 0;
 		}
 
@@ -271,12 +310,12 @@ namespace script
 			{"precacheheadicon", unimplemented},
 			{"makecvarserverinfo", unimplemented},
 			{"setsavedcvar", unimplemented},
-			{"assert", unimplemented},
+			{"assert", scr_assert},
 			{"setnormalhealth", unimplemented},
 			{"getdifficulty", getdifficulty},
 			{"precachemodel", unimplemented},
 			{"precacheshader", unimplemented},
-			{"assertex", unimplemented},
+			{"assertex", scr_assertex},
 			{"precacheturret", unimplemented},
 			{"precachevehicle", unimplemented},
 			{"logprint", print},
