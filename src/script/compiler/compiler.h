@@ -45,6 +45,9 @@ namespace script
 			std::stack<std::weak_ptr<vm::Label>> continue_labels;
 			ast::ExpressionStatement* last_expression_statement = nullptr;
 			size_t label_index = 0;
+
+			DebugInfo debug;
+
 		  public:
 			Compiler(script::ReferenceMap&);
 			CompiledFiles compile();
@@ -52,7 +55,9 @@ namespace script
 			template <typename T, typename... Ts> std::shared_ptr<T> instruction(Ts... ts)
 			{
 				// printf("node(%s)\n", typeid(T).name());
-				return std::move(std::make_shared<T>(ts...));
+				auto instr = std::move(std::make_shared<T>(ts...));
+				instr->debug = debug;
+				return instr;
 			}
 			std::shared_ptr<vm::Label> label()
 			{

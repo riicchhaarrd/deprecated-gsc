@@ -131,12 +131,9 @@ namespace parse
 
 		const int line_number() const
 		{
-			return real_line_number;
-			#if 0
-			if (!m_source)
-				return -1;
+			if (!m_source || pos == -1)
+				return real_line_number;
 			return m_source->line_number(pos);
-			#endif
 		}
 
 		std::string type_as_string() const

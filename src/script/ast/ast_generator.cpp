@@ -22,7 +22,13 @@ namespace script
 
 		bool ASTGenerator::accept(int token_type)
 		{
-			return m_token_parser->accept_token(token, token_type);
+			auto b = m_token_parser->accept_token(token, token_type);
+			if (b)
+			{
+				debug.line = token.line_number();
+				debug.file = token.source_file();
+			}
+			return b;
 		}
 
 		void ASTGenerator::expect(int token_type)
@@ -837,9 +843,10 @@ namespace script
 
 		void ASTGenerator::function_declaration(Program& program)
 		{
-			auto decl = node<FunctionDeclaration>();
 			expect(parse::TokenType_kIdentifier);
+			auto decl = node<FunctionDeclaration>();
 			decl->function_name = token.to_string();
+			decl->debug.function = debug.function = decl->function_name;
 			expect('(');
 			while (1)
 			{

@@ -88,7 +88,10 @@ namespace parse
 		{
 			std::string tmp;
 			if (!fs.read_text_entry(path, tmp))
+			{
+				LOG_WARNING("failed to open %s\n", path.c_str());
 				return false;
+			}
 			sources.insert(std::make_pair(path, parse::source(path, tmp)));
 			opts.tokenize_newlines = true;
 			T lexer(&sources[path], opts);

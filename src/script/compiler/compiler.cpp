@@ -154,6 +154,7 @@ namespace script
 					{
 						func = fun_iter.second;
 						//printf("\tcompiling function: %s\n", fun_iter.first.c_str());
+						debug = fun_iter.second->debug;
 						fun_iter.second->accept(*this);
 					}
 				}
@@ -215,7 +216,13 @@ namespace script
 		void Compiler::visit(ast::BlockStatement& n)
 		{
 			for (auto& stmt : n.body)
+			{
+				std::stringstream ss;
+				GSCWriter wr(ss);
+				wr.visit_statement(stmt);
+				debug.expression_string = ss.str();
 				stmt->accept(*this);
+			}
 		}
 
 		void Compiler::visit(ast::IfStatement& n)

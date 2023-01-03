@@ -92,7 +92,18 @@ namespace script
 		}
 		catch (vm::Exception& ex)
 		{
-			LOG_ERROR("Script Error: %s\n", ex.what());
+			auto* lt = m_vm->get_last_thread();
+			if (lt)
+			{
+				while (!lt->function_name_stack.empty())
+				{
+					auto& it = lt->function_name_stack.top();
+					printf("->%s\n", it.c_str());
+					lt->function_name_stack.pop();
+				}
+			}
+			auto& dbg = m_vm->get_debug_info();
+			LOG_ERROR("Script Error: [%s:%s:%d] '%s' [%s]\n", dbg.file.c_str(), dbg.function.c_str(), dbg.line, ex.what(), dbg.expression_string.c_str());
 			m_vm.reset();
 		}
 	}

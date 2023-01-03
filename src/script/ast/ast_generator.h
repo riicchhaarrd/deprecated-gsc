@@ -35,10 +35,14 @@ namespace script
 			void program();
 			std::unique_ptr<Program> tree;
 
+			DebugInfo debug;
+
 			template <typename T, typename... Ts> std::unique_ptr<T> node(Ts... ts)
 			{
 				// printf("node(%s)\n", typeid(T).name());
-				return std::move(std::make_unique<T>(ts...));
+				auto n = std::move(std::make_unique<T>(ts...));
+				n->debug = debug;
+				return n;
 			}
 			std::unique_ptr<Identifier> identifier();
 			std::unique_ptr<BlockStatement> block_statement();

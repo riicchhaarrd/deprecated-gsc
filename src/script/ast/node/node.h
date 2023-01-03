@@ -4,6 +4,7 @@
 #include <common/type_id.h>
 #include "../printer.h"
 #include <script/ast/visitor.h>
+#include <script/debug_info.h>
 
 #define AST_NODE(x)                                                                                                    \
 	virtual const char* to_string() override                                                                           \
@@ -23,12 +24,6 @@ namespace script
 {
 	namespace ast
 	{
-		struct DebugInfo
-		{
-			std::string file;
-			size_t line;
-		};
-
 		struct Node
 		{
 			size_t start, end;

@@ -2,6 +2,7 @@
 #include <string>
 #include <memory>
 #include <common/type_id.h>
+#include <script/debug_info.h>
 
 namespace script
 {
@@ -31,7 +32,7 @@ namespace script
 		struct Instruction
 		{
 			size_t m_id;
-
+			DebugInfo debug;
 			void set_id(size_t id)
 			{
 				m_id = id;
