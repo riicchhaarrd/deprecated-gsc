@@ -22,6 +22,7 @@ namespace script
 		virtual vm::Variant get_variant(size_t) = 0;
 		virtual std::string variant_to_string(vm::Variant) = 0;
 		virtual float variant_to_number(vm::Variant) = 0;
+		virtual DebugInfo& get_debug_info() = 0;
 		virtual void add_bool(const bool b)
 		{
 			add_int(b ? 1 : 0);
@@ -95,6 +96,8 @@ namespace script
 			std::stack<FunctionContext> m_callstack;
 			std::vector<std::unique_ptr<ThreadLock>> m_locks;
 			std::unique_ptr<VMContext> m_context;
+			//for debugging purposes
+			std::stack<std::string> function_name_stack;
 			std::unique_ptr<VMContext>& context()
 			{
 				return m_context;
@@ -186,7 +189,10 @@ namespace script
 			std::unordered_map<std::string, compiler::CompiledFunction*> m_allcustomfunctions;
 			void call_impl(ThreadContext *, ThreadContext*, vm::ObjectPtr obj, script::compiler::CompiledFunction*, size_t);
 			std::shared_ptr<vm::Instruction> last_instruction;
+			ThreadContext *last_thread = nullptr;
 			std::unordered_map<std::string, vm::Variant> m_globals;
+			DebugInfo* debug = nullptr;
+
 		  public:
 			std::shared_ptr<vm::Instruction> fetch(ThreadContext*);
 			size_t thread_count()

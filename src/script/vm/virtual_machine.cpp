@@ -5,29 +5,29 @@ namespace script
 	namespace vm
 	{
 
-		std::string VirtualMachine::variant_to_string_for_dump(VariantPtr v)
+		std::string VirtualMachine::variant_to_string_for_dump(Variant v)
 		{
-			vm::Type index = (vm::Type)v->index();
+			vm::Type index = (vm::Type)v.index();
 			switch (index)
 			{
 			case vm::Type::kInteger:
-				return std::to_string(std::get<vm::Integer>(*v));
+				return std::to_string(std::get<vm::Integer>(v));
 			case vm::Type::kFloat:
-				return std::to_string(std::get<vm::Number>(*v));
+				return std::to_string(std::get<vm::Number>(v));
 			case vm::Type::kString:
-				return std::get<vm::String>(*v);
+				return std::get<vm::String>(v);
 			case vm::Type::kUndefined:
 				return "undefined";
 			case vm::Type::kObject:
 				return "object";
 			case vm::Type::kVector:
 			{
-				auto vec = std::get<vm::Vector>(*v);
+				auto vec = std::get<vm::Vector>(v);
 				return common::format("({}, {}, {})", vec.x, vec.y, vec.z);
 			}
 			break;
 			}
-			return common::format("unhandled variant {}", v->index());
+			return common::format("unhandled variant {}", v.index());
 		}
 
 		std::string VirtualMachine::variant_to_string(vm::Variant v)
@@ -59,7 +59,8 @@ namespace script
 			}
 			break;
 			}
-			throw vm::Exception("cannot convert {} to string", vm::kVariantNames[v.index()]);
+			throw vm::Exception("cannot convert {} {} to string", vm::kVariantNames[v.index()],
+								variant_to_string_for_dump(v));
 			return "";
 		}
 
@@ -74,7 +75,8 @@ namespace script
 				return 0.f;
 			else if (index == vm::Type::kString)
 				return atof(std::get<vm::String>(v).c_str());
-			throw vm::Exception("cannot convert {} to float", vm::kVariantNames[v.index()]);
+			throw vm::Exception("cannot convert {} {} to float", vm::kVariantNames[v.index()],
+								variant_to_string_for_dump(v));
 			return 0.f;
 		}
 
@@ -85,9 +87,10 @@ namespace script
 				return -1; //TODO: FIXME proper bool types, otherwise undefined (0) would be true to false
 			else if (index == vm::Type::kInteger)
 				return std::get<vm::Integer>(v);
-			//else if (index == vm::Type::kFloat)
-			//	return (int)std::get<vm::Number>(v);
-			throw vm::Exception("cannot convert {} to integer", vm::kVariantNames[v.index()]);
+			else if (index == vm::Type::kFloat)
+				return (int)std::get<vm::Number>(v);
+			throw vm::Exception("cannot convert {} {} to integer", vm::kVariantNames[v.index()],
+								variant_to_string_for_dump(v));
 			return 0;
 		}
 
@@ -103,6 +106,10 @@ namespace script
 			virtual size_t number_of_arguments()
 			{
 				return nargs;
+			}
+			virtual DebugInfo& get_debug_info()
+			{
+				return vm.get_debug_info();
 			}
 			
 			virtual void set_number_of_arguments(size_t n)
@@ -283,6 +290,8 @@ namespace script
 		{
 			if (m_callstack.empty())
 				throw vm::Exception("empty callstack");
+			if (!function_name_stack.empty())
+				function_name_stack.pop();
 			m_callstack.pop();
 			if (m_callstack.empty())
 			{
@@ -293,6 +302,7 @@ namespace script
 		void VirtualMachine::call_impl(ThreadContext *caller_thread, ThreadContext* callee_thread, vm::ObjectPtr obj, script::compiler::CompiledFunction* fn, size_t numargs)
 		{
 			callee_thread->m_callstack.push(FunctionContext());
+			callee_thread->function_name_stack.push(fn->name);
 			auto& fc = callee_thread->function_context();
 
 			for (size_t i = 0; i < numargs; ++i)
@@ -533,6 +543,7 @@ namespace script
 
 		bool VirtualMachine::run_thread(ThreadContext *tc)
 		{
+			last_thread = tc;
 			while (1)
 			{
 				for (auto lock_iterator = tc->m_locks.begin(); lock_iterator != tc->m_locks.end();)
@@ -555,6 +566,7 @@ namespace script
 					printf("\t\t-->%s (%d)\t%s::%s\n", instr->to_string().c_str(), tc->m_stack.size(),
 						   fc.file_name.c_str(), fc.function_name.c_str());
 				}
+				debug = &instr->debug;
 				instr->execute(*this, tc);
 			}
 			return true;
