@@ -156,14 +156,31 @@ namespace script
 				}
 				return v;
 			}
-			vm::Reference pop_ref()
+			void push_ref(vm::Variant* ref)
+			{
+				push(Reference());
+				m_referencestack.push(ref);
+			}
+			vm::Variant* pop_ref(vm::Reference *refout = nullptr)
 			{
 				auto v = pop();
 				if (v.index() != (int)vm::Type::kReference)
 				{
-					throw vm::Exception("not a reference");
+					throw vm::Exception("expected reference got {}", kVariantNames[v.index()]);
 				}
-				return std::get<vm::Reference>(v);
+				if (refout)
+					*refout = std::get<vm::Reference>(v);
+				if (m_referencestack.empty())
+				{
+					throw vm::Exception("empty refstack");
+				}
+				auto *ref = m_referencestack.top();
+				if (!ref)
+				{
+					throw vm::Exception("nullpointer reference");
+				}
+				m_referencestack.pop();
+				return ref;
 			}
 		};
 		class VirtualMachine
