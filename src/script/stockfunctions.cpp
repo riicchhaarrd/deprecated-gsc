@@ -76,6 +76,16 @@ namespace script
 			ctx.add_object(list);
 			return 1;
 		}
+		int dump(script::VMContext& ctx)
+		{
+			auto o = ctx.get_object(0);
+			auto kvp = ctx.get_object_keys_and_values(o);
+			for (auto& it : kvp)
+			{
+				printf("%s = %s\n", it.first.c_str(), ctx.variant_to_string(it.second).c_str());
+			}
+			return 0;
+		}
 		int tolower(script::VMContext& ctx)
 		{
 			ctx.add_string(util::string::to_lower(ctx.get_string(0)));
@@ -84,7 +94,7 @@ namespace script
 		int is_defined(script::VMContext& ctx)
 		{
 			auto v = ctx.get_variant(0);
-			ctx.add_bool(v.index() != 0);
+			ctx.add_int(v.index() == (int)vm::Type::kUndefined ? 0 : 1);
 			return 1;
 		}
 		int typeof_(script::VMContext& ctx)
@@ -263,6 +273,7 @@ namespace script
 			{"sin", sin},
 			{"pow", pow},
 			{"abs", abs},
+			{"dump", dump},
 			{"sqrt", sqrt},
 			{"float", float_conv},
 			{"spawnstruct", spawnstruct},

@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <string>
+#include <optional>
 #include <stdexcept>
 #include <unordered_map>
 #include <variant>
@@ -78,7 +79,6 @@ namespace script
 		struct Object;
 		struct Array;
 		using ObjectPtr = std::shared_ptr<Object>;
-		using ArrayPtr = std::shared_ptr<Array>;
 
 		struct LocalizedString
 		{
@@ -96,36 +96,20 @@ namespace script
 			std::string name;
 		};
 
-		struct Identifier
-		{
-			std::string name;
-		};
-
 		struct Undefined
 		{
 		};
-		
-		using ReferenceType = std::variant<Identifier, ObjectPtr, Vector*>;
-		enum class ReferenceTypeId
-		{
-			kIdentifier,
-			kObjectPtr,
-			kVector
-		};
+
 		struct Reference
 		{
-			size_t offset = 0;
-			int index = -1;
-			std::string field;
-			ReferenceType object;
+			std::optional<std::string> field;
 		};
 
-		using Variant = std::variant<Undefined, Vector, String, Integer, Number, ObjectPtr, ArrayPtr, LocalizedString,
-									 FunctionPointer, Identifier, Animation, Reference>;
+		using Variant = std::variant<Undefined, Vector, String, Integer, Number, ObjectPtr, LocalizedString, FunctionPointer, Animation, Reference>;
 		using VariantPtr = std::shared_ptr<vm::Variant>;
-		static const char* kVariantNames[] = {"Undefined", "Vector", "String", "Integer", "Float",
-											  "Object",	   "Array",	 "String Localized", "Function Pointer", "?",
-											  "Animation", "Reference", NULL};
+		static const char* kVariantNames[] = {"Undefined", "Vector",	"String",		   "Integer",
+											  "Number",	   "ObjectPtr", "LocalizedString", "FunctionPointer",
+											  "Animation", "Reference"};
 
 		enum class Type
 		{
@@ -135,13 +119,10 @@ namespace script
 			kInteger,
 			kFloat,
 			kObject,
-			kArray,
 			kLocalizedString,
 			kFunctionPointer,
-			kIdentifier,
 			kAnimation,
-			kReference,
-			kObjectFieldReference
+			kReference
 		};
 
 		template<typename T> inline size_t type_index()
@@ -149,12 +130,24 @@ namespace script
 			return Variant(T()).index();
 		}
 
+		struct ObjectLookupTable
+		{
+			virtual bool call(const std::string&, VMContext&, int*) = 0;
+			virtual void set(const std::string&, vm::Variant&) = 0;
+			virtual vm::Variant get(const std::string&) = 0;
+		};
+
 		struct Object
 		{
 			std::string m_tag;
 			vm::Variant size;
 			Object(const std::string tag) : m_tag(tag), size(vm::Integer())
 			{
+			}
+
+			virtual std::weak_ptr<void> get_proxy_object()
+			{
+				return {};
 			}
 
 			template<typename T> T* cast()
@@ -175,11 +168,7 @@ namespace script
 			}
 
 			std::unordered_map<std::string, vm::Variant> fields;
-			virtual bool call_method(const std::string n, VMContext&, int*)
-			{
-				return false;
-			}
-			virtual bool set_field(const std::string n, vm::Variant& value)
+			bool set_field(const std::string n, vm::Variant& value)
 			{
 				if (n == "size")
 				{
@@ -188,7 +177,7 @@ namespace script
 				fields[n] = value;
 				return true;
 			}
-			virtual vm::Variant* get_field(const std::string n, bool create)
+			vm::Variant* get_field(const std::string n, bool create)
 			{
 				if (fields.find(n) == fields.end())
 				{
@@ -198,6 +187,45 @@ namespace script
 						return NULL;
 				}
 				return &fields[n];
+			}
+		};
+
+		template<typename T>
+		struct ProxyObject : Object
+		{
+			std::weak_ptr<T> class_instance_ptr;
+			ProxyObject(const std::string tag, std::weak_ptr<T> ptr) : Object(tag), class_instance_ptr(ptr)
+			{
+			}
+
+			virtual std::weak_ptr<void> get_proxy_object() override
+			{
+				return class_instance_ptr;
+			}
+
+			std::shared_ptr<T> get_proxy_shared()
+			{
+				return std::static_pointer_cast<T>(get_proxy_object().lock());
+			}
+
+			virtual size_t kind() override
+			{
+				return type_id<ProxyObject<T>>::id();
+			}
+		};
+
+		template<typename T>
+		struct TObjectLookupTable
+		{
+			virtual bool call(const std::string& method, VMContext &ctx, int *num_pushed) override
+			{
+				auto& methods = MethodEntry<T>::get_methods();
+			}
+			virtual void set(const std::string& field, vm::Variant& value)
+			{
+			}
+			virtual vm::Variant get(const std::string& field) override
+			{
 			}
 		};
 

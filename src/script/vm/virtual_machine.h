@@ -6,7 +6,10 @@
 #include "function.h"
 #include <functional>
 #include <script/compiler/compiler.h>
+#include <script/property.h>
 #include <parse/token.h>
+#include <script/method_entry.h>
+#include <unordered_set>
 
 namespace script
 {
@@ -30,10 +33,26 @@ namespace script
 		virtual void add_variant(vm::Variant) = 0;
 		virtual void add_vector(vm::Vector) = 0;
 		virtual void add_object(std::shared_ptr<vm::Object>) = 0;
+		void add_array(std::shared_ptr<vm::Object> o)
+		{
+			add_object(o);
+		}
 		virtual void add_int(const int) = 0;
 		virtual void add_undefined() = 0;
 		virtual void add_float(const float) = 0;
 		virtual void add_string(const std::string) = 0;
+
+		vm::ObjectPtr create_array(const std::string tag = "array")
+		{
+			auto o = std::make_shared<script::vm::Object>(tag);
+			return o;
+		}
+		void array_push(vm::ObjectPtr &o, vm::Variant value)
+		{
+			size_t index = o->fields.size();
+			o->fields[std::to_string(index)] = value;
+		}
+		virtual std::unordered_map<std::string, vm::Variant> get_object_keys_and_values(vm::ObjectPtr& o) = 0;
 	};
 
 	using StockFunction = std::function<int(VMContext&)>;
@@ -92,7 +111,7 @@ namespace script
 		struct ThreadContext
 		{
 			std::vector<vm::Variant> m_stack;
-			std::vector<vm::Variant*> m_referencestack;
+			std::stack<vm::Variant*> m_referencestack;
 			std::stack<FunctionContext> m_callstack;
 			std::vector<std::unique_ptr<ThreadLock>> m_locks;
 			std::unique_ptr<VMContext> m_context;
@@ -156,9 +175,9 @@ namespace script
 				}
 				return v;
 			}
-			void push_ref(vm::Variant* ref)
+			void push_ref(vm::Variant* ref, Reference r = Reference())
 			{
-				push(Reference());
+				push(r);
 				m_referencestack.push(ref);
 			}
 			vm::Variant* pop_ref(vm::Reference *refout = nullptr)
@@ -210,6 +229,8 @@ namespace script
 			std::unordered_map<std::string, vm::Variant> m_globals;
 			DebugInfo* debug = nullptr;
 
+			std::unordered_map<size_t, std::unordered_map<std::string, IMethod*>> object_method_lookup_table;
+			std::unordered_map<size_t, std::unordered_map<std::string, IProperty*>> object_property_lookup_table;
 		  public:
 			ThreadContext* get_last_thread()
 			{
@@ -219,6 +240,58 @@ namespace script
 			{
 				return *debug;
 			}
+
+			std::unordered_map<std::string, vm::Variant> get_object_keys_and_values(vm::ObjectPtr& o)
+			{
+				std::unordered_map<std::string, vm::Variant> kvp;
+				for (auto& it : o->fields)
+				{
+					kvp[it.first] = it.second;
+				}
+				auto &table = get_object_property_table_for_kind(o->kind());
+				for (auto& it : table)
+				{
+					PropertyHandler handler(kvp[it.first]);
+					it.second->get_value(handler, o->get_proxy_object().lock().get());
+				}
+				return kvp;
+			}
+
+			std::unordered_map<std::string, IProperty*>& get_object_property_table_for_kind(size_t kind)
+			{
+				return object_property_lookup_table[kind];
+			}
+
+			std::unordered_map<std::string, IMethod*>& get_object_method_table_for_kind(size_t kind)
+			{
+				return object_method_lookup_table[kind];
+			}
+
+			template<typename T>
+			void register_method_for_type(const std::string& name, IMethod* method)
+			{
+				object_method_lookup_table[type_id<ProxyObject<T>>::id()][name] = method;
+			}
+			template<typename T, typename U = T>
+			void register_methods_for_type()
+			{
+				auto& methods = MethodEntry<U>::get_methods();
+				for (auto& it : methods)
+					object_method_lookup_table[type_id<ProxyObject<T>>::id()][it.first] = it.second;
+			}
+
+			template<typename T>
+			void register_property_for_type(const std::string& name, IProperty* prop)
+			{
+				object_property_lookup_table[type_id<ProxyObject<T>>::id()][name] = prop;
+			}
+			template<typename T, typename Container>
+			void register_properties_for_type(Container& container)
+			{
+				for (auto& it : container)
+					object_property_lookup_table[type_id<ProxyObject<T>>::id()][it.first] = &it.second;
+			}
+
 			std::shared_ptr<vm::Instruction> fetch(ThreadContext*);
 			size_t thread_count()
 			{
@@ -258,7 +331,7 @@ namespace script
 			vm::Variant get_variable(ThreadContext*, const std::string var);
 			vm::Variant* get_variable_reference(ThreadContext*, const std::string var);
 			std::string variant_to_string_for_dump(Variant v);
-			void dump_object(const std::string, VariantPtr ptr, int indent);
+			void dump_object(const std::string, std::unordered_set<vm::ObjectPtr>& seen, vm::ObjectPtr& ptr, int indent);
 			void dump(ThreadContext*);
 			void notify_event_string(vm::ObjectPtr object, const std::string str, std::vector<vm::Variant>* arguments = nullptr)
 			{

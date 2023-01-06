@@ -93,6 +93,7 @@ namespace script
 		}
 		catch (vm::Exception& ex)
 		{
+			m_vm->dump(m_vm->get_last_thread());
 			auto* lt = m_vm->get_last_thread();
 			if (lt)
 			{

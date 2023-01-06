@@ -237,6 +237,70 @@ namespace script
 			else
 				throw vm::Exception("unexpected {}", v.index());
 		}
+		struct LoadObjectFieldValueVariantVisitor
+		{
+			ThreadContext* thread_context;
+			VirtualMachine& vm;
+			std::string prop;
+
+			LoadObjectFieldValueVariantVisitor(VirtualMachine& vm_, ThreadContext* tc, const std::string& prop_)
+				: vm(vm_), thread_context(tc), prop(prop_)
+			{
+			}
+			template <typename T> void operator()(T& v)
+			{
+				Variant empty = T();
+				throw vm::Exception("expected object got {}", kVariantNames[empty.index()]);
+			}
+			void operator()(vm::Undefined& v)
+			{
+				throw vm::Exception("expected object got undefined");
+			}
+			void operator()(vm::Vector& v)
+			{
+				int propidx = get_vector_index(prop);
+				thread_context->push(v[propidx]);
+			}
+			void operator()(vm::ObjectPtr& v)
+			{
+				if (prop == "size")
+				{
+					thread_context->push(vm::Integer(v->fields.size()));
+				}
+				else
+				{
+					auto& table = vm.get_object_property_table_for_kind(v->kind());
+					auto fnd = table.find(util::string::to_lower(prop));
+					if (fnd != table.end())
+					{
+						auto proxy = v->get_proxy_object().lock();
+						if (!proxy)
+						{
+							throw vm::Exception("pointer expired");
+						}
+						vm::Variant new_value;
+						PropertyHandler handler(new_value);
+						fnd->second->get_value(handler, proxy.get());
+						thread_context->push(new_value);
+					}
+					else
+					{
+						try
+						{
+							auto fv = v->get_field(util::string::to_lower(prop), false);
+							if (fv)
+								thread_context->push(*fv);
+							else
+								thread_context->push(vm::Undefined());
+						}
+						catch (...)
+						{
+							throw vm::Exception("failed getting field {}", prop);
+						}
+					}
+				}
+			}
+		};
 		void LoadObjectFieldValue::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
 			//TODO: FIXME we can't actually load anything if ref is undefined...
@@ -244,164 +308,129 @@ namespace script
 			auto prop = thread_context->context()->get_string(0);
 			thread_context->pop(1);
 
-			if (ref.index() == (int)vm::Type::kVector)
-			{
-				auto vec = std::get<vm::Vector>(ref);
-				int propidx = get_vector_index(prop);
-				thread_context->push(vec[propidx]);
-				return;
-			}
-
-			//TODO: FIXME something is still undefined and won't load properly...
-			//something with the spawnlogic, maybe it's just not getting any spawns from entities and just stays undefined idk
-			#if 1
-			if (ref.index() == (int)vm::Type::kUndefined)
-			{
-				ref = std::make_shared<Object>("object created from undefined");
-			}
-			#endif
-			if (ref.index() != (int)vm::Type::kObject)
-			{
-				throw vm::Exception("expected object got {}", ref.index());
-			}
-			std::shared_ptr<vm::Object> obj = std::get<vm::ObjectPtr>(ref);
-			if (prop == "size")
-			{
-				thread_context->push(vm::Integer(obj->fields.size()));
-			}
-			else
-			{
-				try
-				{
-					auto fv = obj->get_field(util::string::to_lower(prop));
-					if (fv)
-						thread_context->push(*fv);
-					else
-						thread_context->push(vm::Undefined());
-				}
-				catch (...)
-				{
-					throw vm::Exception("failed getting field {}", prop);
-				}
-			}
+			std::visit(LoadObjectFieldValueVariantVisitor(vm, thread_context, util::string::to_lower(prop)), ref);
 		}
 		void LoadObjectFieldRef::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			auto ref = thread_context->pop_ref();
+			vm::Reference ref;
+			auto* ptr = thread_context->pop_ref(&ref);
+			
+			if (ptr->index() == (int)vm::Type::kUndefined)
+			{
+				*ptr = std::make_shared<Object>("object created from undefined");
+			}
+
 			auto prop = thread_context->context()->get_string(0);
 			thread_context->pop(1);
 			if (prop == "size")
 				throw vm::Exception("size is read-only");
-
-			struct Visit
+			if (!ref.field.has_value())
 			{
-				ThreadContext* thread_context;
-				VirtualMachine& vm;
-				std::string prop;
-
-				Visit(VirtualMachine& vm_, ThreadContext* tc, const std::string& prop_)
-					: vm(vm_), thread_context(tc), prop(prop_)
+				thread_context->push_ref(ptr, Reference{.field = prop});
+			}
+			else
+			{
+				if (ptr->index() != (int)vm::Type::kObject)
 				{
+					throw vm::Exception("not a object");
 				}
-				void operator()(Identifier& v)
+				auto o = std::get<vm::ObjectPtr>(*ptr);
+				auto field_name = util::string::to_lower(ref.field.value());
+				auto field_ptr = o->get_field(field_name, true);
+				if (field_ptr->index() == (int)vm::Type::kUndefined)
 				{
-					auto* vr = vm.get_variable_reference(thread_context, util::string::to_lower(v.name));
-
-					vm::Reference r;
-					if (std::holds_alternative<Vector>(*vr))
-					{
-						r.object = std::get_if<Vector>(vr);
-						r.index = get_vector_index(prop);
-					}
-					else if (std::holds_alternative<ObjectPtr>(*vr))
-					{
-						r.object = std::get<ObjectPtr>(*vr);
-						r.field = prop;
-					}
-					else if (std::holds_alternative<Undefined>(*vr))
-					{
-						auto obj = std::make_shared<Object>("object created from undefined");
-						r.object = obj;
-						r.field = prop;
-					}
-					else
-					{
-						throw vm::Exception("not a lvalue");
-					}
-					thread_context->push(r);
+					*field_ptr = std::make_shared<Object>("object created from undefined");
 				}
-				void operator()(Vector*& v)
-				{
-					throw vm::Exception("nested vector [][] not supported, because vector[index][index2] doesn't return a lvalue");
-				}
-				void operator()(ObjectPtr& v)
-				{
-					vm::Reference r;
-					auto *fv = v->get_field(util::string::to_lower(prop));
-					if (!fv)
-					{
-						r.object = std::make_shared<Object>("object created from undefined");
-						r.field = prop;
-					} else if (std::holds_alternative<Vector>(*fv))
-					{
-						r.object = std::get_if<Vector>(fv);
-						r.index = get_vector_index(prop);
-					}
-					else if (std::holds_alternative<ObjectPtr>(*fv))
-					{
-						r.object = std::get<ObjectPtr>(*fv);
-						r.field = prop;
-					}
-					else
-					{
-						throw vm::Exception("not a lvalue");
-					}
-					thread_context->push(r);
-				}
-			};
-
-			std::visit(Visit(vm, thread_context, util::string::to_lower(prop)), ref.object);
+				//TODO: FIXME native c++ class members don't work
+				thread_context->push_ref(field_ptr, Reference{.field = prop});
+			}
+			#if 0
+			try
+			{
+				auto obj = std::get_if<vm::ObjectPtr>(ref);
+				auto fv = (*obj)->get_field(util::string::to_lower(prop), true);
+				if (!fv)
+					throw vm::Exception("unexpected nullpointer reference object field");
+				thread_context->push_ref(fv);
+			}
+			catch (...)
+			{
+				throw vm::Exception("failed getting field {}", prop);
+			}
+			#endif
 		}
+
+		
+		struct StoreRefVariantVisitor
+		{
+			ThreadContext* thread_context;
+			VirtualMachine& vm;
+			vm::Variant& new_value;
+			vm::Reference& ref;
+
+			StoreRefVariantVisitor(VirtualMachine& vm_, ThreadContext* tc, vm::Reference& ref_, vm::Variant& new_value_)
+				: vm(vm_), thread_context(tc), ref(ref_), new_value(new_value_)
+			{
+			}
+
+			template <typename T> void operator()(T& v)
+			{
+				Variant empty = T();
+				throw vm::Exception("expected object got {}", kVariantNames[empty.index()]);
+			}
+			void operator()(vm::ObjectPtr& v)
+			{
+				if (!ref.field.has_value())
+				{
+					v = std::get<vm::ObjectPtr>(new_value);
+				}
+				else
+				{
+					auto &table = vm.get_object_property_table_for_kind(v->kind());
+					auto fnd = table.find(util::string::to_lower(ref.field.value()));
+					if (fnd != table.end())
+					{
+						auto proxy = v->get_proxy_object().lock();
+						if (!proxy)
+						{
+							throw vm::Exception("pointer expired");
+						}
+						PropertyHandler handler(new_value);
+						fnd->second->set_value(handler, proxy.get());
+					}
+					else
+					{
+						v->set_field(util::string::to_lower(ref.field.value()), new_value);
+					}
+				}
+			}
+			void operator()(vm::Vector& v)
+			{
+				if (!ref.field.has_value())
+				{
+					v = std::get<vm::Vector>(new_value);
+				}
+				else
+				{
+					auto index = get_vector_index(ref.field.value());
+					v[index] = vm.variant_to_number(new_value);
+				}
+			}
+		};
+
 		void StoreRef::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			auto ref = thread_context->pop_ref();
-			vm::Variant value = thread_context->pop(1);
-
-			struct Visit
+			vm::Reference ref;
+			auto *ptr = thread_context->pop_ref(&ref);
+			auto new_value = thread_context->pop(1);
+			if (!ref.field.has_value())
 			{
-				ThreadContext* thread_context;
-				VirtualMachine& vm;
-				vm::Variant& value;
-				vm::Reference& ref;
-
-				Visit(VirtualMachine& vm_, ThreadContext* tc, vm::Variant& value_, vm::Reference& ref_)
-					: vm(vm_), thread_context(tc), value(value_), ref(ref_)
-				{
-				}
-				void operator()(Identifier& v)
-				{
-					auto* vr = vm.get_variable_reference(thread_context, util::string::to_lower(v.name));
-					*vr = value;
-				}
-				void operator()(Vector*& v)
-				{
-					(*v)[ref.index] = vm.variant_to_number(value);
-				}
-				void operator()(ObjectPtr& v)
-				{
-					try
-					{
-						v->set_field(util::string::to_lower(ref.field), value);
-					}
-					catch (...)
-					{
-						throw vm::Exception("failed setting field {} to {} on object", ref.field,
-											vm.variant_to_string(value));
-					}
-				}
-			};
-
-			std::visit(Visit(vm, thread_context, value, ref), ref.object);
+				*ptr = new_value;
+			}
+			else
+			{
+				std::visit(StoreRefVariantVisitor(vm, thread_context, ref, new_value), *ptr);
+			}
 		}
 		void LoadValue::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
@@ -409,8 +438,17 @@ namespace script
 		}
 		void LoadRef::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{
-			thread_context->push(
-				vm::Reference{.object = vm::Identifier{.name = util::string::to_lower(variable_name)}});
+			auto* variable_ref = vm.get_variable_reference(thread_context, util::string::to_lower(variable_name));
+			if (!variable_ref)
+				throw vm::Exception("variable ref shouldn't be null");
+			#if 0
+			if (variable_ref->index() == (int)vm::Type::kUndefined)
+			{
+				*variable_ref = std::make_shared<Object>("object created from undefined");
+			}
+			#endif
+
+			thread_context->push_ref(variable_ref);
 		}
 		void Nop::execute(VirtualMachine& vm, ThreadContext *thread_context)
 		{

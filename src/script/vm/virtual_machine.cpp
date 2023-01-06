@@ -19,7 +19,7 @@ namespace script
 			case vm::Type::kUndefined:
 				return "undefined";
 			case vm::Type::kObject:
-				return "object";
+				return common::format("object {}", std::get<vm::ObjectPtr>(v)->m_tag);
 			case vm::Type::kVector:
 			{
 				auto vec = std::get<vm::Vector>(v);
@@ -102,6 +102,10 @@ namespace script
 
 			VMContextImpl(VirtualMachine& vm_, ThreadContext* thread_) : vm(vm_), thread(thread_)
 			{
+			}
+			virtual std::unordered_map<std::string, vm::Variant> get_object_keys_and_values(vm::ObjectPtr& o) override
+			{
+				return vm.get_object_keys_and_values(o);
 			}
 			virtual size_t number_of_arguments()
 			{
@@ -258,32 +262,50 @@ namespace script
 			return &fnd2->second;
 		}
 
-		void VirtualMachine::dump_object(const std::string name, VariantPtr ptr, int indent)
+		void VirtualMachine::dump_object(const std::string name,
+										 std::unordered_set<vm::ObjectPtr>& seen, vm::ObjectPtr& obj, int indent)
 		{
+			if (seen.find(obj) != seen.end())
+				return;
+			seen.insert(obj);
+			auto kvp = get_object_keys_and_values(obj);
+			for (auto& it : kvp)
+			{
+				for (int i = 0; i < indent; ++i)
+					putchar('\t');
+				printf("%s.%s = %s;\n", name.c_str(), it.first.c_str(), variant_to_string_for_dump(it.second).c_str());
+				if (it.second.index() == (int)vm::Type::kObject)
+					dump_object(it.first, seen, std::get<vm::ObjectPtr>(it.second), indent + 1);
+			}
 			#if 0
-			auto obj = std::get<vm::ObjectPtr>(*ptr);
 			for (auto& it : obj->fields)
 			{
 				for (int i = 0; i < indent; ++i)
 					putchar('\t');
 				printf("%s.%s = %s;\n", name.c_str(), it.first.c_str(), variant_to_string_for_dump(it.second).c_str());
-				if (it.second->index() == (int)vm::Type::kObject)
-					dump_object(it.first, it.second, indent + 1);
+				if (it.second.index() == (int)vm::Type::kObject)
+					dump_object(it.first, seen, std::get<vm::ObjectPtr>(it.second), indent + 1);
 			}
 			#endif
 		}
 
 		void VirtualMachine::dump(ThreadContext *tc)
 		{
-			#if 0
+			std::unordered_set<vm::ObjectPtr> seen;
+
 			auto& fc = tc->function_context();
-			dump_object("level", level_object, 0);
-			dump_object("game", game_object, 0);
+			dump_object("level", seen, std::get<vm::ObjectPtr>(level_object), 0);
+			dump_object("game", seen, std::get<vm::ObjectPtr>(game_object), 0);
+			dump_object("self", seen, fc.self_object, 0);
 			for (auto& it : fc.variables)
 			{
 				printf("%s = %s;\n", it.first.c_str(), variant_to_string_for_dump(it.second).c_str());
+				if (it.second.index() == (int)vm::Type::kObject)
+				{
+					printf("%s fields:\n", it.first.c_str());
+					dump_object(it.first, seen, std::get<vm::ObjectPtr>(it.second), 0);
+				}
 			}
-			#endif
 		}
 
 		void ThreadContext::ret()
@@ -418,11 +440,18 @@ namespace script
 		{
 			int num_pushed = 0;
 			thread->m_context->set_number_of_arguments(numargs);
-			if (!obj->call_method(util::string::to_lower(function), *thread->m_context.get(), &num_pushed))
+
+			auto& methods = get_object_method_table_for_kind(obj->kind());
+			auto fnd = methods.find(util::string::to_lower(function));
+			if (fnd == methods.end())
 			{
 				throw vm::Exception("no method {} found for object {}", function, obj->m_tag);
-				return;
 			}
+			auto proxy = obj->get_proxy_object().lock();
+			if (!proxy)
+				throw vm::Exception("expired pointer");
+
+			num_pushed = fnd->second->execute(*thread->m_context.get(), proxy);
 			if (num_pushed == 0)
 			{
 				thread->pop(numargs);
