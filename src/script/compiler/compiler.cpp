@@ -235,13 +235,31 @@ namespace script
 			jz->dest = skip;
 			add(jz);
 			n.consequent->accept(*this);
-			add(skip);
+			std::shared_ptr<vm::Label> jmp_label;
 			if (n.alternative)
 			{
-				n.test->accept(*this);
+				auto constant0 = instruction<Constant0>();
+				add(constant0);
+
+				jmp_label = label();
+				auto jmp = instruction<Jump>();
+				jmp->dest = jmp_label;
+				add(jmp);
+			}
+
+			add(skip);
+
+			if (n.alternative)
+			{
+				auto constant1 = instruction<Constant1>();
+				add(constant1);
+
+				if (jmp_label)
+					add(jmp_label);
+
 				auto test2 = instruction<Test>();
 				add(test2);
-				auto jz2 = instruction<JumpNotZero>();
+				auto jz2 = instruction<JumpZero>();
 				auto skip2 = label();
 				jz2->dest = skip2;
 				add(jz2);
