@@ -510,11 +510,57 @@ namespace script
 
 		void Compiler::visit(ast::BinaryExpression& n)
 		{
-			n.right->accept(*this);
-			n.left->accept(*this);
-			auto instr = instruction<BinOp>();
-			instr->op = n.op;
-			add(instr);
+			if (n.op == parse::TokenType_kAndAnd)
+			{
+				n.left->accept(*this);
+				
+				//check if left is > 0
+
+				auto test = instruction<Test>();
+				add(test);
+
+				auto jz = instruction<JumpZero>();
+				
+				auto skip = label();
+				jz->dest = skip;
+
+				add(jz);
+
+				//if we didn't jump (jz), then evaluate rhs
+				n.right->accept(*this);
+				//evaluate rhs and if it's not zero, then the result is 1
+
+				auto test_right = instruction<Test>();
+				add(test_right);
+
+				auto jz_right = instruction<JumpZero>();
+
+				jz_right->dest = skip;
+
+				add(jz_right);
+
+				auto constant1 = instruction<Constant1>();
+				add(constant1);
+
+				auto ed = label();
+				auto jmp = instruction<Jump>();
+				jmp->dest = ed;
+				add(jmp);
+
+				add(skip);
+
+				auto constant0 = instruction<Constant0>();
+				add(constant0);
+				add(ed);
+			}
+			else
+			{
+				n.right->accept(*this);
+				n.left->accept(*this);
+				auto instr = instruction<BinOp>();
+				instr->op = n.op;
+				add(instr);
+			}
 		}
 
 		bool get_property(ast::Expression& n, std::string& prop, int op)
