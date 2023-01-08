@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\common\logger.cpp" />
     <ClCompile Include="..\..\..\src\core\filesystem\api.cpp" />
     <ClCompile Include="..\..\..\src\script\ast\ast_generator.cpp" />
     <ClCompile Include="..\..\..\src\script\ast\gsc_writer.cpp" />
@@ -87,7 +88,7 @@
     <LibraryPath>F:\source\repos\acedia\deps\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>F:\source\repos\acedia\deps\include;F:\source\repos\acedia\src;$(IncludePath)</IncludePath>
+    <IncludePath>F:\source\repos\acedia\src;F:\source\repos\acedia\deps\include;$(IncludePath)</IncludePath>
     <LibraryPath>F:\source\repos\acedia\deps;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -124,7 +125,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalOptions>/D GLM_FORCE_CTOR_INIT %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/D GLM_FORCE_CTOR_INIT /D "_CRT_SECURE_NO_WARNINGS" %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
