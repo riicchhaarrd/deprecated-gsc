@@ -8,7 +8,6 @@
 #include <script/compiler/compiler.h>
 #include <script/property.h>
 #include <parse/token.h>
-#include <script/method_entry.h>
 #include <unordered_set>
 
 namespace script

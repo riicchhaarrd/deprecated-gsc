@@ -150,6 +150,24 @@ namespace script
 			m_vm.reset();
 		}
 	}
+	void ScriptEngine::execute_thread(vm::ObjectPtr object, const std::string file, const std::string function, std::vector<vm::Variant>& args)
+	{
+		if (!m_vm)
+			return;
+		try
+		{
+			vm::ThreadContext tmp;
+			for (auto it = args.rbegin(); it != args.rend(); ++it)
+				tmp.push(*it);
+			m_vm->exec_thread(&tmp, object ? object : m_vm->get_level_object(), file, function, args.size(),
+							  object ? true : false);
+		}
+		catch (vm::Exception& ex)
+		{
+			LOG_ERROR("Script Error: %s\n", ex.what());
+			m_vm.reset();
+		}
+	}
 	bool ScriptEngine::load_file(const std::string path)
 	{
 		try
