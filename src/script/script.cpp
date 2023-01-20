@@ -170,10 +170,14 @@ namespace script
 	}
 	bool ScriptEngine::load_file(const std::string path)
 	{
+		return load_file(m_fs, path);
+	}
+	bool ScriptEngine::load_file(filesystem_api &fs, const std::string path)
+	{
 		try
 		{
 			script::ReferenceMap refmap;
-			ReferenceSolver rs(m_fs, "", path, refmap, m_library_path);
+			ReferenceSolver rs(fs, "", path, refmap, m_library_path);
 			script::compiler::Compiler compiler(refmap);
 			auto cf = compiler.compile();
 			for (auto& it : cf)
