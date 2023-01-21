@@ -111,6 +111,13 @@ namespace script
 		struct Array;
 		using ObjectPtr = std::shared_ptr<Object>;
 
+		//TODO: replace objectptr with a table/array/list of Objects that ObjectRef points to
+		struct ObjectRef
+		{
+			type_id_t type = 0;
+			size_t index = ~0U;
+		};
+
 		struct LocalizedString
 		{
 			std::string reference;
