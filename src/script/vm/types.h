@@ -252,20 +252,6 @@ namespace script
 			}
 		};
 
-		template<typename T>
-		struct TObjectLookupTable
-		{
-			virtual bool call(const std::string& method, VMContext &ctx, int *num_pushed) override
-			{
-				auto& methods = MethodEntry<T>::get_methods();
-			}
-			virtual void set(const std::string& field, vm::Variant& value)
-			{
-			}
-			virtual vm::Variant get(const std::string& field) override
-			{
-			}
-		};
 
 		struct Array
 		{
