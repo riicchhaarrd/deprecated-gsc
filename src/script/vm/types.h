@@ -16,16 +16,16 @@ namespace script
 
 	struct IMethod
 	{
-		virtual int execute(VMContext&, std::shared_ptr<void>) = 0;
+		virtual int execute(VMContext&, void*) = 0;
 	};
 
 	template <typename T> struct Method : IMethod
 	{
-		virtual int execute(VMContext& ctx, std::shared_ptr<void> ptr) override
+		virtual int execute(VMContext& ctx, void* ptr) override
 		{
-			return execute_impl(ctx, std::static_pointer_cast<T>(ptr));
+			return execute_impl(ctx, *(T*)ptr);
 		}
-		virtual int execute_impl(VMContext&, std::shared_ptr<T>) = 0;
+		virtual int execute_impl(VMContext&, T&) = 0;
 	};
 
 	template <typename T> class MethodEntry
