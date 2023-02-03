@@ -451,7 +451,7 @@ namespace script
 			if (!proxy)
 				throw vm::Exception("expired pointer");
 
-			num_pushed = fnd->second->execute(*thread->m_context.get(), proxy);
+			num_pushed = fnd->second->execute(*thread->m_context.get(), proxy.get());
 			if (num_pushed == 0)
 			{
 				thread->pop(numargs);
