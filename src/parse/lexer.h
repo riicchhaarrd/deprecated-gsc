@@ -142,11 +142,41 @@ namespace parse
 			int start = m_cursor;
 			int ch = read_character();
 			int is_integer = true;
-			while (is_digit(ch) || ch == '.')
+			int prev = -1;
+			while (1)
 			{
+				if (ch == 'E' || ch == 'e')
+				{
+					int n = peek_next_character();
+					if (n == '-' || n == '+')
+					{
+						int n2 = peek_next_character(1);
+						if (!is_digit(n2))
+						{
+							// should throw exception...
+							break;
+						}
+						else
+						{
+							++m_cursor;
+						}
+					} else if (!is_digit(n))
+					{
+						//should throw exception...
+						break;
+					}
+					//could still be a integer though...
+					is_integer = false;
+				}
+				else
+				{
+					if (!is_digit(ch) && ch != '.')
+						break;
+				}
 				if (ch == '.')
 					is_integer = false;
 				++m_cursor;
+				prev = ch;
 				ch = read_character();
 			}
 			return token(m_source, is_integer ? token_type::integer : token_type::number, start, m_cursor - start,
