@@ -4,6 +4,7 @@
 #include <vector>
 #include <sstream>
 #include <set>
+#include <stack>
 #include <unordered_map>
 #include <exception>
 #include "token_parser.h"
@@ -14,7 +15,15 @@
 namespace parse
 {
 	using source_map = std::unordered_map<std::string, parse::source>;
-	using definition_map = std::unordered_map<std::string, token_list>;
+
+	struct Define
+	{
+		bool is_function = false;
+		std::unordered_map<std::string, size_t> parameters;
+		token_list body;
+	};
+
+	using definition_map = std::unordered_map<std::string, Define>;
 
 	struct preprocessor_error : std::exception
 	{
@@ -58,21 +67,8 @@ namespace parse
 		}
 
 		// recursively resolve
-		void resolve_identifier(parse::token& t, token_list& preprocessed_tokens, definition_map& definitions)
-		{
-			auto fnd = definitions.find(t.to_string());
-			if (fnd != definitions.end())
-			{
-				// printf("found %s\n", t.to_string().c_str());
-				for (auto& it : fnd->second)
-				{
-					// preprocessed_tokens.push_back(it);
-					resolve_identifier(it, preprocessed_tokens, definitions);
-				}
-			}
-			else
-				preprocessed_tokens.push_back(t);
-		}
+		bool resolve_identifier(token_parser& parser, std::string, token_list& preprocessed_tokens,
+								definition_map& definitions);
 		bool preprocess(filesystem_api& fs, const std::string& path_base, const std::string& path,
 						token_list& preprocessed_tokens, source_map& sources, definition_map& definitions,
 						parse::lexer_opts opts, int depth = 0)
@@ -110,16 +106,23 @@ namespace parse
 			popts.newlines = true;
 			token_parser parser(tokens, popts);
 
+			std::stack<bool> m_process_token_stack;
+
 			while (1)
 			{
 				auto t = parser.read_token();
 				if (t.type == parse::token_type::eof)
 					break;
+
+				if (!m_process_token_stack.empty() && !m_process_token_stack.top())
+					continue;
+
 				switch (t.type_as_int())
 				{
 				case (int)parse::token_type::identifier:
 				{
-					resolve_identifier(t, preprocessed_tokens, definitions);
+					if (!resolve_identifier(parser, t.to_string(), preprocessed_tokens, definitions))
+						preprocessed_tokens.push_back(t);
 				}
 				break;
 
@@ -176,19 +179,80 @@ namespace parse
 						else
 							throw preprocessor_error("invalid include directive", t.to_string(), t.line_number());
 					}
+					else if (directive == "ifdef")
+					{
+						if (!parser.accept_token(t, parse::token_type::identifier))
+							throw preprocessor_error("expected identifier", path, t.line_number());
+						//check if we have the definition...
+						auto def = definitions.find(t.to_string());
+						if (def == definitions.end()) //nope
+						{
+							m_process_token_stack.push(false);
+						}
+						else
+						{
+							m_process_token_stack.push(true);
+						}
+					}
+					else if (directive == "else")
+					{
+						if (m_process_token_stack.empty())
+							throw preprocessor_error("missing ifdef", path, t.line_number());
+						bool b = m_process_token_stack.top();
+						m_process_token_stack.pop();
+						m_process_token_stack.push(!b);
+					}
+					else if (directive == "endif")
+					{
+						if (m_process_token_stack.empty())
+							throw preprocessor_error("missing ifdef", path, t.line_number());
+						m_process_token_stack.pop();
+					}
 					else if (directive == "define")
 					{
 						if (!parser.accept_token(t, parse::token_type::identifier))
 							throw preprocessor_error("expected identifier", path, t.line_number());
-						// parse rest of line
-						token_list deftokens;
-						parser.read_tokens_till(deftokens, '\n');
-						/*std::string definition;
-						for (auto& it : deftokens)
-							definition += it.to_string();
-						*/
-						// printf("definition %s -> %s\n", t.to_string().c_str(), definition.c_str());
-						definitions[t.to_string()] = deftokens;
+						auto &def = definitions[t.to_string()];
+//						printf("adding def %s\n", t.to_string().c_str());
+						if (parser.accept_token(t, '('))
+						{
+							def.is_function = true;
+							size_t numparm = 0;
+							do
+							{
+								if (!parser.accept_token(t, parse::token_type::identifier))
+									throw preprocessor_error("expected identifier", path, t.line_number());
+								def.parameters[t.to_string()] = numparm++;
+							} while (parser.accept_token(t, ','));
+							parser.expect_token(')');
+
+							bool got_backslash = false;
+							while (1)
+							{
+								auto nt = parser.read_token();
+								if (nt.type == parse::token_type::eof)
+									break;
+								if (nt.type_as_int() == '\n')
+								{
+									if (!got_backslash)
+										break;
+									def.body.push_back(nt);
+								}
+								else if (nt.type_as_int() == '\\')
+								{
+									got_backslash = true;
+								}
+								else
+								{
+									def.body.push_back(nt);
+								}
+							}
+						}
+						else
+						{
+
+							parser.read_tokens_till(def.body, '\n');
+						}
 					}
 					else
 					{
