@@ -35,6 +35,7 @@ namespace parse
 		or_or,
 		slash_pound,
 		pound_slash,
+		pound_pound,
 		eof,
 		invalid
 	};
@@ -77,7 +78,7 @@ namespace parse
 	static const char* token_type_strings[] = {
 		"string", "identifier", "literal", "integer", "hexadecimal", "number", "comment", "==",		 "!=", "<=", ">=",
 		"<<",	  ">>",			"+=",	   "-=",	  "/=",			 "*=",	   "&=",	  "|=",		 "^=", "%=", "++",
-		"--",	  "::",			"&&",	   "||",	  "/#",			 "#/",	   "eof",	  "invalid", NULL};
+		"--",	  "::",			"&&",	   "||",	  "/#",			 "#/",	   "##",	  "eof", "invalid", NULL};
 
 	struct token
 	{

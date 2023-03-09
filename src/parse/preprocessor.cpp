@@ -17,9 +17,9 @@ bool parse::preprocessor::resolve_identifier(token_parser& parser, std::string i
 			//build token list arguments of parameters
 			std::vector<token_list> arguments;
 
+			token_list tl;
 			while (1)
 			{
-				token_list tl;
 				t = parser.read_token();
 				if (t.type == parse::token_type::eof)
 					throw preprocessor_error("unexpected eof", t.to_string(), t.line_number());
@@ -33,17 +33,55 @@ bool parse::preprocessor::resolve_identifier(token_parser& parser, std::string i
 					else
 						break;
 				}
-
 				tl.push_back(t);
 			}
 
-			for (auto& it : def->second.body)
+			parse_opts popts;
+			popts.newlines = true;
+			token_parser def_parser(def->second.body, popts);
+			while (1)
 			{
+				t = def_parser.read_token();
+				if (t.type == parse::token_type::eof)
+					break;
 				// is the current token in our block/body a ident?
-				if (it.type_as_int() == (int)parse::token_type::identifier)
+				if (t.type == parse::token_type::string)
+				{
+					std::string concatenation = t.to_string();
+					while (def_parser.accept_token(t, parse::token_type::pound_pound)) // concatenate
+					{
+						if (!def_parser.accept_token(t, parse::token_type::identifier))
+							throw preprocessor_error("expected identifier", t.to_string(), t.line_number());
+						auto parm = def->second.parameters.find(t.to_string());
+						if (parm == def->second.parameters.end())
+						{
+							throw preprocessor_error("no such parameter", t.to_string(), t.line_number());
+						}
+						if (parm->second >= arguments.size())
+							throw preprocessor_error("argument out of bounds for concatenation", t.to_string(),
+													 t.line_number());
+						auto& tl = arguments[parm->second];
+						if (tl.size() > 1)
+						{
+							throw preprocessor_error("expected 1 argument for concatenation", t.to_string(),
+													 t.line_number());
+						}
+						auto& tl1 = tl[0];
+						concatenation += tl1.to_string();
+					}
+					/*while (1)
+					{
+						auto tk = def_parser.read_token();
+						printf("concat=%s,type=%d '%s'\n", concatenation.c_str(), tk.type_as_int(),
+							   tk.to_string().c_str());
+						getchar();
+					}*/
+					preprocessed_tokens.push_back(parse::token(concatenation, parse::token_type::string));
+				}
+				else if (t.type_as_int() == (int)parse::token_type::identifier)
 				{
 					// if so, check if it matches any of the parameters
-					auto parm = def->second.parameters.find(it.to_string());
+					auto parm = def->second.parameters.find(t.to_string());
 					if (parm != def->second.parameters.end())
 					{
 						// we found the parameter, so replace it..
@@ -54,7 +92,8 @@ bool parse::preprocessor::resolve_identifier(token_parser& parser, std::string i
 						{
 							if (tl_it.type_as_int() == (int)parse::token_type::identifier)
 							{
-								if (!resolve_identifier(parser, tl_it.to_string(), preprocessed_tokens, definitions))
+								if (!resolve_identifier(def_parser, tl_it.to_string(), preprocessed_tokens,
+														definitions))
 									preprocessed_tokens.push_back(tl_it);
 							}
 							else
@@ -63,17 +102,38 @@ bool parse::preprocessor::resolve_identifier(token_parser& parser, std::string i
 							}
 						}
 					}
+					else
+					{
+						if (!resolve_identifier(def_parser, t.to_string(), preprocessed_tokens, definitions))
+							preprocessed_tokens.push_back(t);
+					}
+				}
+				else
+				{
+					preprocessed_tokens.push_back(t);
 				}
 			}
 		}
 		else
 		{
 			// printf("found %s\n", t.to_string().c_str());
-			for (auto& it : def->second.body)
+			parse_opts popts;
+			popts.newlines = true;
+			token_parser def_parser(def->second.body, popts);
+			while (1)
 			{
-				// preprocessed_tokens.push_back(it);
-				if (!resolve_identifier(parser, it.to_string(), preprocessed_tokens, definitions))
-					preprocessed_tokens.push_back(it);
+				t = def_parser.read_token();
+				if (t.type == parse::token_type::eof)
+					break;
+				if (t.type == parse::token_type::identifier)
+				{
+					if (!resolve_identifier(def_parser, t.to_string(), preprocessed_tokens, definitions))
+						preprocessed_tokens.push_back(t);
+				}
+				else
+				{
+					preprocessed_tokens.push_back(t);
+				}
 			}
 		}
 		return true;

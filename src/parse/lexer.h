@@ -41,7 +41,8 @@ namespace parse
 											{"&&", token_type::and_and},
 											{"||", token_type::or_or},
 											{"/#", token_type::slash_pound},
-											{"#/", token_type::pound_slash}
+											{"#/", token_type::pound_slash},
+											{"##", token_type::pound_pound}
 	};
 
 	struct lexer_error : std::exception

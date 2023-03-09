@@ -77,6 +77,63 @@ namespace parse
 															 definitions, opts, depth);
 		}
 
+		bool handle_token_stack_directives(parse::token& t, token_parser& parser, const std::string& path, definition_map& definitions,
+										   std::stack<bool>& process_token_stack)
+		{
+			std::string directive = parser.read_identifier();
+			if (directive == "ifdef")
+			{
+				if (!parser.accept_token(t, parse::token_type::identifier))
+					throw preprocessor_error("expected identifier", path, t.line_number());
+				// check if we have the definition...
+				auto def = definitions.find(t.to_string());
+				if (def == definitions.end()) // nope
+				{
+					process_token_stack.push(false);
+				}
+				else
+				{
+					process_token_stack.push(true);
+				}
+			}
+			else if (directive == "ifndef")
+			{
+				if (!parser.accept_token(t, parse::token_type::identifier))
+					throw preprocessor_error("expected identifier", path, t.line_number());
+				// check if we have the definition...
+				auto def = definitions.find(t.to_string());
+				if (def != definitions.end()) // nope
+				{
+					process_token_stack.push(false);
+				}
+				else
+				{
+					process_token_stack.push(true);
+				}
+			}
+			else if (directive == "else")
+			{
+				if (process_token_stack.empty())
+					throw preprocessor_error("missing ifdef", path, t.line_number());
+				bool b = process_token_stack.top();
+				process_token_stack.pop();
+				process_token_stack.push(!b);
+			}
+			else if (directive == "endif")
+			{
+				if (process_token_stack.empty())
+					throw preprocessor_error("missing ifdef", path, t.line_number());
+				bool b = process_token_stack.top();
+				process_token_stack.pop();
+			}
+			else
+			{
+				parser.unread_token();
+				return false;
+			}
+			return true;
+		}
+
 		template <typename T>
 		bool preprocess_with_typed_lexer(filesystem_api& fs, const std::string& path_base, const std::string& path,
 						token_list& preprocessed_tokens,
@@ -113,6 +170,12 @@ namespace parse
 				auto t = parser.read_token();
 				if (t.type == parse::token_type::eof)
 					break;
+
+				if (t.type_as_int() == '#')
+				{
+					if (handle_token_stack_directives(t, parser, path, definitions, m_process_token_stack))
+						continue;
+				}
 
 				if (!m_process_token_stack.empty() && !m_process_token_stack.top())
 					continue;
@@ -179,35 +242,6 @@ namespace parse
 						else
 							throw preprocessor_error("invalid include directive", t.to_string(), t.line_number());
 					}
-					else if (directive == "ifdef")
-					{
-						if (!parser.accept_token(t, parse::token_type::identifier))
-							throw preprocessor_error("expected identifier", path, t.line_number());
-						//check if we have the definition...
-						auto def = definitions.find(t.to_string());
-						if (def == definitions.end()) //nope
-						{
-							m_process_token_stack.push(false);
-						}
-						else
-						{
-							m_process_token_stack.push(true);
-						}
-					}
-					else if (directive == "else")
-					{
-						if (m_process_token_stack.empty())
-							throw preprocessor_error("missing ifdef", path, t.line_number());
-						bool b = m_process_token_stack.top();
-						m_process_token_stack.pop();
-						m_process_token_stack.push(!b);
-					}
-					else if (directive == "endif")
-					{
-						if (m_process_token_stack.empty())
-							throw preprocessor_error("missing ifdef", path, t.line_number());
-						m_process_token_stack.pop();
-					}
 					else if (directive == "define")
 					{
 						if (!parser.accept_token(t, parse::token_type::identifier))
@@ -237,6 +271,7 @@ namespace parse
 									if (!got_backslash)
 										break;
 									def.body.push_back(nt);
+									got_backslash = false;
 								}
 								else if (nt.type_as_int() == '\\')
 								{
