@@ -71,6 +71,7 @@ namespace parse
 		TokenType_kOrOr,
 		TokenType_kSlashPound,
 		TokenType_kPoundSlash,
+		TokenType_kPoundPound,
 		TokenType_kEof,
 		TokenType_kInvalid
 	};
