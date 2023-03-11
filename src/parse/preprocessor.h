@@ -242,6 +242,15 @@ namespace parse
 						else
 							throw preprocessor_error("invalid include directive", t.to_string(), t.line_number());
 					}
+					else if (directive == "undef")
+					{
+						if (!parser.accept_token(t, parse::token_type::identifier))
+							throw preprocessor_error("expected identifier", path, t.line_number());
+						if (definitions.find(t.to_string()) != definitions.end())
+						{
+							definitions.erase(t.to_string());
+						}
+					}
 					else if (directive == "define")
 					{
 						if (!parser.accept_token(t, parse::token_type::identifier))
