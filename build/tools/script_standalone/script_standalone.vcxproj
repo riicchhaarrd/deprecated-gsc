@@ -19,8 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\deps\include\miniz\miniz.c" />
+    <ClCompile Include="..\..\..\src\common\filesystem.cpp" />
     <ClCompile Include="..\..\..\src\common\logger.cpp" />
     <ClCompile Include="..\..\..\src\core\filesystem\api.cpp" />
+    <ClCompile Include="..\..\..\src\core\time.cpp" />
+    <ClCompile Include="..\..\..\src\parse\preprocessor.cpp" />
     <ClCompile Include="..\..\..\src\script\ast\ast_generator.cpp" />
     <ClCompile Include="..\..\..\src\script\ast\gsc_writer.cpp" />
     <ClCompile Include="..\..\..\src\script\ast\recursive_visitor.cpp" />
