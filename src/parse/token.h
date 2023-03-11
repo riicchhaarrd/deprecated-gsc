@@ -160,6 +160,11 @@ namespace parse
 			return std::stoi(to_string());
 		}
 
+		float to_float() const
+		{
+			return std::stof(to_string());
+		}
+
 		int type_as_int() const
 		{
 			return (int)type;
