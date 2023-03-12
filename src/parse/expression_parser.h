@@ -226,17 +226,17 @@ namespace parse
 				parser.expect_token('(');
 				std::string function_name = t.to_string();
 				FuncArgs func_args{.parser = parser, .function_name = function_name};
-				while (1)
+				do
 				{
 					t = parser.read_token();
 					if (t.type == token_type::eof)
 						throw parse_error("unexpected eof");
 					if (t.type_as_int() == ')')
 						break;
-					Expr arg = expression();
+					parser.unread_token();
+					Expr arg = factor();
 					func_args.args.push_back(arg);
-					parser.expect_token(',');
-				}
+				} while (parser.accept_token(t, ','));
 				Func f;
 				if(function_find_fn)
 					f = function_find_fn(function_name);
