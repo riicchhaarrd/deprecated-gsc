@@ -19,23 +19,34 @@ bool parse::preprocessor::resolve_identifier(token_parser& parser, std::string i
 			std::vector<token_list> arguments;
 
 			token_list tl;
+			int numparens = 0;
 			while (1)
 			{
 				t = parser.read_token();
 				if (t.type == parse::token_type::eof)
 					throw preprocessor_error("unexpected eof", t.to_string(), t.line_number());
-				int tai = t.type_as_int();
-				if (tai == ',' || tai == ')')
+
+				if (t.type_as_int() == '(')
 				{
-					arguments.push_back(tl);
-					tl.clear();
-					if (tai == ',')
-						continue;
-					else
-						break;
+					++numparens;
 				}
-				tl.push_back(t);
+				else if (t.type_as_int() == ',')
+				{
+					if (numparens == 0)
+					{
+						arguments.push_back(tl);
+						tl.clear();
+					}
+				} else if (t.type_as_int() == ')')
+				{
+					if (numparens <= 0)
+						break;
+					--numparens;
+				}
+				if (t.type_as_int() != ',')
+					tl.push_back(t);
 			}
+			arguments.push_back(tl);
 
 			parse_opts popts;
 			popts.newlines = true;
