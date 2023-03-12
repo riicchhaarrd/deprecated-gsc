@@ -143,10 +143,6 @@ namespace parse
 
 	class ExpressionParser
 	{
-	  public:
-
-		using FunctionCallback = std::function<bool(const std::string&, const std::vector<Expr>&, Expr&)>;
-
 	  private:
 		token_parser& parser;
 
@@ -183,7 +179,7 @@ namespace parse
 			{
 				token t = parser.read_token();
 				int type = t.type_as_int();
-				if (type != '*' && type != '/')
+				if (type != '*' && type != '/' && type != '%')
 				{
 					parser.unread_token();
 					break;
@@ -196,6 +192,9 @@ namespace parse
 					break;
 				case '/':
 					result = std::visit(op::Div{}, result, operand);
+					break;
+				case '%':
+					result = fmod(parse::expression_number(result), parse::expression_number(operand));
 					break;
 				}
 			}
@@ -260,6 +259,7 @@ namespace parse
 
 		Expr evaluate()
 		{
+			//TODO: check if expression was fully parsed, otherwise it's a "invalid expression"
 			return expression();
 		}
 	};
