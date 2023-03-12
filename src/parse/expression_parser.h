@@ -218,6 +218,10 @@ namespace parse
 			{
 				result = t.to_float();
 			}
+			else if (t.type == token_type::string)
+			{
+				result = t.to_string();
+			}
 			else if (t.type == token_type::identifier)
 			{
 				parser.expect_token('(');
