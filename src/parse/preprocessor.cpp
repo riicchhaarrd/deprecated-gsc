@@ -1,4 +1,5 @@
 #include "preprocessor.h"
+#include <parse/expression_parser.h>
 
 bool parse::preprocessor::resolve_identifier(token_parser& parser, std::string ident, token_list& preprocessed_tokens,
 											 definition_map& definitions)
@@ -44,8 +45,57 @@ bool parse::preprocessor::resolve_identifier(token_parser& parser, std::string i
 				t = def_parser.read_token();
 				if (t.type == parse::token_type::eof)
 					break;
-				// is the current token in our block/body a ident?
-				if (t.type == parse::token_type::string)
+				/*
+				//scrap this
+				if (t.type_as_int() == '$')
+				{
+					ExpressionParser expression_parser(def_parser,
+					[&def,&arguments](const token& t, float& f) -> bool
+					{ 
+						if (t.type != token_type::identifier)
+							return false;
+						// if so, check if it matches any of the parameters
+						auto parm = def->second.parameters.find(t.to_string());
+						if (parm == def->second.parameters.end())
+						{
+							throw preprocessor_error("no such parameter", t.to_string(), t.line_number());
+						}
+						if (parm->second >= arguments.size())
+							throw preprocessor_error("argument out of bounds for macro function", t.to_string(),
+														t.line_number());
+						float total = 0.f;
+						for (auto& it : arguments[parm->second])
+						{
+							total += it.to_float();
+						}
+						return total;
+					});
+					preprocessed_tokens.push_back(parse::token(std::to_string(expression_parser.parse()), parse::token_type::number));
+				} else
+				*/
+				if (t.type_as_int() == '#')
+				{
+					if (!def_parser.accept_token(t, parse::token_type::identifier))
+						throw preprocessor_error(common::format("expected identifier got {}", t.type_as_string()), t.to_string(), t.line_number());
+
+					// if so, check if it matches any of the parameters
+					auto parm = def->second.parameters.find(t.to_string());
+					if (parm == def->second.parameters.end())
+					{
+						throw preprocessor_error("no such parameter", t.to_string(), t.line_number());
+					}
+					// we found the parameter, so stringify it
+					if (parm->second >= arguments.size())
+						throw preprocessor_error("argument out of bounds for macro function", t.to_string(), t.line_number());
+						
+					std::string concatenation;
+					for (auto& it : arguments[parm->second])
+					{
+						concatenation += it.to_string();
+					}
+					preprocessed_tokens.push_back(parse::token(concatenation, parse::token_type::string));
+				}
+				else if (t.type == parse::token_type::string) // is the current token in our block/body a ident?
 				{
 					std::string concatenation = t.to_string();
 					while (def_parser.accept_token(t, parse::token_type::pound_pound)) // concatenate

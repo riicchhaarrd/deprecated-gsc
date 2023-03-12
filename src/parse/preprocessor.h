@@ -268,34 +268,29 @@ namespace parse
 								def.parameters[t.to_string()] = numparm++;
 							} while (parser.accept_token(t, ','));
 							parser.expect_token(')');
-
-							bool got_backslash = false;
-							while (1)
-							{
-								auto nt = parser.read_token();
-								if (nt.type == parse::token_type::eof)
-									break;
-								if (nt.type_as_int() == '\n')
-								{
-									if (!got_backslash)
-										break;
-									def.body.push_back(nt);
-									got_backslash = false;
-								}
-								else if (nt.type_as_int() == '\\')
-								{
-									got_backslash = true;
-								}
-								else
-								{
-									def.body.push_back(nt);
-								}
-							}
 						}
-						else
-						{
 
-							parser.read_tokens_till(def.body, '\n');
+						bool got_backslash = false;
+						while (1)
+						{
+							auto nt = parser.read_token();
+							if (nt.type == parse::token_type::eof)
+								break;
+							if (nt.type_as_int() == '\n')
+							{
+								if (!got_backslash)
+									break;
+								def.body.push_back(nt);
+								got_backslash = false;
+							}
+							else if (nt.type_as_int() == '\\')
+							{
+								got_backslash = true;
+							}
+							else
+							{
+								def.body.push_back(nt);
+							}
 						}
 					}
 					else
