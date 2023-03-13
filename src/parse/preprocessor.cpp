@@ -121,22 +121,12 @@ bool parse::preprocessor::resolve_identifier(token_parser& parser, std::string i
 						if (parm->second >= arguments.size())
 							throw preprocessor_error("argument out of bounds for concatenation", t.to_string(),
 													 t.line_number());
-						auto& tl = arguments[parm->second];
-						if (tl.size() > 1)
+
+						for (auto& it : arguments[parm->second])
 						{
-							throw preprocessor_error("expected 1 argument for concatenation", t.to_string(),
-													 t.line_number());
+							concatenation += it.to_string();
 						}
-						auto& tl1 = tl[0];
-						concatenation += tl1.to_string();
 					}
-					/*while (1)
-					{
-						auto tk = def_parser.read_token();
-						printf("concat=%s,type=%d '%s'\n", concatenation.c_str(), tk.type_as_int(),
-							   tk.to_string().c_str());
-						getchar();
-					}*/
 					preprocessed_tokens.push_back(parse::token(concatenation, parse::token_type::string));
 				}
 				else if (t.type_as_int() == (int)parse::token_type::identifier)

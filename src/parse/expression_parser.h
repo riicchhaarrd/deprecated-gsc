@@ -90,6 +90,38 @@ namespace parse
 				}
 			}
 		};
+		
+		struct Zero
+		{
+			template <typename T>
+			Expr operator()(const T& operand) const
+			{
+				if constexpr (std::is_arithmetic_v<T>)
+				{
+					return T{}*0;
+				}
+				else
+				{
+					throw parse_error("Not arithmetic type");
+				}
+			}
+		};
+
+		struct Negative
+		{
+			template <typename T>
+			Expr operator()(const T& operand) const
+			{
+				if constexpr (std::is_arithmetic_v<T>)
+				{
+					return -operand;
+				}
+				else
+				{
+					throw parse_error("Not arithmetic type");
+				}
+			}
+		};
 
 		struct Sub
 		{
@@ -121,6 +153,97 @@ namespace parse
 			}
 		};
 
+		struct Leq
+		{
+			template <typename T, typename U>
+			bool operator()(const T& lhs, const U& rhs) const
+			{
+				if constexpr (std::is_arithmetic_v<T> && std::is_arithmetic_v<U>)
+				{
+					return lhs <= rhs;
+				}
+				else
+				{
+					throw parse_error("Operator '<=' not applicable to given types");
+				}
+			}
+		};
+		struct Geq
+		{
+			template <typename T, typename U>
+			bool operator()(const T& lhs, const U& rhs) const
+			{
+				if constexpr (std::is_arithmetic_v<T> && std::is_arithmetic_v<U>)
+				{
+					return lhs >= rhs;
+				}
+				else
+				{
+					throw parse_error("Operator '>=' not applicable to given types");
+				}
+			}
+		};
+		struct Eq
+		{
+			template <typename T, typename U>
+			bool operator()(const T& lhs, const U& rhs) const
+			{
+				if constexpr (std::is_arithmetic_v<T> && std::is_arithmetic_v<U>)
+				{
+					return lhs == rhs;
+				}
+				else
+				{
+					throw parse_error("Operator '==' not applicable to given types");
+				}
+			}
+		};
+		struct Neq
+		{
+			template <typename T, typename U>
+			bool operator()(const T& lhs, const U& rhs) const
+			{
+				if constexpr (std::is_arithmetic_v<T> && std::is_arithmetic_v<U>)
+				{
+					return lhs != rhs;
+				}
+				else
+				{
+					throw parse_error("Operator '!=' not applicable to given types");
+				}
+			}
+		};
+		struct Less
+		{
+			template <typename T, typename U>
+			bool operator()(const T& lhs, const U& rhs) const
+			{
+				if constexpr (std::is_arithmetic_v<T> && std::is_arithmetic_v<U>)
+				{
+					return lhs < rhs;
+				}
+				else
+				{
+					throw parse_error("Operator '<' not applicable to given types");
+				}
+			}
+		};
+		struct Greater
+		{
+			template <typename T, typename U>
+			bool operator()(const T& lhs, const U& rhs) const
+			{
+				if constexpr (std::is_arithmetic_v<T> && std::is_arithmetic_v<U>)
+				{
+					return lhs > rhs;
+				}
+				else
+				{
+					throw parse_error("Operator '>' not applicable to given types");
+				}
+			}
+		};
+
 		struct Div
 		{
 			template <typename T, typename U> Expr operator()(const T& lhs, const U& rhs) const
@@ -145,8 +268,55 @@ namespace parse
 	{
 	  private:
 		token_parser& parser;
-
+		
 		Expr expression()
+		{
+			return relational();
+		}
+
+		Expr relational()
+		{
+			Expr result = add_and_subtract();
+			while (1)
+			{
+				token t = parser.read_token();
+				int type = t.type_as_int();
+				
+				if (type != '>' && type != '<' && type != parse::TokenType_kEq && type != parse::TokenType_kLeq && 
+					   type != parse::TokenType_kNeq && type != parse::TokenType_kGeq)
+				{
+					parser.unread_token();
+					break;
+				}
+				Expr operand = add_and_subtract();
+				bool b;
+				switch (type)
+				{
+				case '>':
+					b = std::visit(op::Geq{}, result, operand);
+					break;
+				case '<':
+					b = std::visit(op::Less{}, result, operand);
+					break;
+				case parse::TokenType_kGeq:
+					b = std::visit(op::Geq{}, result, operand);
+					break;
+				case parse::TokenType_kLeq:
+					b = std::visit(op::Leq{}, result, operand);
+					break;
+				case parse::TokenType_kEq:
+					b = std::visit(op::Eq{}, result, operand);
+					break;
+				case parse::TokenType_kNeq:
+					b = std::visit(op::Neq{}, result, operand);
+					break;
+				}
+				result = b ? 1 : 0;
+			}
+			return result;
+		}
+
+		Expr add_and_subtract()
 		{
 			Expr result = term();
 			while (1)
@@ -217,6 +387,13 @@ namespace parse
 			{
 				result = t.to_float();
 			}
+			else if (t.type_as_int() == '-')
+			{
+				// TODO: FIXME
+				//uh... -(1) should work, did I do this correctly in other implementations?
+				result = factor();
+				result = std::visit(op::Negative{}, result);
+			}
 			else if (t.type == token_type::string)
 			{
 				result = t.to_string();
@@ -232,11 +409,13 @@ namespace parse
 					if (t.type == token_type::eof)
 						throw parse_error("unexpected eof");
 					if (t.type_as_int() == ')')
-						break;
+						goto skip_paren;
 					parser.unread_token();
-					Expr arg = factor();
+					Expr arg = expression();
 					func_args.args.push_back(arg);
 				} while (parser.accept_token(t, ','));
+				parser.expect_token(')');
+				skip_paren:
 				Func f;
 				if(function_find_fn)
 					f = function_find_fn(function_name);
