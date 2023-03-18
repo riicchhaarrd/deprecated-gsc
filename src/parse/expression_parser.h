@@ -73,6 +73,7 @@ namespace parse
 	};
 	using Func = std::function<Expr(FuncArgs&)>;
 	using FindFuncFn = std::function<Func(const std::string&)>;
+	using FindIdentFunc = std::function<bool(const std::string&, Expr&)>;
 
 	namespace op
 	{
@@ -400,28 +401,36 @@ namespace parse
 			}
 			else if (t.type == token_type::identifier)
 			{
-				parser.expect_token('(');
-				std::string function_name = t.to_string();
-				FuncArgs func_args{.parser = parser, .function_name = function_name};
-				do
+				std::string ident = t.to_string();
+				if (parser.accept_token(t, '('))
 				{
-					t = parser.read_token();
-					if (t.type == token_type::eof)
-						throw parse_error("unexpected eof");
-					if (t.type_as_int() == ')')
-						goto skip_paren;
-					parser.unread_token();
-					Expr arg = expression();
-					func_args.args.push_back(arg);
-				} while (parser.accept_token(t, ','));
-				parser.expect_token(')');
-				skip_paren:
-				Func f;
-				if(function_find_fn)
-					f = function_find_fn(function_name);
-				if (!f)
-					throw parse_error(common::format("can't find function {}", function_name), &t);
-				result = f(func_args);
+					std::string function_name = t.to_string();
+					FuncArgs func_args{.parser = parser, .function_name = function_name};
+					do
+					{
+						t = parser.read_token();
+						if (t.type == token_type::eof)
+							throw parse_error("unexpected eof");
+						if (t.type_as_int() == ')')
+							goto skip_paren;
+						parser.unread_token();
+						Expr arg = expression();
+						func_args.args.push_back(arg);
+					} while (parser.accept_token(t, ','));
+					parser.expect_token(')');
+					skip_paren:
+					Func f;
+					if(function_find_fn)
+						f = function_find_fn(function_name);
+					if (!f)
+						throw parse_error(common::format("can't find function {}", function_name), &t);
+					result = f(func_args);
+				}
+				else
+				{
+					if (!ident_find_fn || !ident_find_fn(ident, result))
+						throw parse_error(common::format("can't find identifier {}", ident), &t);
+				}
 			}
 			else
 			{
@@ -430,9 +439,11 @@ namespace parse
 			return result;
 		}
 		FindFuncFn function_find_fn;
+		FindIdentFunc ident_find_fn;
 
 	  public:
-		ExpressionParser(token_parser& parser_, FindFuncFn fn = {}) : parser(parser_), function_find_fn(fn)
+		ExpressionParser(token_parser& parser_, FindFuncFn fn = {}, FindIdentFunc id_fn = {})
+			: parser(parser_), function_find_fn(fn), ident_find_fn(id_fn)
 		{
 		}
 
