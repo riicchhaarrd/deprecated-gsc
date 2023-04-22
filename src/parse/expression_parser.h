@@ -8,7 +8,7 @@ namespace parse
 {
 	using Expr = std::variant<std::string, float, int>;
 	
-	static std::string expression_type(const Expr& expr)
+	static std::string expression_type(const Expr expr)
 	{
 		auto _ = common::Overload
 		{
@@ -19,7 +19,7 @@ namespace parse
 		return std::visit(_, expr);
 	}
 
-	static float expression_number(const Expr &expr)
+	static float expression_number(const Expr expr)
 	{
 		auto _ = common::Overload
 		{
@@ -39,7 +39,7 @@ namespace parse
 		return std::visit(_, expr);
 	}
 
-	static std::string expression_string(const Expr& expr)
+	static std::string expression_string(const Expr expr)
 	{
 		auto _ = common::Overload
 		{
@@ -193,6 +193,10 @@ namespace parse
 				{
 					return lhs == rhs;
 				}
+				else if constexpr (std::is_same_v<T, std::string> && std::is_same_v<U, std::string>)
+				{
+					return lhs == rhs;
+				}
 				else
 				{
 					throw parse_error("Operator '==' not applicable to given types");
@@ -205,6 +209,10 @@ namespace parse
 			bool operator()(const T& lhs, const U& rhs) const
 			{
 				if constexpr (std::is_arithmetic_v<T> && std::is_arithmetic_v<U>)
+				{
+					return lhs != rhs;
+				}
+				else if constexpr (std::is_same_v<T, std::string> && std::is_same_v<U, std::string>)
 				{
 					return lhs != rhs;
 				}
@@ -272,7 +280,32 @@ namespace parse
 		
 		Expr expression()
 		{
-			return relational();
+			return ternary();
+		}
+
+		Expr ternary()
+		{
+			//condition
+			Expr expr = relational();
+
+			parse::token t;
+			if (parser.accept_token(t, '?'))
+			{
+				Expr consequent = relational();
+				parser.expect_token(':');
+				Expr alternative = relational();
+
+				int cond = (int)expression_number(expr);
+				if (cond == 0)
+				{
+					expr = alternative;
+				}
+				else
+				{
+					expr = consequent;
+				}
+			}
+			return expr;
 		}
 
 		Expr relational()
@@ -388,6 +421,15 @@ namespace parse
 			{
 				result = t.to_float();
 			}
+			else if (t.type_as_int() == '!')
+			{
+				//iirc this should be factor
+				int i = (int)expression_number(factor());
+				if (i == 0)
+					result = 1;
+				else
+					result = 0;
+			}
 			else if (t.type_as_int() == '-')
 			{
 				// TODO: FIXME
@@ -404,8 +446,7 @@ namespace parse
 				std::string ident = t.to_string();
 				if (parser.accept_token(t, '('))
 				{
-					std::string function_name = t.to_string();
-					FuncArgs func_args{.parser = parser, .function_name = function_name};
+					FuncArgs func_args{.parser = parser, .function_name = ident};
 					do
 					{
 						t = parser.read_token();
@@ -421,15 +462,17 @@ namespace parse
 					skip_paren:
 					Func f;
 					if(function_find_fn)
-						f = function_find_fn(function_name);
+						f = function_find_fn(ident);
 					if (!f)
-						throw parse_error(common::format("can't find function {}", function_name), &t);
+						throw parse_error(common::format("can't find function {}", ident), &t);
 					result = f(func_args);
 				}
 				else
 				{
-					if (!ident_find_fn || !ident_find_fn(ident, result))
-						throw parse_error(common::format("can't find identifier {}", ident), &t);
+
+					result = t.to_string();
+					//if (!ident_find_fn || !ident_find_fn(ident, result))
+						//throw parse_error(common::format("can't find identifier {}", ident), &t);
 				}
 			}
 			else
