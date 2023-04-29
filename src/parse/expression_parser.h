@@ -134,7 +134,7 @@ namespace parse
 				}
 				else
 				{
-					throw parse_error("Operator '+' not applicable to given types");
+					throw parse_error("Operator '-' not applicable to given types");
 				}
 			}
 		};
