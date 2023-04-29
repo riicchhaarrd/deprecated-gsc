@@ -2,6 +2,8 @@
 #include <script/ast/recursive_visitor.h>
 #include <set>
 #include <string>
+#include <stack>
+#include <vector>
 #include <unordered_map>
 
 namespace script
@@ -19,6 +21,25 @@ namespace script
 				if (m_parent_map.find(n) == m_parent_map.end())
 					return nullptr;
 				return m_parent_map[n];
+			}
+			template<typename T>
+			T* get_parent_by_type(ast::Node* n, std::vector<ast::Node*>& visited_list)
+			{
+				auto* current = n;
+				
+				do
+				{
+					auto* parent = get_parent(current);
+					if (!parent)
+						break;
+					//auto* dc = dynamic_cast<T*>(parent);
+					auto* dc = parent->cast<T>();
+					if (dc)
+						return dc;
+					visited_list.push_back(parent);
+					current = parent;
+				} while (current != nullptr);
+				return nullptr;
 			}
 			
 			template<typename T>
