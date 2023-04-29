@@ -66,6 +66,7 @@ namespace parse
 		const source* m_source;
 		size_t m_cursor, m_bufsz;
 		int m_lineno;
+		int space = 0;
 
 		lexer_opts m_opts;
 
@@ -135,7 +136,7 @@ namespace parse
 				++m_cursor;
 				ch = read_character();
 			}
-			return token(m_source, token_type::hexadecimal, start, m_cursor - start, m_lineno);
+			return token(m_source, token_type::hexadecimal, start, m_cursor - start, m_lineno, space);
 		}
 
 		token number()
@@ -181,7 +182,7 @@ namespace parse
 				ch = read_character();
 			}
 			return token(m_source, is_integer ? token_type::integer : token_type::number, start, m_cursor - start,
-						 m_lineno);
+						 m_lineno, space);
 		}
 
 		virtual bool is_identifier_preamble_character(int ch)
@@ -199,7 +200,7 @@ namespace parse
 			int start = m_cursor;
 			while (is_identifier_character(read_character()) || is_digit(read_character()))
 				++m_cursor;
-			return token(m_source, token_type::identifier, start, m_cursor - start, m_lineno);
+			return token(m_source, token_type::identifier, start, m_cursor - start, m_lineno, space);
 		}
 
 		token string(int quote, token_type tt)
@@ -230,7 +231,7 @@ namespace parse
 				escaped = false;
 				++m_cursor;
 			}
-			auto t = token(m_source, tt, start, m_cursor - start, m_lineno);
+			auto t = token(m_source, tt, start, m_cursor - start, m_lineno, space);
 			++m_cursor;
 			return t;
 		}
@@ -239,6 +240,7 @@ namespace parse
 		{
 		repeat:
 			int c;
+			space = 0;
 			do
 			{
 				c = read_character();
@@ -246,13 +248,14 @@ namespace parse
 					++m_lineno;
 				if (!is_space(c))
 					break;
+				++space;
 				++m_cursor;
 			} while (is_space(c));
 			//while (is_space(read_character()))
 				//++m_cursor;
 			int ch = read_character();
 			if (ch == -1)
-				return token(m_source, token_type::eof);
+				return token(m_source, token_type::eof, space);
 			if (is_identifier_preamble_character(ch))
 				return identifier();
 			if (ch == '0' && peek_next_character() == 'x')
@@ -277,14 +280,14 @@ namespace parse
 						{
 							if (!m_opts.tokenize_comments)
 								goto repeat;
-							return token(m_source, token_type::comment, start, m_cursor - start, m_lineno);
+							return token(m_source, token_type::comment, start, m_cursor - start, m_lineno, space);
 						}
 						++m_cursor;
 					} while (ch != '\n');
 					--m_cursor; // incase we read the \n as token
 					if (!m_opts.tokenize_comments)
 						goto repeat;
-					return token(m_source, token_type::comment, start, m_cursor - start, m_lineno);
+					return token(m_source, token_type::comment, start, m_cursor - start, m_lineno, space);
 				}
 			}
 			if (ch == '/')
@@ -304,14 +307,14 @@ namespace parse
 						{
 							if (!m_opts.tokenize_comments)
 								goto repeat;
-							return token(m_source, token_type::comment, start, m_cursor - start, m_lineno);
+							return token(m_source, token_type::comment, start, m_cursor - start, m_lineno, space);
 						}
 						++m_cursor;
 					}
 					m_cursor += 2;
 					if (!m_opts.tokenize_comments)
 						goto repeat;
-					return token(m_source, token_type::comment, start, m_cursor - start, m_lineno);
+					return token(m_source, token_type::comment, start, m_cursor - start, m_lineno, space);
 				}
 				else if (peek_next_character() == '/')
 				{
@@ -325,14 +328,14 @@ namespace parse
 						{
 							if (!m_opts.tokenize_comments)
 								goto repeat;
-							return token(m_source, token_type::comment, start, m_cursor - start, m_lineno);
+							return token(m_source, token_type::comment, start, m_cursor - start, m_lineno, space);
 						}
 						++m_cursor;
 					} while (ch != '\n');
 					--m_cursor; // incase we read the \n as token
 					if (!m_opts.tokenize_comments)
 						goto repeat;
-					return token(m_source, token_type::comment, start, m_cursor - start, m_lineno);
+					return token(m_source, token_type::comment, start, m_cursor - start, m_lineno, space);
 				}
 			}
 			for (int i = 0; i < sizeof(sequence_map) / sizeof(sequence_map[0]); ++i)
@@ -348,9 +351,9 @@ namespace parse
 					continue;
 				}
 				++m_cursor;
-				return token(m_source, sequence_map[i].type, m_cursor - 2, 2, m_lineno);
+				return token(m_source, sequence_map[i].type, m_cursor - 2, 2, m_lineno, space);
 			}
-			return token(m_source, ch, m_cursor++, 1, m_lineno);
+			return token(m_source, ch, m_cursor++, 1, m_lineno, space);
 		}
 
 		std::vector<token> tokenize()
