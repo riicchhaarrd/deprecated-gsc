@@ -257,17 +257,30 @@ namespace parse
 							throw preprocessor_error("expected identifier", path, t.line_number());
 						auto &def = definitions[t.to_string()];
 //						printf("adding def %s\n", t.to_string().c_str());
+						//maybe having a query/filter like function would be better
+						//e.g
+						// filter = {...}
+						// where filter has all the "search" or query options that the parsed token has to meet otherwise it won't accept it
+						// parser.accept_filter(t, filter))
+						// e.g because of t.whitespace && t.token_type == ?
 						if (parser.accept_token(t, '('))
 						{
-							def.is_function = true;
-							size_t numparm = 0;
-							do
+							if (t.whitespace == 0)
 							{
-								if (!parser.accept_token(t, parse::token_type::identifier))
-									throw preprocessor_error("expected identifier", path, t.line_number());
-								def.parameters[t.to_string()] = numparm++;
-							} while (parser.accept_token(t, ','));
-							parser.expect_token(')');
+								def.is_function = true;
+								size_t numparm = 0;
+								do
+								{
+									if (!parser.accept_token(t, parse::token_type::identifier))
+										throw preprocessor_error("expected identifier", path, t.line_number());
+									def.parameters[t.to_string()] = numparm++;
+								} while (parser.accept_token(t, ','));
+								parser.expect_token(')');
+							}
+							else
+							{
+								parser.unread_token();
+							}
 						}
 
 						bool got_backslash = false;
