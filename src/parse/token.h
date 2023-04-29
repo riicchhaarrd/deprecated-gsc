@@ -89,26 +89,30 @@ namespace parse
 		token_type type;
 		int pos, sz;
 		int real_line_number;
+		int whitespace = 0; //kinda just hack atm to fix macro preprocessor functions to check whether it's FUNC( or FUNC ( altough it might be useful...? would kinda have to track all cases of whitespace e.g \t\n\r\s+ and so on
 
 		token() : pos(-1), sz(0), type(token_type::invalid), m_source(NULL), real_line_number(-1)
 		{
 		}
-		token(token_type t) : type(t), m_source(NULL), pos(-1), sz(0), real_line_number(-1)
+		token(token_type t, int space = 0) : type(t), m_source(NULL), pos(-1), sz(0), real_line_number(-1), whitespace(space)
 		{
 		}
-		token(int t) : type((token_type)t), m_source(NULL), pos(-1), sz(0), real_line_number(-1)
+		token(int t, int space = 0)
+			: type((token_type)t), m_source(NULL), pos(-1), sz(0), real_line_number(-1), whitespace(space)
 		{
 		}
-		token(const source* src, token_type t) : m_source(src), type(t), pos(-1), sz(0), real_line_number(-1)
+		token(const source* src, token_type t, int space = 0)
+			: m_source(src), type(t), pos(-1), sz(0), real_line_number(-1), whitespace(space)
 		{
 		}
 		template <typename T>
-		token(const source* src, T t, int _pos, int _sz, int ln)
-			: m_source(src), type((token_type)t), pos(_pos), sz(_sz), real_line_number(ln)
+		token(const source* src, T t, int _pos, int _sz, int ln, int space = 0)
+			: m_source(src), type((token_type)t), pos(_pos), sz(_sz), real_line_number(ln), whitespace(space)
 		{
 		}
 
-		token(const std::string& sv, parse::token_type t) : m_stringvalue(sv), pos(-1), sz(-1), type(t), real_line_number(-1), m_source(nullptr)
+		token(const std::string& sv, parse::token_type t, int space = 0)
+			: m_stringvalue(sv), pos(-1), sz(-1), type(t), real_line_number(-1), m_source(nullptr), whitespace(space)
 		{
 		}
 
