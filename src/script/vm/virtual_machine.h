@@ -228,9 +228,25 @@ namespace script
 			std::unordered_map<std::string, vm::Variant> m_globals;
 			DebugInfo* debug = nullptr;
 
-			std::unordered_map<size_t, std::unordered_map<std::string, IMethod*>> object_method_lookup_table;
+			template<typename T>
+			using TMethod = std::function<int(VMContext&, T&)>;
+
+			using FMethod = std::function<int(VMContext&, void*)>;
+
+//			std::unordered_map<size_t, std::unordered_map<std::string, IMethod*>> object_method_lookup_table;
+			std::unordered_map<size_t, std::unordered_map<std::string, FMethod>> object_method_lookup_table;
 			std::unordered_map<size_t, std::unordered_map<std::string, IProperty*>> object_property_lookup_table;
 		  public:
+
+			template<typename T>
+			void register_method(const std::string name, TMethod<T> method)
+			{
+				object_method_lookup_table[type_id<ProxyObject<T>>::id()][name] = [method](VMContext& ctx, void* ptr) -> int
+				{
+					return method(ctx, *(T*)ptr);
+				};
+			}
+
 			ThreadContext* get_last_thread()
 			{
 				return last_thread;
@@ -261,16 +277,11 @@ namespace script
 				return object_property_lookup_table[kind];
 			}
 
-			std::unordered_map<std::string, IMethod*>& get_object_method_table_for_kind(size_t kind)
+			std::unordered_map<std::string, FMethod>& get_object_method_table_for_kind(size_t kind)
 			{
 				return object_method_lookup_table[kind];
 			}
 
-			template<typename T>
-			void register_method_for_type(const std::string& name, IMethod* method)
-			{
-				object_method_lookup_table[type_id<ProxyObject<T>>::id()][name] = method;
-			}
 			template<typename T, typename U = T>
 			void register_methods_for_type()
 			{
