@@ -7,16 +7,20 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
 add_definitions(-DGLM_FORCE_CTOR_INIT)
 get_filename_component(PARENT_DIR ../../../ ABSOLUTE)
 include_directories(${PARENT_DIR}/src)
-include_directories(${PARENT_DIR}/deps/include)
-include_directories(${PARENT_DIR}/deps)
+include_directories(${PARENT_DIR}/third_party/include)
+include_directories(${PARENT_DIR}/third_party)
 
 add_executable(
 gsc
-../../../deps/include/miniz/miniz.c
+../../../third_party/include/miniz/miniz.c
+../../../src/core/time.cpp
+../../../src/common/logger.cpp
+../../../src/common/filesystem.cpp
 ../../../src/core/filesystem/api.cpp
 ../../../src/script/ast/ast_generator.cpp
 ../../../src/script/ast/gsc_writer.cpp
 ../../../src/script/ast/recursive_visitor.cpp
+../../../src/parse/preprocessor.cpp
 ../../../src/script/ast/visitor.cpp
 ../../../src/script/compiler/compiler.cpp
 ../../../src/script/stockfunctions.cpp
