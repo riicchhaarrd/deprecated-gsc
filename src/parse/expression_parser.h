@@ -3,6 +3,7 @@
 #include <variant>
 #include <parse/token_parser.h>
 #include <common/overload.h>
+#include <math.h>
 
 namespace parse
 {
@@ -398,7 +399,7 @@ namespace parse
 					result = std::visit(op::Div{}, result, operand);
 					break;
 				case '%':
-					result = fmod(parse::expression_number(result), parse::expression_number(operand));
+					result = (float)fmod(parse::expression_number(result), parse::expression_number(operand));
 					break;
 				}
 			}
