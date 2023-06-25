@@ -10,6 +10,12 @@
 #include <common/type_id.h>
 #include <math.h>
 
+enum
+{
+	k_EScriptObjectTypeArray = -1,
+	k_EScriptObjectTypeDefault = 0
+};
+
 namespace script
 {
 	struct VMContext;
@@ -168,87 +174,70 @@ namespace script
 			virtual vm::Variant get(const std::string&) = 0;
 		};
 
-		struct Object
+		class Object
 		{
+			friend class VirtualMachine;
+
 			std::string m_tag;
-			vm::Variant size;
-			Object(const std::string tag) : m_tag(tag), size(vm::Integer())
+			std::unordered_map<std::string, vm::Variant> m_fields;
+
+		  public:
+			Object(const std::string& tag) : m_tag(tag)
 			{
 			}
-
-			virtual std::weak_ptr<void> get_proxy_object()
-			{
-				return {};
-			}
-
-			template<typename T> T* cast()
-			{
-				constexpr auto k = type_id<T>::id();
-				if (k != this->kind())
-					return NULL;
-				return (T*)this;
-			}
-
-			virtual size_t kind()
-			{
-				return type_id<Object>::id();
-			}
-
 			virtual ~Object()
 			{
 			}
 
-			std::unordered_map<std::string, vm::Variant> fields;
-			bool set_field(const std::string n, vm::Variant& value)
+			const std::unordered_map<std::string, vm::Variant>& fields() const
 			{
-				if (n == "size")
+				return m_fields;
+			}
+
+			virtual int type_id()
+			{
+				return k_EScriptObjectTypeDefault;
+			}
+
+			const size_t size() const
+			{
+				return m_fields.size();
+			}
+
+			void set_field(const std::string& key, vm::Variant& value)
+			{
+				if (key == "size")
 				{
-					throw std::runtime_error("cannot set size for object");
+					throw std::runtime_error("Cannot set field 'size' for Object");
 				}
-				fields[n] = value;
-				return true;
+				m_fields[key] = value;
 			}
 			vm::Variant* get_field(const std::string n, bool create)
 			{
-				if (fields.find(n) == fields.end())
+				if (m_fields.find(n) == m_fields.end())
 				{
 					if (create)
-						fields[n] = vm::Undefined();
+						m_fields[n] = vm::Undefined();
 					else
 						return NULL;
 				}
-				return &fields[n];
+				return &m_fields[n];
 			}
 		};
-
-		template<typename T>
-		struct ProxyObject : Object
-		{
-			std::weak_ptr<T> class_instance_ptr;
-			ProxyObject(const std::string tag, std::weak_ptr<T> ptr) : Object(tag), class_instance_ptr(ptr)
-			{
-			}
-
-			virtual std::weak_ptr<void> get_proxy_object() override
-			{
-				return class_instance_ptr;
-			}
-
-			std::shared_ptr<T> get_proxy_shared()
-			{
-				return std::static_pointer_cast<T>(get_proxy_object().lock());
-			}
-
-			virtual size_t kind() override
-			{
-				return type_id<ProxyObject<T>>::id();
-			}
-		};
-
-
+		/*
 		struct Array
 		{
 			std::vector<std::shared_ptr<Variant>> elements;
+		};
+		*/
+		class Array : public Object
+		{
+		  public:
+			using Object::Object;
+			virtual int type_id()
+			{
+				return k_EScriptObjectTypeArray;
+			}
 		};
 
 		using Constants = std::vector<Variant>;

@@ -265,23 +265,20 @@ namespace script
 			{
 				if (prop == "size")
 				{
-					thread_context->push(vm::Integer(v->fields.size()));
+					thread_context->push(vm::Integer(v->size()));
 				}
 				else
 				{
-					auto& table = vm.get_object_property_table_for_kind(v->kind());
-					auto fnd = table.find(util::string::to_lower(prop));
-					if (fnd != table.end())
+
+					auto& registry = vm.get_field_registry()[v->type_id()];
+					auto fnd = registry.find(util::string::to_lower(prop));
+					if (fnd != registry.end())
 					{
-						auto proxy = v->get_proxy_object().lock();
-						if (!proxy)
+						int n = fnd->second.getter(v.get(), *thread_context->m_context.get());
+						if (n == 0)
 						{
-							throw vm::Exception("pointer expired");
+							thread_context->push(vm::Undefined());
 						}
-						vm::Variant new_value;
-						PropertyHandler handler(new_value);
-						fnd->second->get_value(handler, proxy.get());
-						thread_context->push(new_value);
 					}
 					else
 					{
@@ -386,17 +383,21 @@ namespace script
 				}
 				else
 				{
-					auto &table = vm.get_object_property_table_for_kind(v->kind());
-					auto fnd = table.find(util::string::to_lower(ref.field.value()));
-					if (fnd != table.end())
+					auto& registry = vm.get_field_registry()[v->type_id()];
+					auto fnd = registry.find(util::string::to_lower(ref.field.value()));
+					if (fnd != registry.end())
 					{
-						auto proxy = v->get_proxy_object().lock();
-						if (!proxy)
+						if (!fnd->second.setter)
 						{
-							throw vm::Exception("pointer expired");
+							throw vm::Exception("cannot set '{}' for object", ref.field.value());
 						}
-						PropertyHandler handler(new_value);
-						fnd->second->set_value(handler, proxy.get());
+						thread_context->push(new_value);
+						int n = fnd->second.setter(v.get(), *thread_context->m_context.get());
+						if (n > 0)
+						{
+							throw vm::Exception("return is non-zero");
+						}
+						thread_context->pop();
 					}
 					else
 					{

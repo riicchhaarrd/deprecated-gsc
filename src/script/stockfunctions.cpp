@@ -69,9 +69,10 @@ namespace script
 			auto o = ctx.get_object(0);
 			auto list = std::make_shared<vm::Object>("dir");
 			size_t i = 0;
-			for (auto& it : o->fields)
+			for (auto& [key, value] : o->fields())
 			{
-				list->fields[std::to_string(i++)] = it.first;
+				vm::Variant v = value;
+				list->set_field(std::to_string(i++), v);
 			}
 			ctx.add_object(list);
 			return 1;

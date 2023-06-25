@@ -441,17 +441,14 @@ namespace script
 			int num_pushed = 0;
 			thread->m_context->set_number_of_arguments(numargs);
 
-			auto& methods = get_object_method_table_for_kind(obj->kind());
-			auto fnd = methods.find(util::string::to_lower(function));
-			if (fnd == methods.end())
+			auto &registry = m_method_registry[obj->type_id()];
+			auto fnd = registry.find(util::string::to_lower(function));
+			if (fnd == registry.end())
 			{
 				throw vm::Exception("no method {} found for object {}", function, obj->m_tag);
 			}
-			auto proxy = obj->get_proxy_object().lock();
-			if (!proxy)
-				throw vm::Exception("expired pointer");
 
-			num_pushed = fnd->second(*thread->m_context.get(), proxy.get());
+			num_pushed = fnd->second(obj.get(), *thread->m_context.get());
 			if (num_pushed == 0)
 			{
 				thread->pop(numargs);

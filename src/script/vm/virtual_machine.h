@@ -43,13 +43,12 @@ namespace script
 
 		vm::ObjectPtr create_array(const std::string tag = "array")
 		{
-			auto o = std::make_shared<script::vm::Object>(tag);
-			return o;
+			return std::make_shared<script::vm::Array>(tag);
 		}
 		void array_push(vm::ObjectPtr &o, vm::Variant value)
 		{
-			size_t index = o->fields.size();
-			o->fields[std::to_string(index)] = value;
+			size_t index = o->size();
+			o->set_field(std::to_string(index), value);
 		}
 		virtual std::unordered_map<std::string, vm::Variant> get_object_keys_and_values(vm::ObjectPtr& o) = 0;
 	};
@@ -201,6 +200,8 @@ namespace script
 				return ref;
 			}
 		};
+//		inline int runtime_generated_type_id_sequence = 0;
+//		template <typename T> inline const int runtime_generated_type_id = runtime_generated_type_id_sequence++;
 		class VirtualMachine
 		{
 			int m_flags = flags::kNone;
@@ -228,23 +229,66 @@ namespace script
 			std::unordered_map<std::string, vm::Variant> m_globals;
 			DebugInfo* debug = nullptr;
 
-			template<typename T>
-			using TMethod = std::function<int(VMContext&, T&)>;
-
-			using FMethod = std::function<int(VMContext&, void*)>;
-
-//			std::unordered_map<size_t, std::unordered_map<std::string, IMethod*>> object_method_lookup_table;
-			std::unordered_map<size_t, std::unordered_map<std::string, FMethod>> object_method_lookup_table;
-			std::unordered_map<size_t, std::unordered_map<std::string, IProperty*>> object_property_lookup_table;
-		  public:
-
-			template<typename T>
-			void register_method(const std::string name, TMethod<T> method)
+			
+			std::unordered_map<int, std::unordered_map<std::string, std::function<int(void*, VMContext&)>>>
+				m_method_registry;
+			template<typename Class>
+			int call_mem_fn(void* ptr, int (Class::*fn)(VMContext&), VMContext &ctx)
 			{
-				object_method_lookup_table[type_id<ProxyObject<T>>::id()][name] = [method](VMContext& ctx, void* ptr) -> int
+				return (static_cast<Class*>(ptr)->*fn)(ctx);
+			}
+			struct FieldRegistryEntry
+			{
+				std::function<int(void*, VMContext&)> getter;
+				std::function<int(void*, VMContext&)> setter;
+			};
+			std::unordered_map<int, std::unordered_map<std::string, FieldRegistryEntry>> m_field_registry;
+		  public:
+			  
+			template<typename T>
+			void register_method(const std::string& name, int (T::*method)(VMContext&))
+			{
+				static thread_local T dummy;
+				m_method_registry[dummy.type_id()][name] =
+					std::bind(&call_mem_fn<T>, std::placeholders::_1, method, std::placeholders::_2);
+			}
+			template<typename T>
+			void call_method(const std::string& name, T& inst, VMContext &ctx)
+			{
+				static thread_local T dummy;
+				m_method_registry[dummy.type_id()][name](&inst, ctx);
+			}
+
+			std::unordered_map<int, std::unordered_map<std::string, FieldRegistryEntry>>& get_field_registry()
+			{
+				return m_field_registry;
+			}
+			void register_field_fn(int type_id, const std::string& name, std::function<int(void*, VMContext&)> getter,
+								   std::function<int(void*, VMContext&)> setter = {})
+			{
+				FieldRegistryEntry entry = {.getter = getter};
+				if (setter)
 				{
-					return method(ctx, *(T*)ptr);
-				};
+					entry.setter = setter;
+				}
+				m_field_registry[type_id][name] = entry;
+			}
+
+			template <typename T>
+			void register_field(const std::string& name, int (T::*getter)(VMContext&),
+								int (T::*setter)(VMContext&) = nullptr)
+			{
+				if (setter)
+				{
+					register_field_fn(name,
+									  std::bind(&call_mem_fn<T>, std::placeholders::_1, getter, std::placeholders::_2),
+									  std::bind(&call_mem_fn<T>, std::placeholders::_1, setter, std::placeholders::_2));
+				}
+				else
+				{
+					register_field_fn(name,
+									  std::bind(&call_mem_fn<T>, std::placeholders::_1, getter, std::placeholders::_2));
+				}
 			}
 
 			ThreadContext* get_last_thread()
@@ -259,47 +303,23 @@ namespace script
 			std::unordered_map<std::string, vm::Variant> get_object_keys_and_values(vm::ObjectPtr& o)
 			{
 				std::unordered_map<std::string, vm::Variant> kvp;
-				for (auto& it : o->fields)
+				for (auto& it : o->m_fields)
 				{
 					kvp[it.first] = it.second;
 				}
+				/*
+				* //TODO: FIXME add type_id to object when created/pushed
+				* //still with a ECSObject we'd get _ALL_ the properties even though the Object may not have "that" component
+				* //filtering?
+				* //atm only used for dumping for debug purposes really, so not _that_ important
 				auto &table = get_object_property_table_for_kind(o->kind());
 				for (auto& it : table)
 				{
 					PropertyHandler handler(kvp[it.first]);
 					it.second->get_value(handler, o->get_proxy_object().lock().get());
 				}
+				*/
 				return kvp;
-			}
-
-			std::unordered_map<std::string, IProperty*>& get_object_property_table_for_kind(size_t kind)
-			{
-				return object_property_lookup_table[kind];
-			}
-
-			std::unordered_map<std::string, FMethod>& get_object_method_table_for_kind(size_t kind)
-			{
-				return object_method_lookup_table[kind];
-			}
-
-			template<typename T, typename U = T>
-			void register_methods_for_type()
-			{
-				auto& methods = MethodEntry<U>::get_methods();
-				for (auto& it : methods)
-					object_method_lookup_table[type_id<ProxyObject<T>>::id()][it.first] = it.second;
-			}
-
-			template<typename T>
-			void register_property_for_type(const std::string& name, IProperty* prop)
-			{
-				object_property_lookup_table[type_id<ProxyObject<T>>::id()][name] = prop;
-			}
-			template<typename T, typename Container>
-			void register_properties_for_type(Container& container)
-			{
-				for (auto& it : container)
-					object_property_lookup_table[type_id<ProxyObject<T>>::id()][it.first] = &it.second;
 			}
 
 			std::shared_ptr<vm::Instruction> fetch(ThreadContext*);
@@ -428,6 +448,7 @@ namespace script
 				throw vm::Exception("invalid operator {}", op);
 				return T();
 			}
+			//TODO: rewrite using visitor pattern?
 			vm::Variant handle_binary_op(const float& a, const float& b, int op)
 			{
 				switch (op)
