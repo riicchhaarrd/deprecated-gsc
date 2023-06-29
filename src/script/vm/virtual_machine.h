@@ -246,11 +246,22 @@ namespace script
 		  public:
 			  
 			template<typename T>
-			void register_method(const std::string& name, int (T::*method)(VMContext&))
+			void register_method_id(int type_id, const std::string& name, int (T::*method)(VMContext&))
 			{
-				static thread_local T dummy;
-				m_method_registry[dummy.type_id()][name] =
-					std::bind(&call_mem_fn<T>, std::placeholders::_1, method, std::placeholders::_2);
+				//m_method_registry[type_id][name] = std::bind(&call_mem_fn<T>, std::placeholders::_1, method, std::placeholders::_2);
+				m_method_registry[type_id][name] = [method](void* ptr, VMContext& ctx) -> int
+				{
+					T* inst = (T*)ptr;
+					return (inst->*method)(ctx);
+				};
+			}
+			template <typename T>
+			void register_method_id_fn(int type_id, const std::string name, std::function<int(T&, VMContext&)> method)
+			{
+				m_method_registry[type_id][name] = [method](void* ptr, VMContext& ctx) -> int
+				{
+					return method(*(T*)ptr, ctx);
+				};
 			}
 			template<typename T>
 			void call_method(const std::string& name, T& inst, VMContext &ctx)
@@ -278,15 +289,16 @@ namespace script
 			void register_field(const std::string& name, int (T::*getter)(VMContext&),
 								int (T::*setter)(VMContext&) = nullptr)
 			{
+				static thread_local T dummy;
 				if (setter)
 				{
-					register_field_fn(name,
+					register_field_fn(dummy.type_id(), name,
 									  std::bind(&call_mem_fn<T>, std::placeholders::_1, getter, std::placeholders::_2),
 									  std::bind(&call_mem_fn<T>, std::placeholders::_1, setter, std::placeholders::_2));
 				}
 				else
 				{
-					register_field_fn(name,
+					register_field_fn(dummy.type_id(), name,
 									  std::bind(&call_mem_fn<T>, std::placeholders::_1, getter, std::placeholders::_2));
 				}
 			}

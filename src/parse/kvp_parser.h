@@ -42,14 +42,15 @@ namespace parse
 		// might be very specific, but eh..
 		// could use ptr and offsetof, but now the member gets initialized
 		template <typename M>
-		void parse(M(T::*ptm), const std::string& key)
+		bool parse(M(T::*ptm), const std::string& key)
 		{
 			auto fnd = map.find(key);
 			if (fnd == map.end())
-				return;
+				return false;
 			auto& mv = (inst->*ptm);
 			KvpParser parser(fnd->second);
 			parser.parse(mv);
+			return true;
 		}
 	};
 };
