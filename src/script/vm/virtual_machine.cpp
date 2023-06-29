@@ -16,6 +16,10 @@ namespace script
 				return std::to_string(std::get<vm::Number>(v));
 			case vm::Type::kString:
 				return std::get<vm::String>(v);
+			case vm::Type::kLocalizedString:
+				return std::get<vm::LocalizedString>(v).reference;
+			case vm::Type::kAnimation:
+				return std::get<vm::Animation>(v).reference;
 			case vm::Type::kUndefined:
 				return "undefined";
 			case vm::Type::kObject:
@@ -43,6 +47,8 @@ namespace script
 				return std::get<vm::String>(v);
 			case vm::Type::kLocalizedString:
 				return std::get<vm::LocalizedString>(v).reference;
+			case vm::Type::kAnimation:
+				return std::get<vm::Animation>(v).reference;
 			case vm::Type::kUndefined:
 				return "undefined";
 			case vm::Type::kObject:
