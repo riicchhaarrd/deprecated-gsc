@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <parse/preprocessor.h>
 #include <core/filesystem/api.h>
-
+#include <common/common.h>
 #include "ast_generator.h"
 #include "printer.h"
 #include "nodes.h"

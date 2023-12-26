@@ -5,7 +5,6 @@
 #include <common/format.h>
 #include <stack>
 #include <sstream>
-#include <common/logger.h>
 #include <platform/debug.h>
 
 namespace parse
