@@ -437,6 +437,8 @@ namespace script
 		}
 		void VirtualMachine::endon(ThreadContext* thread, vm::ObjectPtr obj, size_t numargs)
 		{
+			std::string evstr = thread->context()->get_string(0);
+			thread->m_endon_strings.insert(evstr);
 			thread->pop(numargs);
 			thread->push(vm::Undefined());
 		}
@@ -632,9 +634,16 @@ namespace script
 				{
 					for(auto & thr : m_threads)
 					{
-						for (auto& l : thr->m_locks)
+						if (thr->m_endon_strings.find(ne.event_string) != thr->m_endon_strings.end())
 						{
-							l->notify(ne);
+							thr->marked_for_deletion = true;
+						}
+						else
+						{
+							for (auto& l : thr->m_locks)
+							{
+								l->notify(ne);
+							}
 						}
 					}
 				}

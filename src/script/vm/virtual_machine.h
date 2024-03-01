@@ -112,6 +112,7 @@ namespace script
 			std::stack<vm::Variant*> m_referencestack;
 			std::stack<FunctionContext> m_callstack;
 			std::vector<std::unique_ptr<ThreadLock>> m_locks;
+			std::unordered_set<std::string> m_endon_strings;
 			std::unique_ptr<VMContext> m_context;
 			//for debugging purposes
 			std::stack<std::string> function_name_stack;
