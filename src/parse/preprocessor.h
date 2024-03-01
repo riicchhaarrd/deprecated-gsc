@@ -213,7 +213,7 @@ namespace parse
 
 								// for (int i = 0; i < depth; ++i)
 								// putchar('\t');
-								printf("including %s\n", t.to_string().c_str());
+								//printf("including %s\n", t.to_string().c_str());
 								if ((m_options & k_EPreprocessorOption_DoNotInclude) != k_EPreprocessorOption_DoNotInclude)
 								{
 									token_list tmp;
@@ -237,7 +237,9 @@ namespace parse
 								}
 							}
 							else
-								printf("duplicate include '%s'\n", fixed_path.c_str());
+							{
+								//printf("duplicate include '%s'\n", fixed_path.c_str());
+							}
 						}
 						else
 							throw preprocessor_error("invalid include directive", t.to_string(), t.line_number());
