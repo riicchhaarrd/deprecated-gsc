@@ -14,7 +14,7 @@ $ make
 $ ./gsc [-d <base_dir>] [-s <script_file>] [-f <function>] [--verbose]
 -d <base_dir>: Specifies the base directory, default value is the current directory.
 -s <script_file>: Specifies the script file.
--f <function>: Specifies the function, defaults function is main.
+-f <function>: Specifies the function, default function is main.
 --verbose: Enable verbose mode.
 ```
 # Example
