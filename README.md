@@ -11,9 +11,18 @@ $ make
 
 # Usage
 ```sh
-
-$ ./gsc ../examples/hello_world
+$ ./gsc [-d <base_dir>] [-s <script_file>] [-f <function>] [--verbose]
+-d <base_dir>: Specifies the base directory, default value is the current directory.
+-s <script_file>: Specifies the script file.
+-f <function>: Specifies the function, defaults function is main.
+--verbose: Enable verbose mode.
+```
+# Example
+```sh
+$ ./gsc -s ../examples/hello_world --verbose
+compiling program ../examples/hello_world
 -------------------------------------------------------------------------------
+Compile done!
                 -->PushString Hello world!\n (0)        ../examples/hello_world::main
                 -->CallFunction print (1)       ../examples/hello_world::main
 [./../examples/hello_world.gsc:0] Hello world!\n
