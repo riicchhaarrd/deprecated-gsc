@@ -1,8 +1,53 @@
 #pragma once
-#include <math/math.h>
 #include <unordered_map>
 #include <string>
 #include <script/vm/types.h>
+
+struct vec2
+{
+	union
+	{
+		struct
+		{
+			float x, y;
+		};
+		float components_[2];
+	};
+	float& operator[](const size_t index)
+	{
+		return components_[index];
+	}
+};
+struct vec3
+{
+	union
+	{
+		struct
+		{
+			float x, y, z;
+		};
+		float components_[3];
+	};
+	float& operator[](const size_t index)
+	{
+		return components_[index];
+	}
+};
+struct vec4
+{
+	union
+	{
+		struct
+		{
+			float x, y, z, w;
+		};
+		float components_[4];
+	};
+	float& operator[](const size_t index)
+	{
+		return components_[index];
+	}
+};
 
 namespace script
 {
@@ -24,30 +69,30 @@ namespace script
 			throw std::runtime_error("no object ptr");
 		}
 
-		void get_value(const Vec4& v)
+		void get_value(const vec4& v)
 		{
 			throw std::runtime_error("no vec4");
 		}
-		void set_value(Vec4& v)
+		void set_value(vec4& v)
 		{
 			throw std::runtime_error("no vec4");
 		}
-		void get_value(const Vec3& v)
+		void get_value(const vec3& v)
 		{
 			m_value = vm::Vector(v.x, v.y, v.z);
 		}
-		void set_value(Vec3& v)
+		void set_value(vec3& v)
 		{
 			auto tmp = std::get<vm::Vector>(m_value);
 			v.x = tmp.x;
 			v.y = tmp.y;
 			v.z = tmp.z;
 		}
-		void get_value(const Vec2& v)
+		void get_value(const vec2& v)
 		{
 			throw std::runtime_error("no vec2");
 		}
-		void set_value(Vec2& v)
+		void set_value(vec2& v)
 		{
 			throw std::runtime_error("no vec2");
 		}

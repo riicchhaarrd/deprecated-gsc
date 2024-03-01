@@ -6,7 +6,6 @@
 #include <unordered_map>
 #include <variant>
 #include <vector>
-#include <common/stringutil.h>
 #include <common/type_id.h>
 #include <math.h>
 

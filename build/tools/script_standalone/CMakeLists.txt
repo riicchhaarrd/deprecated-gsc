@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 project(gsc)
+set(CMAKE_CXX_STANDARD 20)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
@@ -12,9 +13,9 @@ include_directories(${PARENT_DIR}/third_party)
 
 add_executable(
 gsc
-../../../third_party/include/miniz/miniz.c
+#../../../third_party/include/miniz/miniz.c
 ../../../src/core/time.cpp
-../../../src/common/logger.cpp
+#../../../src/common/logger.cpp
 ../../../src/common/filesystem.cpp
 ../../../src/core/filesystem/api.cpp
 ../../../src/script/ast/ast_generator.cpp

@@ -4,7 +4,6 @@
 #include <unordered_map>
 #include <parse/preprocessor.h>
 #include <core/filesystem/api.h>
-#include <common/common.h>
 #include "ast_generator.h"
 #include "printer.h"
 #include "nodes.h"
@@ -353,7 +352,7 @@ namespace script
 									  parse::TokenType_kOrAssign,
 									  parse::TokenType_kXorAssign,
 									  parse::TokenType_kModAssign};
-			for (size_t i = 0; i < COUNT_OF(operators); ++i)
+			for (size_t i = 0; i < sizeof(operators) / sizeof(operators[0]); ++i)
 			{
 				if (accept(operators[i]))
 					return true;
