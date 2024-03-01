@@ -4,6 +4,7 @@
 #include <script/ast/gsc_writer.h>
 #include <stdexcept>
 #include <variant>
+#include <cstring>
 #include <set>
 #include <common/exception.h>
 #include <script/ast/type_visitor.h>
@@ -83,20 +84,20 @@ class ReferenceSolver
 #ifndef EMSCRIPTEN
 #define EMSCRIPTEN_KEEPALIVE
 #endif
+bool verbose = false;
 
-extern "C" EMSCRIPTEN_KEEPALIVE void run_file(const char* file, const char *function)
+extern "C" EMSCRIPTEN_KEEPALIVE void run_file(const char* base_path, const char* file, const char *function)
 {
-	printf("run_file(%s, %s)\n", file, function);
-	bool verbose = true;
+	//printf("run_file(%s, %s)\n", file, function);
 	default_filesystem fs;
 	try
 	{
 		script::ReferenceMap refmap;
-		ReferenceSolver rs("./", file, refmap, "data/scriptlib/");
-		printf("loaded files:\n");
+		ReferenceSolver rs(base_path, file, refmap, "data/scriptlib/");
+		//printf("loaded files:\n");
 		for (auto& it : refmap)
 		{
-			printf("\t%s\n", it.first.c_str());
+			//printf("\t%s\n", it.first.c_str());
 		}
 		script::compiler::Compiler compiler(refmap);
 		auto cf = compiler.compile();
@@ -133,11 +134,57 @@ extern "C" EMSCRIPTEN_KEEPALIVE void run_file(const char* file, const char *func
 	}
 }
 
-int main(int argc, char **argv)
+int main(int argc, const char **argv)
 {
 	#ifndef EMSCRIPTEN
-	assert(argc > 1);
-	run_file(argv[1], argc > 2 ? argv[2] : "main");
+
+	const char* base_dir = "./";
+	const char* function = "main";
+	const char* script_file = NULL;
+
+	for (int i = 1; i < argc; i++)
+	{
+		if (strcmp(argv[i], "-d") == 0)
+		{
+			if (i + 1 < argc) {
+				base_dir = argv[++i];
+			}
+			else {
+				printf("Error: No directory specified.\n");
+				return 1;
+			}
+		}
+		else if (strcmp(argv[i], "-s") == 0)
+		{
+			if (i + 1 < argc) {
+				script_file = argv[++i];
+			}
+			else {
+				printf("Error: No script specified.\n");
+				return 1;
+			}
+		}
+		else if (strcmp(argv[i], "-f") == 0)
+		{
+			if (i + 1 < argc) {
+				function = argv[++i];
+			}
+			else {
+				printf("Error: No function specified.\n");
+				return 1;
+			}
+		}
+		else if (strcmp(argv[i], "--verbose") == 0)
+		{
+			verbose = true;
+		}
+	}
+	if (!script_file)
+	{
+		printf("Usage: %s -s <script>\n", argv[0]);
+		return 1;
+	}
+	run_file(base_dir, script_file, function);
 	#endif
 	return 0;
 }
