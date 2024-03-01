@@ -87,6 +87,21 @@ namespace script
 			}
 			return 0;
 		}
+		int getarraykeys(script::VMContext& ctx)
+		{
+			auto o = ctx.get_object(0);
+			auto kvp = ctx.get_object_keys_and_values(o);
+
+			auto result = std::make_shared<vm::Object>("getarraykeys");
+			size_t n = 0;
+			for(auto & it : kvp)
+			{
+				vm::Variant key = it.first;
+				result->set_field(std::to_string(n++), key);
+			}
+			ctx.add_object(result);
+			return 1;
+		}
 		int tolower(script::VMContext& ctx)
 		{
 			ctx.add_string(util::string::to_lower(ctx.get_string(0)));
@@ -262,6 +277,7 @@ namespace script
 		}
 
 		std::unordered_map<std::string, StockFunction> stockfunctions = {
+			{"getarraykeys", getarraykeys},
 			{"setexpfog", set_exp_fog},
 			{"isdefined", is_defined},
 			{"typeof", typeof_},
